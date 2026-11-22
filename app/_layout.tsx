@@ -17,7 +17,9 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Provider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
 
-import { persistor, store, useAppSelector } from '@/store';
+import { useAuthListener } from '@/features/auth/hooks/useAuthListener';
+import { useAppSelector } from '@/store';
+import { persistor, store } from '@/store/root';
 import { SnackbarProvider, ThemeProvider, useTheme } from '@/ui';
 
 SplashScreen.preventAutoHideAsync().catch(() => undefined);
@@ -33,10 +35,6 @@ export default function RootLayout() {
     PlusJakartaSans_700Bold,
     PlusJakartaSans_800ExtraBold,
   });
-
-  useEffect(() => {
-    if (fontsLoaded || fontError) SplashScreen.hideAsync().catch(() => undefined);
-  }, [fontsLoaded, fontError]);
 
   // Fonts are bundled, so this is a few ms; a font error falls back to system fonts.
   if (!fontsLoaded && !fontError) return null;
@@ -63,6 +61,14 @@ function ThemedRoot() {
 
 function Navigator() {
   const { scheme, colors } = useTheme();
+  useAuthListener();
+  const status = useAppSelector((s) => s.auth.status);
+  const signedIn = status === 'signedIn';
+
+  // Keep the splash up until fonts are in and the stored session is restored.
+  useEffect(() => {
+    if (status !== 'restoring') SplashScreen.hideAsync().catch(() => undefined);
+  }, [status]);
 
   useEffect(() => {
     SystemUI.setBackgroundColorAsync(colors.canvas).catch(() => undefined);
@@ -87,9 +93,20 @@ function Navigator() {
     <NavThemeProvider value={navTheme}>
       <SnackbarProvider>
         <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
-        <Stack
-          screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.canvas } }}
-        />
+        {status === 'restoring' ? null : (
+          <Stack
+            screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.canvas } }}
+          >
+            <Stack.Screen name="index" />
+            <Stack.Protected guard={signedIn}>
+              <Stack.Screen name="(tabs)" />
+              <Stack.Screen name="dev/gallery" />
+            </Stack.Protected>
+            <Stack.Protected guard={!signedIn}>
+              <Stack.Screen name="(auth)/sign-in" />
+            </Stack.Protected>
+          </Stack>
+        )}
       </SnackbarProvider>
     </NavThemeProvider>
   );

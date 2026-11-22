@@ -1,6 +1,8 @@
 import { useRouter } from 'expo-router';
-import { Palette } from 'lucide-react-native';
+import { LogOut, Palette } from 'lucide-react-native';
 
+import { selectUser } from '@/features/auth/selectors';
+import { signOut } from '@/features/auth/slice';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { setThemePreference } from '@/store/appSlice';
 import { Button, Card, SegmentedToggle, Screen, Text, type ThemePreference } from '@/ui';
@@ -15,6 +17,8 @@ export default function MoreScreen() {
   const dispatch = useAppDispatch();
   const router = useRouter();
   const preference = useAppSelector((s) => s.app.themePreference);
+  const user = useAppSelector(selectUser);
+  const offline = useAppSelector((s) => s.auth.offline);
 
   return (
     <Screen title="More" subtitle="Routine, tasks, money and settings arrive from F04.">
@@ -28,6 +32,20 @@ export default function MoreScreen() {
         <Text variant="sub" tone="secondary">
           Default is Dark. System follows your phone.
         </Text>
+      </Card>
+      <Card kicker="Account" title={user?.email ?? 'Signed in'}>
+        <Text variant="sub" tone="secondary">
+          {offline
+            ? 'Offline — signed in from this phone’s saved session.'
+            : 'Synced to your account only.'}
+        </Text>
+        <Button
+          variant="secondary"
+          icon={LogOut}
+          label="Sign out"
+          accessibilityLabel="Sign out"
+          onPress={() => void dispatch(signOut())}
+        />
       </Card>
       {__DEV__ ? (
         <Card kicker="Developer" title="Component gallery">

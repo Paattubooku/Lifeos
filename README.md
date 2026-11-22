@@ -14,10 +14,12 @@ Personal single-user mobile app (Expo React Native + Supabase) that runs the day
 
 ## Status
 
-F00 (project scaffold) done, see `PROGRESS.md`. Next: F01.
+F00 (scaffold) and F01 (Supabase, auth, schema, seed) done, see `PROGRESS.md`. Next: F02.
 
 ```bash
 npm install
 npm start        # Expo dev server, scan the QR with Expo Go
 npm run typecheck && npm run lint && npm test
+npm run test:db    # migrations + RLS/seed SQL tests on a throwaway local Postgres
+npm run gen:types  # regenerate src/types/supabase.ts from the migrations
 ```

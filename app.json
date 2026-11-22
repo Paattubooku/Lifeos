@@ -31,11 +31,15 @@
           "imageWidth": 160,
           "resizeMode": "contain",
           "backgroundColor": "#F8FAFC",
-          "dark": { "image": "./assets/splash-icon.png", "backgroundColor": "#0A0F1C" }
+          "dark": {
+            "image": "./assets/splash-icon.png",
+            "backgroundColor": "#0A0F1C"
+          }
         }
       ],
       "expo-font",
-      "expo-status-bar"
+      "expo-status-bar",
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true

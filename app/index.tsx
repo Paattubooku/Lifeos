@@ -1,6 +1,10 @@
 import { Redirect } from 'expo-router';
 
-/** App opens on Today (F03 will route first-run users to onboarding). */
+import { selectIsSignedIn } from '@/features/auth/selectors';
+import { useAppSelector } from '@/store';
+
+/** Signed in → Today (F03 will route first-run users to onboarding); otherwise sign-in. */
 export default function Index() {
-  return <Redirect href="/today" />;
+  const signedIn = useAppSelector(selectIsSignedIn);
+  return <Redirect href={signedIn ? '/today' : '/sign-in'} />;
 }

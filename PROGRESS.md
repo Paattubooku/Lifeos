@@ -2,6 +2,39 @@
 
 One entry per feature, newest first: feature ID, what was built, how PTR verifies it on the phone, known gaps.
 
+## F01 — Supabase, auth, schema and seed · 2026-11-22 · built, remote project pending
+
+**Built**
+
+- `supabase/migrations/`: every table in PRD §5 (30 tables) with per-user RLS (`user_id = auth.uid()`), `updated_at` triggers, `client_id` (unique, for offline upserts) and `deleted_at` on all user tables, `(user_id, date)` indexes on every log table, PRD unique keys (one `day_log`/`weight_log`/`sleep_log`/… per day, `expense (user_id, txn_ref)`), and the three views `v_daily_summary`, `v_weight_trend` (7-day trailing average), `v_weekly_rollup`, all `security_invoker` so RLS applies.
+- `seed_defaults()` RPC with the full PRD §6 seed: profile (170 cm, 91 → 75 kg, 3,000 ml, 2,200 kcal, 150 g …), Workday/Weekend/Rest day templates (Workday = 11 counted blocks, Evening walk optional + silent), "Fixed Day v1" (27 dishes, swap groups; defaults = 2,219 kcal / 157 g protein), "Dumbbell Beginner 5-Day" (7 days, 25 exercises, nothing needing a barbell/cable/machine) and the 6 + Income expense categories. Idempotent; the app calls it after each sign-in.
+- App: Supabase client (anon key only) with the session in chunked `expo-secure-store`, auto-refresh only in the foreground; auth slice (restore at launch, sign in, dev-only sign-up, forgot password, sign out); Sign-in screen from `design/screens/SignIn(-Dark).png` (+ `TextField` in `src/ui`); routes guarded with `Stack.Protected` (signed out → sign-in, signed in → tabs); the splash stays up until the session is restored; More → Account (email + Sign out).
+- `src/types/supabase.ts` generated from the migrations (`npm run gen:types`).
+- New scripts: `npm run test:db` (applies migrations to a throwaway local Postgres and runs `supabase/tests/*.sql`), `npm run gen:types`.
+
+**Checks run here**
+
+- `npm run typecheck` ✅ · `npm run lint` ✅ · `npm test` ✅ 27 suites / 169 tests (auth slice, offline restore, chunked SecureStore, Sign-in screen, Supabase client wiring); coverage `src/lib` 97%, `features/auth/lib` 100%.
+- `npm run test:db` ✅ on Postgres 16 + a Supabase auth shim: **AC2** `rls.sql` (user B sees 0 rows in every table and view, can't update/delete A's rows, can't insert rows owned by A; anon sees nothing and can't seed). I also broke RLS on purpose (RLS off on one table; a view without `security_invoker`) and the test caught both. **AC3** `seed.sql` (second run creates nothing; counts and seed values match PRD §6).
+- `expo export` for iOS + Android ✅. Sign-in screen rendered on web and compared with the design PNG.
+
+**How PTR verifies on the phone** (after the Supabase project exists, see below)
+
+1. `.env`: `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY` from Supabase → Project Settings → API.
+2. Create your account once: Supabase dashboard → Authentication → Users → Add user (email + password, auto-confirm). Then turn **off** "Allow new users to sign up" (Authentication → Sign In / Providers).
+3. `npm start`, open in Expo Go: the app shows **Sign in**. Wrong password → "Email or password is wrong."
+4. Sign in → lands on Today. In Supabase → Table Editor, `routine_template`, `dish`, `exercise` etc. now hold your seed rows.
+5. **AC1:** kill the app and reopen → still signed in, no sign-in screen. Airplane mode + reopen → still opens (More → Account says "Offline").
+6. More → Account → Sign out → back to Sign in.
+
+**Known gaps**
+
+- Not yet applied to a real Supabase project (waiting for PTR, see the question in the session). Until then the RLS/seed tests have run on local Postgres only.
+- `src/types/supabase.ts` is from the local generator; switch to `npx supabase gen types typescript --linked` once linked (same shape).
+- Forgot-password emails a Supabase reset link that opens in the browser (no in-app reset screen; not in the PRD).
+- Cross-user FK references (a row pointing at another user's plan uuid) aren't blocked by a trigger; RLS still hides the other user's rows. Fine for a single-user app.
+- Placeholder bundle id and icon (from F00).
+
 ## F00 — Project scaffold · 2026-11-22 · done
 
 **Built**
@@ -50,4 +83,4 @@ One entry per feature, newest first: feature ID, what was built, how PTR verifie
 - Placeholder app icon/splash (Expo defaults) and bundle id `app.lifeos.ptr`.
 - Open questions from `REFERENCE_NOTES.md` (todo sort order, weight-trend insight, golden fixtures) still default as proposed until PTR answers.
 
-_Next: F01 (Supabase, auth, schema, seed). Waiting for PTR's "next"._
+_Next: F02 (offline storage and sync engine). Waiting for PTR's "next"._
