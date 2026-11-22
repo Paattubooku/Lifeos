@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lock-screen notifications Dark</title>
+<script src="./_runtime/react.js"></script>
+<script src="./_runtime/react-dom.js"></script>
+<script src="./_runtime/support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@500;600;700;800&amp;display=swap">
+<style>
+body{margin:0}
+button{cursor:pointer;transition:transform .3s cubic-bezier(.34,1.3,.64,1),box-shadow .25s cubic-bezier(.4,0,.2,1),background-color .2s}
+.lo-btn:active,.lo-fab:active{transform:scale(.98)}
+.lo-card{transition:transform .35s cubic-bezier(.34,1.3,.64,1),box-shadow .3s cubic-bezier(.4,0,.2,1)}
+.lo-card:hover{transform:translateY(-1px)}
+@property --n{syntax:'<integer>';inherits:false;initial-value:0}
+@keyframes loCount{from{--n:0}to{--n:var(--to)}}
+.lo-count{animation:loCount 1.4s cubic-bezier(.4,0,.2,1) both .2s;counter-reset:n var(--n)}
+.lo-count::after{content:counter(n) attr(data-suffix)}
+@keyframes loRing{0%{stroke-dashoffset:var(--c)}100%{stroke-dashoffset:var(--off)}}
+.lo-ring{animation:loRing 1.4s cubic-bezier(.4,0,.2,1) both}
+@keyframes loBar{0%{transform:scaleX(0)}100%{transform:scaleX(1)}}
+.lo-bar{transform-origin:left center;animation:loBar 1.1s cubic-bezier(.4,0,.2,1) both .3s}
+@keyframes loPace{0%,100%{opacity:1}50%{opacity:.35}}
+.lo-pace{animation:loPace 2s ease-in-out infinite 1.4s}
+@keyframes loUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.lo-stack>*{animation:loUp .6s cubic-bezier(.34,1.3,.64,1) both}
+.lo-stack>*:nth-child(2){animation-delay:.06s}.lo-stack>*:nth-child(3){animation-delay:.12s}.lo-stack>*:nth-child(4){animation-delay:.18s}
+.lo-stack>*:nth-child(5){animation-delay:.24s}.lo-stack>*:nth-child(6){animation-delay:.3s}.lo-stack>*:nth-child(n+7){animation-delay:.36s}
+@keyframes loCur{0%,100%{transform:scale(1)}50%{transform:scale(1.015)}}
+.lo-cur{animation:loCur 2.6s ease-in-out infinite}
+@keyframes loDot{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(.5);opacity:.7}}
+.lo-dot{animation:loDot 1.4s ease-in-out infinite}
+@keyframes loBeacon{0%{box-shadow:0 0 0 0 currentColor}80%,100%{box-shadow:0 0 0 6px transparent}}
+.lo-beacon{animation:loBeacon 1.6s ease-out infinite}
+@keyframes loPop{0%{transform:scale(.3);opacity:0}100%{transform:none;opacity:1}}
+.lo-done{animation:loPop .5s cubic-bezier(.34,1.3,.64,1) both .45s}
+@keyframes loFab{0%{box-shadow:0 0 0 0 rgba(2,132,199,.45)}70%{box-shadow:0 0 0 14px rgba(2,132,199,0)}100%{box-shadow:0 0 0 0 rgba(2,132,199,0)}}
+.lo-fab{animation:loFab 2.8s ease-out infinite 1s}
+@keyframes loSheet{from{transform:translateY(100%)}to{transform:none}}
+.lo-sheet{animation:loSheet .6s cubic-bezier(.34,1.3,.64,1) both .1s}
+@keyframes loFade{from{opacity:0}to{opacity:1}}
+.lo-scrim{animation:loFade .35s ease both}
+@keyframes loShake{0%,100%{transform:none}25%{transform:rotate(-10deg)}50%{transform:rotate(8deg)}75%{transform:rotate(-4deg)}}
+.lo-banner-ic{animation:loShake .7s ease both .7s}
+@keyframes loFlame{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
+.lo-flame{transform-origin:50% 90%;animation:loFlame 1.6s ease-in-out infinite}
+@keyframes loGrow{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+.lo-barv{transform-box:fill-box;transform-origin:50% 100%;animation:loGrow .9s cubic-bezier(.34,1.3,.64,1) both}
+@keyframes loDraw{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
+.lo-line{stroke-dasharray:1;animation:loDraw 1.6s cubic-bezier(.4,0,.2,1) both .2s}
+@keyframes loSnack{from{transform:translateY(24px);opacity:0}to{transform:none;opacity:1}}
+.lo-snack{animation:loSnack .5s cubic-bezier(.34,1.3,.64,1) both}
+.lo-ringlive{transition:stroke-dashoffset .9s cubic-bezier(.4,0,.2,1)}
+@keyframes loIn{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:none}}
+.lo-in{animation:loIn .45s cubic-bezier(.34,1.3,.64,1) both}
+@keyframes loTab{from{transform:scale(.6);opacity:0}to{transform:none;opacity:1}}
+.lo-tabpill{animation:loTab .5s cubic-bezier(.34,1.3,.64,1) both .4s}
+.lo-shine{}
+@media (prefers-reduced-motion: reduce){*{animation:none !important;transition:none !important}}
+</style>
+</helmet>
+<main aria-label="Lock-screen notifications" style="width:393px;height:1240px;position:relative;overflow:hidden;background:#050811;color:#F1F5F9;font-family:Inter,-apple-system,BlinkMacSystemFont,system-ui,sans-serif;box-sizing:border-box"><div class="lo-stack" style="padding:56px 12px 40px;display:flex;flex-direction:column;gap:8px"><div style="text-align:center;padding:8px 0 12px"><div style="font-size:16px;font-weight:600;color:#94A3B8">Monday 23 November</div><div style="font-size:84px;font-weight:700;letter-spacing:-0.04em;line-height:1;font-family:Plus Jakarta Sans,Inter,system-ui,sans-serif;font-variant-numeric:tabular-nums;">5:00</div></div><div style="font-size:11px;font-weight:600;letter-spacing:0.06em;color:#94A3B8;padding:8px 4px 0">5:00 AM · WAKE</div><div style="border-radius:20px;padding:12px 14px;background:rgba(30,38,58,0.72);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);"><div style="display:flex;align-items:center;gap:8px"><span style="width:20px;height:20px;border-radius:6px;background:#2563EB;display:flex;align-items:center;justify-content:center;color:#FFFFFF;font-size:11px;font-weight:800">L</span><span style="flex:1;font-size:12px;font-weight:600;letter-spacing:0.02em;color:#94A3B8">LIFEOS</span><span style="font-size:12px;color:#94A3B8;font-variant-numeric:tabular-nums;">5:00 am</span></div><div style="font-size:15px;font-weight:600;margin-top:6px;color:#F1F5F9">Wake.</div><div style="font-size:14px;line-height:1.4;color:#F1F5F9;font-variant-numeric:tabular-nums;">Next: drink 500 ml before Upper A at 5:30.</div><div style="display:flex;gap:6px;margin-top:8px"><button type="button" style="flex:1;height:44px;border-radius:12px;border:none;background:rgba(255,255,255,0.1);color:#F1F5F9;font-family:inherit;font-size:14px;font-weight:600">Done</button><button type="button" style="flex:1;height:44px;border-radius:12px;border:none;background:rgba(255,255,255,0.1);color:#F1F5F9;font-family:inherit;font-size:14px;font-weight:600">Snooze 5</button></div></div><div style="font-size:11px;font-weight:600;letter-spacing:0.06em;color:#94A3B8;padding:8px 4px 0">5:25 AM · WORKOUT</div><div style="border-radius:20px;padding:12px 14px;background:rgba(30,38,58,0.72);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);"><div style="display:flex;align-items:center;gap:8px"><span style="width:20px;height:20px;border-radius:6px;background:#2563EB;display:flex;align-items:center;justify-content:center;color:#FFFFFF;font-size:11px;font-weight:800">L</span><span style="flex:1;font-size:12px;font-weight:600;letter-spacing:0.02em;color:#94A3B8">LIFEOS</span><span style="font-size:12px;color:#94A3B8;font-variant-numeric:tabular-nums;">5:25 am</span></div><div style="font-size:15px;font-weight:600;margin-top:6px;color:#F1F5F9">Upper A in 5 min</div><div style="font-size:14px;line-height:1.4;color:#F1F5F9;font-variant-numeric:tabular-nums;">DB bench starts at 14 kg. Last time 14 × 12 on set 1: try 15.</div><div style="display:flex;gap:6px;margin-top:8px"><button type="button" style="flex:1;height:44px;border-radius:12px;border:none;background:rgba(255,255,255,0.1);color:#F1F5F9;font-family:inherit;font-size:14px;font-weight:600">Start session</button></div></div><div style="font-size:11px;font-weight:600;letter-spacing:0.06em;color:#94A3B8;padding:8px 4px 0">2:20 PM · WATER</div><div style="border-radius:20px;padding:12px 14px;background:rgba(30,38,58,0.72);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);"><div style="display:flex;align-items:center;gap:8px"><span style="width:20px;height:20px;border-radius:6px;background:#2563EB;display:flex;align-items:center;justify-content:center;color:#FFFFFF;font-size:11px;font-weight:800">L</span><span style="flex:1;font-size:12px;font-weight:600;letter-spacing:0.02em;color:#94A3B8">LIFEOS</span><span style="font-size:12px;color:#94A3B8;font-variant-numeric:tabular-nums;">2:20 pm</span></div><div style="font-size:15px;font-weight:600;margin-top:6px;color:#F1F5F9">Water: 350 ml behind.</div><div style="font-size:14px;line-height:1.4;color:#F1F5F9;font-variant-numeric:tabular-nums;">Drink 350 ml now. 1,400 / 3,000 ml.</div><div style="display:flex;gap:6px;margin-top:8px"><button type="button" style="flex:1;height:44px;border-radius:12px;border:none;background:rgba(255,255,255,0.1);color:#F1F5F9;font-family:inherit;font-size:14px;font-weight:600">+350 ml</button><button type="button" style="flex:1;height:44px;border-radius:12px;border:none;background:rgba(255,255,255,0.1);color:#F1F5F9;font-family:inherit;font-size:14px;font-weight:600">+200 ml</button></div></div><div style="font-size:11px;font-weight:600;letter-spacing:0.06em;color:#94A3B8;padding:8px 4px 0">11:40 AM · FAILURE INTERRUPT</div><div style="border-radius:20px;padding:12px 14px;background:rgba(30,38,58,0.72);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);box-shadow:inset 0 0 0 1.5px #FB7185;"><div style="display:flex;align-items:center;gap:8px"><span style="width:20px;height:20px;border-radius:6px;background:#2563EB;display:flex;align-items:center;justify-content:center;color:#FFFFFF;font-size:11px;font-weight:800">L</span><span style="flex:1;font-size:12px;font-weight:600;letter-spacing:0.02em;color:#94A3B8">LIFEOS · TIME SENSITIVE</span><span style="font-size:12px;color:#94A3B8;font-variant-numeric:tabular-nums;">11:40 am</span></div><div style="font-size:15px;font-weight:600;margin-top:6px;color:#FB7185">3 blocks overdue. Do ONE thing now.</div><div style="font-size:14px;line-height:1.4;color:#F1F5F9;font-variant-numeric:tabular-nums;">Drink 500 ml. Everything else can wait 2 minutes.</div><div style="display:flex;gap:6px;margin-top:8px"><button type="button" style="flex:1;height:44px;border-radius:12px;border:none;background:rgba(255,255,255,0.1);color:#F1F5F9;font-family:inherit;font-size:14px;font-weight:600">Done · 500 ml</button></div></div><div style="font-size:11px;font-weight:600;letter-spacing:0.06em;color:#94A3B8;padding:8px 4px 0">9:30 PM · PHONE AWAY</div><div style="border-radius:20px;padding:12px 14px;background:rgba(30,38,58,0.72);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);"><div style="display:flex;align-items:center;gap:8px"><span style="width:20px;height:20px;border-radius:6px;background:#2563EB;display:flex;align-items:center;justify-content:center;color:#FFFFFF;font-size:11px;font-weight:800">L</span><span style="flex:1;font-size:12px;font-weight:600;letter-spacing:0.02em;color:#94A3B8">LIFEOS</span><span style="font-size:12px;color:#94A3B8;font-variant-numeric:tabular-nums;">9:30 pm</span></div><div style="font-size:15px;font-weight:600;margin-top:6px;color:#F1F5F9">Phone away. Today: 78%.</div><div style="font-size:14px;line-height:1.4;color:#F1F5F9;font-variant-numeric:tabular-nums;">3 open: water 350 ml short, weight, sleep. Then charger in the hall.</div><div style="display:flex;gap:6px;margin-top:8px"><button type="button" style="flex:1;height:44px;border-radius:12px;border:none;background:rgba(255,255,255,0.1);color:#F1F5F9;font-family:inherit;font-size:14px;font-weight:600">Open</button><button type="button" style="flex:1;height:44px;border-radius:12px;border:none;background:rgba(255,255,255,0.1);color:#F1F5F9;font-family:inherit;font-size:14px;font-weight:600">Done</button></div></div></div></main>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview": {"width": 393, "height": 1240}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,38 @@
+# dependencies
+node_modules/
+
+# Expo / React Native
+.expo/
+dist/
+web-build/
+ios/
+android/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# env & secrets (keep only the example)
+.env
+.env.*
+!.env.example
+
+# old repos cloned for reference (read-only, PRD §2)
+reference/
+
+# tests & tooling
+coverage/
+*.log
+npm-debug.*
+yarn-error.*
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Supabase local
+supabase/.branches/
+supabase/.temp/
