@@ -14,4 +14,10 @@ Personal single-user mobile app (Expo React Native + Supabase) that runs the day
 
 ## Status
 
-Not started. Next: session 1 in `KICKOFF_PROMPT.md` (read-only review), then F00.
+F00 (project scaffold) done, see `PROGRESS.md`. Next: F01.
+
+```bash
+npm install
+npm start        # Expo dev server, scan the QR with Expo Go
+npm run typecheck && npm run lint && npm test
+```

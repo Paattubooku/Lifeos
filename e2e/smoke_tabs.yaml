@@ -1,0 +1,18 @@
+# F00 smoke: app opens on Today, all five tabs switch, theme toggle works.
+# Run with a dev build or Expo Go installed: npm run e2e
+appId: host.exp.Exponent # Expo Go; use app.lifeos.ptr for a dev/preview build
+---
+- launchApp
+- assertVisible: 'Today'
+- tapOn: 'Food'
+- assertVisible: 'Meals live here'
+- tapOn: 'Train'
+- assertVisible: 'Training lives here'
+- tapOn: 'Progress'
+- assertVisible: 'Trends live here'
+- tapOn: 'More'
+- assertVisible: 'Theme'
+- tapOn: 'Light'
+- tapOn: 'Dark'
+- tapOn: 'Today'
+- assertVisible: 'Your day runs here'

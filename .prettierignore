@@ -1,0 +1,8 @@
+node_modules
+reference
+design
+.expo
+dist
+coverage
+package-lock.json
+*.md
