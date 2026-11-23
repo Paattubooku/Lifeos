@@ -84,3 +84,10 @@ Decisions made during the build that the PRD left open. Format: date · feature 
 - 2026-11-23 · F06 · **The score sync runs inside the Today screen**, which is the first tab and stays mounted; later features that log away from Today (F07 water screen) still update the score because Today re-renders from the shared cache.
 - 2026-11-23 · F06 · **Per-block streaks** count manual ticks (`block_log` done) for 90 days back, ending today if ticked else yesterday; shown from 2 days. Auto-complete blocks have no per-day rows, so they show no per-block streak.
 - 2026-11-23 · F06 · **Streaks screen** built now (design rows F06/F16) at `/streaks`, opened from Today's streak line.
+- 2026-11-23 · F07 · **Pace window** = `profile.wake_time` → the day's last water block (the Water target block, A6), default 21:00. After `sleep_time` (and before wake) the status is "sleeping": no banner, no tick.
+- 2026-11-23 · F07 · **Behind banner / catch-up button** show from a 50 ml gap (the suggestion floor), so being 10 ml behind reads as "on pace". Notifications keep A7's 300 ml threshold (F15).
+- 2026-11-23 · F07 · **Streak stats read 90 days** of water (the reference's 7-day window capped streaks at 7). The 7-day average and bars are the 7 complete days before today; today in progress never breaks the water streak.
+- 2026-11-23 · F07 · **Goal toast once per logical day**, remembered on the phone (`app.waterGoalCelebrated`, persisted). It fires only when an entry crosses the target, not when opening the app above it.
+- 2026-11-23 · F07 · **Custom amount** can be typed as well as stepped (50 ml steps, 50–2,000); typed values outside 1–2,000 ml or non-whole show the inline error (AC3) and disable Add.
+- 2026-11-23 · F07 · **Entry points**: Today water card tap and More → Water open the screen; the FAB tap logs +200 and a hold opens the add sheet (Sheet-WaterAdd copy). The NOW card's "Log 500 ml" and every other water write go through one `useLogWater` (Undo + goal toast).
+- 2026-11-23 · F07 · **Deleting an entry** is a soft delete with Undo (re-sends the full row, so it also restores an entry that never synced).

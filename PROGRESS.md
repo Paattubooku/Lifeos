@@ -2,6 +2,44 @@
 
 One entry per feature, newest first: feature ID, what was built, how PTR verifies it on the phone, known gaps.
 
+## F07 — Water · 2026-11-23 · done
+
+**Built**
+
+- **Pace engine** `src/features/water/lib/pace.ts` (port of My-Tracker `reminderEngine.ts` steps 3, 6–9, on IST plan times): `expected = clamp((now − wake) ÷ (Water target block − wake), 0, 1) × target`, gap, urgency (low ≤ 200, medium ≤ 500, high > 500), suggested = round50(gap) clamped 50–500, status sleeping / goal_reached / on_track / behind; `validateAmount` (1–2,000 ml, whole numbers).
+- **Stats** `lib/stats.ts` (port of `getStats`): current water streak (today in progress doesn't break it), best streak, 7-day average, the 7 days before today vs goal. Reads 90 days, so streaks aren't capped at 7 like the reference.
+- **Water screen** (`/water`, Water design): ring with a white pace tick ("pace for 2:20 pm (1,750 ml)"), "1,600 ml left by 9:00 pm", behind banner "350 ml behind. Drink 350 ml now." with a one-tap button, +200 / +500 / +750, custom amount (50 ml steps or typed, inline error outside 1–2,000 ml), today's log (swipe left to delete with Undo, **Undo last**), streak / best / 7-day average tiles, last-7-days bars with the goal line.
+- **Today**: water card (bar with pace tick, gap line, "+150 ml" catch-up, tap → Water screen); the floating **+200** water button (tap = +200 ml, hold = **Add water** sheet with 500 / 750 / custom and the pace line, Sheet-WaterAdd design). The NOW card's "Log 500 ml" uses the same path.
+- **Goal hit**: crossing the target fires a success haptic + "Water goal hit · 3,000 ml" toast once per logical day (remembered on the phone).
+- More → **Water** opens the screen. `Ring` gained an optional pace `marker` (additive).
+
+**Checks run here**
+
+- `typecheck` ✅ · `lint` ✅ · `test` ✅ 502 tests; coverage 97% overall, `features/water/lib` 100%.
+- **AC1**: wake 05:00, target 21:00, 3,000 ml → 1,500 ml expected at 13:00, 1,750 ml at 14:20 (unit + screen).
+- **AC2**: gap 180 → low, suggest 200; gap 620 → high, suggest 500; plus 200/500 boundaries and the 50 ml floor.
+- **AC3**: 0, 2,500, empty and fractional amounts show an inline error and disable Add.
+- **AC4**: crossing 3,000 ml → one success haptic + toast; Undo and re-crossing the same day doesn't repeat it.
+- `test:db` ✅ · Android bundle export ✅.
+
+**How PTR verifies on the phone**
+
+1. `git pull`, `npm install`, `npm start` (no new packages this time, but run it anyway as the habit).
+2. **Today**: the Water card shows your total, the bar with a white pace tick, and "… behind. Drink … now." with a + button when you're behind.
+3. Tap the round **+200** button → 200 ml logged with Undo. **Hold** it → Add water sheet → tap 500.
+4. Tap the Water card (or More → Water): ring + pace tick, quick adds, type 2500 in Custom → red "At most 2,000 ml at a time." and Add is disabled.
+5. Swipe a log row left → Delete → Undo brings it back.
+6. Log enough to pass your target → a success buzz and "Water goal hit" once; later entries today just say "… ml logged".
+7. The "Drink 500 ml" block on the timeline ticks itself once 500 ml is logged.
+
+**Known gaps**
+
+- Behind-pace notifications (only when ≥ 300 ml behind, DESIGN_NOTES A7) are F15.
+- Entries don't record how they were added, so the log shows time + amount, not the design's "Quick add / Custom / auto" labels.
+- Water ring colour stays water-blue rather than shifting as the % rises (My-Tracker `ProgressCircle`); the design uses the fixed gradient.
+
+**Milestone M1 (Run the day: F04–F07) is complete.** Per PRD §12, PTR uses the app for 7 consecutive days before asking for M2 (F08 Food).
+
 ## F06 — Day scoring and streaks · 2026-11-23 · done
 
 **Built**
@@ -267,4 +305,4 @@ One entry per feature, newest first: feature ID, what was built, how PTR verifie
 - Placeholder app icon/splash (Expo defaults) and bundle id `app.lifeos.ptr`.
 - Open questions from `REFERENCE_NOTES.md` (todo sort order, weight-trend insight, golden fixtures) still default as proposed until PTR answers.
 
-_Next: F07 (water) — last feature of milestone M1. Waiting for PTR's "next"._
+_Next: F08 (food: meal plan, logging and swaps), milestone M2 — after PTR's 7-day M1 trial. Waiting for PTR's "next"._

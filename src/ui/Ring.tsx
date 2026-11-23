@@ -8,7 +8,7 @@ import Animated, {
   withDelay,
   withTiming,
 } from 'react-native-reanimated';
-import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
+import Svg, { Circle, Defs, Line, LinearGradient, Stop } from 'react-native-svg';
 
 import { useTheme } from './ThemeProvider';
 import { type Accent, motion } from './theme';
@@ -27,6 +27,8 @@ export type RingProps = {
   children?: ReactNode;
   /** e.g. "Routine 45 percent". */
   accessibilityLabel: string;
+  /** 0–1: a white tick across the ring (e.g. water pace for now). */
+  marker?: number;
 };
 
 export type TripleRingProps = {
@@ -49,6 +51,7 @@ export function Ring({
   strokeWidth = 8,
   children,
   accessibilityLabel,
+  marker,
 }: RingProps) {
   return (
     <RingFrame
@@ -64,6 +67,7 @@ export function Ring({
         spec={{ progress, accent }}
         delay={150}
       />
+      {marker === undefined ? null : <Tick size={size} strokeWidth={strokeWidth} at={marker} />}
     </RingFrame>
   );
 }
@@ -194,6 +198,28 @@ function Arc({
         transform={`rotate(-90 ${mid} ${mid})`}
       />
     </>
+  );
+}
+
+/** Radial tick at `at` (0–1, clockwise from 12 o'clock) across the ring. */
+function Tick({ size, strokeWidth, at }: { size: number; strokeWidth: number; at: number }) {
+  const { colors } = useTheme();
+  const mid = size / 2;
+  const r = (size - strokeWidth) / 2;
+  const angle = clamp01(at) * 2 * Math.PI - Math.PI / 2;
+  const inner = r - strokeWidth / 2 - 4;
+  const outer = r + strokeWidth / 2 + 2;
+  return (
+    <Line
+      testID="ring-marker"
+      x1={mid + inner * Math.cos(angle)}
+      y1={mid + inner * Math.sin(angle)}
+      x2={mid + Math.min(outer, mid - 1) * Math.cos(angle)}
+      y2={mid + Math.min(outer, mid - 1) * Math.sin(angle)}
+      stroke={colors.text}
+      strokeWidth={3}
+      strokeLinecap="round"
+    />
   );
 }
 

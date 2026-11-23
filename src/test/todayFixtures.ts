@@ -1,5 +1,6 @@
 import { profileApi } from '@/features/profile/api';
 import { todayApi } from '@/features/today/api';
+import { waterApi } from '@/features/water/api';
 import { addDays, logicalMoment, weekStart } from '@/lib/dates';
 
 import { base } from './profileFixtures';
@@ -25,6 +26,10 @@ export type TodayStoreOptions = {
   history?: { daysAgo: number; score: number | null; template_id?: string | null }[];
   /** Ticked blocks per day for the finaliser / per-block streaks. */
   doneBlocks?: { daysAgo: number; blockId: string }[];
+  /** Today's water entries: [IST HH:mm, ml]. */
+  water?: [string, number][];
+  /** Past days' water totals (one entry per day). */
+  waterHistory?: { daysAgo: number; ml: number }[];
 };
 
 export async function todayStore(opts: TodayStoreOptions = {}) {
@@ -48,7 +53,18 @@ export async function todayStore(opts: TodayStoreOptions = {}) {
   ) =>
     store.dispatch(todayApi.util.upsertQueryData(endpoint as never, arg as never, data as never));
   await put('getBlockLogs', today, []);
-  await put('getWaterLogs', today, []);
+  await put(
+    'getWaterLogs',
+    today,
+    (opts.water ?? []).map(([hhmm, ml], i) => ({
+      ...base,
+      id: `w${i}`,
+      client_id: `w${i}-c`,
+      date: today,
+      amount_ml: ml,
+      logged_at: new Date(logicalMoment(today, hhmm)).toISOString(),
+    })),
+  );
   await put('getFoodLogs', today, []);
   await put('getSessionOn', today, null);
   await put('getSleepOn', today, null);
@@ -110,6 +126,18 @@ export async function todayStore(opts: TodayStoreOptions = {}) {
     sessions: [],
   });
   await put('getDoneBlocksSince', addDays(today, -90), done);
+  await store.dispatch(
+    waterApi.util.upsertQueryData(
+      'getWaterSince',
+      addDays(today, -90),
+      (opts.waterHistory ?? []).map((h) => ({
+        client_id: `wh${h.daysAgo}-c`,
+        date: addDays(today, -h.daysAgo),
+        amount_ml: h.ml,
+        deleted_at: null,
+      })),
+    ),
+  );
   const at = (hhmm: string) => logicalMoment(today, hhmm);
   return { store, today, blocks, at };
 }

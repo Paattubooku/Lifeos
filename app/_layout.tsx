@@ -121,6 +121,7 @@ function Navigator() {
               <Stack.Screen name="routine/index" />
               <Stack.Screen name="routine/[id]" />
               <Stack.Screen name="streaks" />
+              <Stack.Screen name="water" />
               <Stack.Screen name="dev/gallery" />
             </Stack.Protected>
             <Stack.Protected guard={signedIn && gate === 'onboard'}>

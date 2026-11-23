@@ -1,18 +1,32 @@
 import { useRouter } from 'expo-router';
 import { CalendarDays, ChevronDown } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { weightWrite } from '@/features/profile/lib/plan';
 import { SwitchTemplateSheet } from '@/features/routine/components/SwitchTemplateSheet';
 import { dayMinutes, hhmm } from '@/features/routine/lib/blocks';
 import type { Change } from '@/features/routine/lib/changes';
 import { applyChanges } from '@/features/routine/slice';
-import { queueSoftDelete, queueUpsert } from '@/features/sync/slice';
 import { istClock, isoWeekday, logicalMoment } from '@/lib/dates';
 import { formatClock } from '@/lib/format';
+import { WaterAddSheet } from '@/features/water/components/WaterAddSheet';
+import { WaterCard } from '@/features/water/components/WaterCard';
+import { useLogWater } from '@/features/water/hooks/useLogWater';
+import { useWater } from '@/features/water/hooks/useWater';
 import { useAppDispatch } from '@/store';
-import { Card, Chip, EmptyState, haptics, Screen, useSnackbar, useTheme } from '@/ui';
+import {
+  Card,
+  Chip,
+  EmptyState,
+  Fab,
+  haptics,
+  Screen,
+  TAB_BAR_HEIGHT,
+  useSnackbar,
+  useTheme,
+} from '@/ui';
 
 import { useDayScoreSync } from '../hooks/useDayScoreSync';
 import { useNow } from '../hooks/useNow';
@@ -35,13 +49,15 @@ import { Timeline } from './Timeline';
 /** Event-time clock (kept out of render for the React Compiler). */
 const clock = () => Date.now();
 
-type Open = 'switch' | 'weight' | 'sleep' | 'note' | null;
+type Open = 'switch' | 'weight' | 'sleep' | 'note' | 'water' | null;
 
 /** One screen that runs the day (PRD F05). `now` is fixed in tests. */
 export function TodayScreen({ now: fixedNow }: { now?: number } = {}) {
   const ticking = useNow();
   const now = fixedNow ?? ticking;
   const t = useToday(now);
+  const water = useWater(now);
+  const { log: logWaterEntry } = useLogWater();
   useDayScoreSync(t);
   const { streak } = useStreak(t.today, t.plan.blocks.length > 0 ? t.day.score.score : null);
   const dispatch = useAppDispatch();
@@ -50,6 +66,7 @@ export function TodayScreen({ now: fixedNow }: { now?: number } = {}) {
   const { colors } = useTheme();
   const [open, setOpen] = useState<Open>(null);
   const [skipping, setSkipping] = useState<DayRow | null>(null);
+  const insets = useSafeAreaInsets();
 
   // Undo runs later, against the rows as they are then.
   const latest = useRef(t);
@@ -94,25 +111,12 @@ export function TodayScreen({ now: fixedNow }: { now?: number } = {}) {
     void setStatus(row, { status: 'done' }, `${title} done`);
   };
 
-  const logWater = async (ml: number) => {
-    haptics.tap();
-    const res = await dispatch(
-      queueUpsert({
-        table: 'water_log',
-        row: { date: t.today, amount_ml: ml, logged_at: new Date(clock()).toISOString() },
-      }),
-    );
-    const id = queueUpsert.fulfilled.match(res) ? res.payload : null;
-    showSnackbar({
-      message: `${ml} ml logged`,
-      ...(id
-        ? {
-            actionLabel: 'Undo',
-            onAction: () => void dispatch(queueSoftDelete({ table: 'water_log', clientId: id })),
-          }
-        : {}),
+  const logWater = (ml: number) =>
+    void logWaterEntry(ml, {
+      today: water.today,
+      totalBefore: water.totalMl,
+      targetMl: water.targetMl,
     });
-  };
 
   const skip = async (reason: SkipReason, move: boolean) => {
     const row = skipping;
@@ -168,147 +172,188 @@ export function TodayScreen({ now: fixedNow }: { now?: number } = {}) {
 
   const skipRow = skipping;
   return (
-    <Screen title={header.title} kicker={header.kicker} accessory={templateChip}>
-      <ScoreCard
-        score={t.day.score.score}
-        done={t.day.score.done}
-        counted={t.day.score.counted}
-        waterMl={t.waterMl}
-        waterTargetMl={t.waterTargetMl}
-        proteinG={t.foodTotals.protein}
-        proteinTargetG={t.profile?.protein_target_g ?? 150}
-        streak={{
-          current: streak.current,
-          line: streakLine(streak, shortDay),
-          onPress: () => router.push('/streaks'),
-        }}
-      />
+    <View style={styles.fill}>
+      <Screen title={header.title} kicker={header.kicker} accessory={templateChip}>
+        <ScoreCard
+          score={t.day.score.score}
+          done={t.day.score.done}
+          counted={t.day.score.counted}
+          waterMl={t.waterMl}
+          waterTargetMl={t.waterTargetMl}
+          proteinG={t.foodTotals.protein}
+          proteinTargetG={t.profile?.protein_target_g ?? 150}
+          streak={{
+            current: streak.current,
+            line: streakLine(streak, shortDay),
+            onPress: () => router.push('/streaks'),
+          }}
+        />
 
-      {t.plan.blocks.length === 0 ? (
-        <Card>
-          <EmptyState
-            icon={CalendarDays}
-            title="No routine for today"
-            body="Give a template today’s weekday, or switch one in for today."
-            action={{
-              label: 'Open Routine',
-              accessibilityLabel: 'Open Routine',
-              onPress: () => router.push('/routine'),
+        {t.plan.blocks.length === 0 ? (
+          <Card>
+            <EmptyState
+              icon={CalendarDays}
+              title="No routine for today"
+              body="Give a template today’s weekday, or switch one in for today."
+              action={{
+                label: 'Open Routine',
+                accessibilityLabel: 'Open Routine',
+                onPress: () => router.push('/routine'),
+              }}
+            />
+          </Card>
+        ) : null}
+
+        {showEndOfDay ? (
+          <EndOfDayCard
+            score={t.day.score.score}
+            items={items}
+            hasNote={Boolean(t.dayLog?.note)}
+            onLogWeight={() => setOpen('weight')}
+            onLogSleep={() => setOpen('sleep')}
+            onNote={() => setOpen('note')}
+          />
+        ) : (
+          <NowCard
+            current={t.day.current}
+            next={t.day.next}
+            ctx={ctx}
+            isWaterTarget={t.day.current?.block.client_id === waterTarget?.client_id}
+            onDone={(row) => onTap(row)}
+            onSkip={setSkipping}
+            onLogWater={logWater}
+          />
+        )}
+
+        <WaterCard
+          totalMl={water.totalMl}
+          targetMl={water.targetMl}
+          pace={water.pace}
+          targetTime={water.targetTime}
+          wakeTime={water.wakeTime}
+          beforeWake={water.beforeWake}
+          onOpen={() => router.push('/water')}
+          onDrink={logWater}
+        />
+
+        {t.plan.blocks.length > 0 ? (
+          <Timeline
+            rows={t.day.rows}
+            ctx={ctx}
+            nextId={t.day.next?.block.client_id ?? null}
+            templateName={t.plan.template?.name ?? null}
+            onTap={onTap}
+            onLongPress={setSkipping}
+          />
+        ) : null}
+
+        {skipRow ? (
+          <SkipSheet
+            key={skipRow.block.client_id}
+            visible
+            onClose={() => setSkipping(null)}
+            title={rowTitle(skipRow, ctx.session)}
+            startTime={skipRow.block.start_time}
+            durationMin={skipRow.block.duration_min}
+            skipped={skipRow.state === 'skipped'}
+            initialReason={(skipRow.log?.skip_reason as SkipReason | null) ?? null}
+            optional={skipRow.block.is_optional}
+            moveSummary={
+              skipRow.block.kind === 'workout' && canMoveToTomorrow(t.today, t.programCtx)
+                ? moveSummary(t.today, t.programCtx)
+                : null
+            }
+            onSkip={(reason, move) => void skip(reason, move)}
+            onUnskip={() => {
+              setSkipping(null);
+              void setStatus(skipRow, null, `${rowTitle(skipRow, ctx.session)} unskipped`);
             }}
           />
-        </Card>
-      ) : null}
+        ) : null}
 
-      {showEndOfDay ? (
-        <EndOfDayCard
-          score={t.day.score.score}
-          items={items}
-          hasNote={Boolean(t.dayLog?.note)}
-          onLogWeight={() => setOpen('weight')}
-          onLogSleep={() => setOpen('sleep')}
-          onNote={() => setOpen('note')}
+        {open === 'water' ? (
+          <WaterAddSheet
+            visible
+            onClose={() => setOpen(null)}
+            totalMl={water.totalMl}
+            targetMl={water.targetMl}
+            pace={water.pace}
+            nowClock={istClock(now)}
+            onAdd={(ml) => {
+              setOpen(null);
+              logWater(ml);
+            }}
+          />
+        ) : null}
+        {open === 'switch' ? <SwitchTemplateSheet visible onClose={() => setOpen(null)} /> : null}
+        {open === 'weight' ? (
+          <WeightSheet
+            visible
+            onClose={() => setOpen(null)}
+            initialKg={t.latestWeightKg ?? t.profile?.start_weight_kg ?? 80}
+            onSave={(kg) => {
+              setOpen(null);
+              const w = weightWrite(t.today, kg, t.weightToday ?? null);
+              if (w)
+                void apply([
+                  {
+                    op: 'upsert',
+                    table: w.table,
+                    row: w.row,
+                    ...(w.clientId ? { clientId: w.clientId } : {}),
+                  },
+                ]);
+              showSnackbar({ message: `${kg.toFixed(1)} kg logged` });
+            }}
+          />
+        ) : null}
+        {open === 'sleep' ? (
+          <SleepSheet
+            visible
+            onClose={() => setOpen(null)}
+            initialBed={hhmm(t.profile?.sleep_time ?? '22:00')}
+            initialWake={hhmm(t.profile?.wake_time ?? '05:00')}
+            onSave={(bed, wake) => {
+              setOpen(null);
+              void apply(
+                planSleep(
+                  t.today,
+                  t.sleep,
+                  logicalMoment(t.yesterday, bed),
+                  logicalMoment(t.today, wake),
+                ),
+              );
+              showSnackbar({ message: 'Sleep logged' });
+            }}
+          />
+        ) : null}
+        {open === 'note' ? (
+          <NoteSheet
+            visible
+            onClose={() => setOpen(null)}
+            initial={t.dayLog?.note ?? ''}
+            onSave={(note) => {
+              setOpen(null);
+              void apply(planNote(t.today, t.dayLog ?? null, note, t.plan.template?.id ?? null));
+              showSnackbar({ message: 'Note saved' });
+            }}
+          />
+        ) : null}
+      </Screen>
+      <View style={[styles.fab, { bottom: TAB_BAR_HEIGHT + insets.bottom + 12 }]}>
+        <Fab
+          label="+200"
+          accessibilityLabel="Add 200 ml of water. Hold for more amounts"
+          onPress={() => logWater(200)}
+          onLongPress={() => setOpen('water')}
+          testID="water-fab"
         />
-      ) : (
-        <NowCard
-          current={t.day.current}
-          next={t.day.next}
-          ctx={ctx}
-          isWaterTarget={t.day.current?.block.client_id === waterTarget?.client_id}
-          onDone={(row) => onTap(row)}
-          onSkip={setSkipping}
-          onLogWater={(ml) => void logWater(ml)}
-        />
-      )}
-
-      {t.plan.blocks.length > 0 ? (
-        <Timeline
-          rows={t.day.rows}
-          ctx={ctx}
-          nextId={t.day.next?.block.client_id ?? null}
-          templateName={t.plan.template?.name ?? null}
-          onTap={onTap}
-          onLongPress={setSkipping}
-        />
-      ) : null}
-
-      {skipRow ? (
-        <SkipSheet
-          key={skipRow.block.client_id}
-          visible
-          onClose={() => setSkipping(null)}
-          title={rowTitle(skipRow, ctx.session)}
-          startTime={skipRow.block.start_time}
-          durationMin={skipRow.block.duration_min}
-          skipped={skipRow.state === 'skipped'}
-          initialReason={(skipRow.log?.skip_reason as SkipReason | null) ?? null}
-          optional={skipRow.block.is_optional}
-          moveSummary={
-            skipRow.block.kind === 'workout' && canMoveToTomorrow(t.today, t.programCtx)
-              ? moveSummary(t.today, t.programCtx)
-              : null
-          }
-          onSkip={(reason, move) => void skip(reason, move)}
-          onUnskip={() => {
-            setSkipping(null);
-            void setStatus(skipRow, null, `${rowTitle(skipRow, ctx.session)} unskipped`);
-          }}
-        />
-      ) : null}
-
-      {open === 'switch' ? <SwitchTemplateSheet visible onClose={() => setOpen(null)} /> : null}
-      {open === 'weight' ? (
-        <WeightSheet
-          visible
-          onClose={() => setOpen(null)}
-          initialKg={t.latestWeightKg ?? t.profile?.start_weight_kg ?? 80}
-          onSave={(kg) => {
-            setOpen(null);
-            const w = weightWrite(t.today, kg, t.weightToday ?? null);
-            if (w)
-              void apply([
-                {
-                  op: 'upsert',
-                  table: w.table,
-                  row: w.row,
-                  ...(w.clientId ? { clientId: w.clientId } : {}),
-                },
-              ]);
-            showSnackbar({ message: `${kg.toFixed(1)} kg logged` });
-          }}
-        />
-      ) : null}
-      {open === 'sleep' ? (
-        <SleepSheet
-          visible
-          onClose={() => setOpen(null)}
-          initialBed={hhmm(t.profile?.sleep_time ?? '22:00')}
-          initialWake={hhmm(t.profile?.wake_time ?? '05:00')}
-          onSave={(bed, wake) => {
-            setOpen(null);
-            void apply(
-              planSleep(
-                t.today,
-                t.sleep,
-                logicalMoment(t.yesterday, bed),
-                logicalMoment(t.today, wake),
-              ),
-            );
-            showSnackbar({ message: 'Sleep logged' });
-          }}
-        />
-      ) : null}
-      {open === 'note' ? (
-        <NoteSheet
-          visible
-          onClose={() => setOpen(null)}
-          initial={t.dayLog?.note ?? ''}
-          onSave={(note) => {
-            setOpen(null);
-            void apply(planNote(t.today, t.dayLog ?? null, note, t.plan.template?.id ?? null));
-            showSnackbar({ message: 'Note saved' });
-          }}
-        />
-      ) : null}
-    </Screen>
+      </View>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  fill: { flex: 1 },
+  fab: { position: 'absolute', right: 16 },
+});

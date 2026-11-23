@@ -50,6 +50,14 @@ export default function MoreScreen() {
               : 'Templates for your day'
           }
           onPress={() => router.push('/routine')}
+          divider
+        />
+        <MenuRow
+          icon={Droplet}
+          accent="water"
+          title="Water"
+          sub="Today’s log, pace and 7-day stats"
+          onPress={() => router.push('/water')}
         />
       </Card>
       <Card kicker="Appearance" title="Theme">
