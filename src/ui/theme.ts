@@ -340,3 +340,11 @@ export type Theme = {
 export function buildTheme(scheme: Scheme): Theme {
   return { scheme, colors: palettes[scheme], space, radius, type, fonts, motion };
 }
+
+/** '#34D399' + 0.3 → 'rgba(52,211,153,0.3)'. For tints of theme tokens only. */
+export function withAlpha(hex: string, alpha: number): string {
+  const m = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex);
+  if (!m) return hex;
+  const [r, g, b] = [m[1], m[2], m[3]].map((h) => parseInt(h as string, 16));
+  return `rgba(${r},${g},${b},${alpha})`;
+}

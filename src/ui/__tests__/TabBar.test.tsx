@@ -55,3 +55,14 @@ describe('TabBar', () => {
     expect(tabBarClearance(0)).toBe(56 + 12 + 16);
   });
 });
+
+describe('TabBar badge', () => {
+  it('shows a red dot on More when there is a sync issue', async () => {
+    await renderWithTheme(
+      <TabBarItems routes={routes} activeIndex={0} onSelect={jest.fn()} badges={{ more: true }} />,
+    );
+    expect(screen.getByTestId('tab-badge-more')).toBeOnTheScreen();
+    expect(screen.getByRole('tab', { name: 'More, needs attention' })).toBeOnTheScreen();
+    expect(screen.queryByTestId('tab-badge-today')).toBeNull();
+  });
+});

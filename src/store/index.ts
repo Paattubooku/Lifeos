@@ -3,15 +3,17 @@ import { type TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux
 import { FLUSH, PAUSE, PERSIST, PURGE, REGISTER, REHYDRATE, persistReducer } from 'redux-persist';
 
 import { type AuthDeps, authSlice } from '@/features/auth/slice';
+import { syncSlice } from '@/features/sync/slice';
 import { AUTH_STORAGE_KEY, authStorage, getSupabase, isSupabaseConfigured } from '@/lib/supabase';
 
 import { appSlice } from './appSlice';
 import { baseApi } from './baseApi';
-import { persistConfig } from './persist';
+import { persistConfig, syncPersistConfig } from './persist';
 
 const rootReducer = combineReducers({
   [appSlice.name]: appSlice.reducer,
   [authSlice.name]: authSlice.reducer,
+  [syncSlice.name]: persistReducer(syncPersistConfig, syncSlice.reducer),
   [baseApi.reducerPath]: baseApi.reducer,
 });
 

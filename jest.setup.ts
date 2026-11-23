@@ -42,3 +42,12 @@ jest.mock('react-native-gesture-handler/ReanimatedSwipeable', () =>
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   require('./src/test/mocks/ReanimatedSwipeable'),
 );
+
+jest.mock('@react-native-community/netinfo', () =>
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  require('@react-native-community/netinfo/jest/netinfo-mock.js'),
+);
+
+jest.mock('expo-crypto', () => ({
+  randomUUID: () => globalThis.crypto.randomUUID(),
+}));

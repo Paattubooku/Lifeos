@@ -18,6 +18,7 @@ import { Provider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
 
 import { useAuthListener } from '@/features/auth/hooks/useAuthListener';
+import { useSyncWorker } from '@/features/sync/hooks/useSyncWorker';
 import { useAppSelector } from '@/store';
 import { persistor, store } from '@/store/root';
 import { SnackbarProvider, ThemeProvider, useTheme } from '@/ui';
@@ -62,6 +63,7 @@ function ThemedRoot() {
 function Navigator() {
   const { scheme, colors } = useTheme();
   useAuthListener();
+  useSyncWorker();
   const status = useAppSelector((s) => s.auth.status);
   const signedIn = status === 'signedIn';
 

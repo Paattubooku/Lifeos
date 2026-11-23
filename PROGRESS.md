@@ -2,6 +2,39 @@
 
 One entry per feature, newest first: feature ID, what was built, how PTR verifies it on the phone, known gaps.
 
+## F02 — Offline storage and sync engine · 2026-11-23 · done
+
+**Built**
+
+- `src/lib/sync.ts` (pure, 100% covered): write queue `{client_id, table, op: upsert|soft_delete, row, attempts, next_try_at, …}`; collapse rules (two edits → one merged upsert; deleting a row that never reached the server drops both; deleting a synced row replaces its pending edit); backoff 1 s → 5 s → 30 s → 2 min → 10 min, then every 10 min; dead-letter after 20 attempts (or at once for errors the server will always reject, e.g. a check constraint); `mergeByClientId` (server rows + unsynced local rows, PRD §3.2).
+- Sync slice + worker: optimistic `queueUpsert` / `queueSoftDelete` (every write gets a `client_id`, pushes immediately when online), `runSync` pushes oldest-first with `upsert(..., { onConflict: 'client_id' })` (idempotent), soft deletes set `deleted_at` to the moment of deletion. Worker runs at launch/sign-in, on foreground, on NetInfo reconnect (which also clears network-only backoff) and every 60 s while open.
+- The queue is persisted on its own key (MMKV in builds, AsyncStorage in Expo Go) and survives app kills; writes are tagged with their owner — signing out keeps them on the phone (Settings design) and only that account ever pushes them.
+- More: sync card from the More-Menu design ("Synced 2 min ago · 0 pending" + Sync; "Offline · n pending"; "Sync issue · n failed" + Retry) and a red dot on the More tab when something failed. Dev-only card: "Queue 200 ml water" to test sync before F07 exists.
+- `src/lib/dates.ts` (IST, logical day from 03:00, weeks from Monday) and `src/lib/ids.ts` (UUID v4 client ids).
+
+**Checks run here**
+
+- `typecheck` ✅ · `lint` ✅ · `test` ✅ 35 suites / 263 tests; coverage `src/lib` 100% lines, `features/sync` 98%.
+- **AC1** integration test: airplane mode → 5 water entries → app "killed" (new store rehydrated from storage) → reconnect → exactly 5 rows on the (fake) server, plus a lost-acknowledgement retry that still yields 1 row. Turning off queue persistence makes this test fail (checked).
+- **AC2**: after long offline backoff, the reconnect event makes everything due at once → pending 0 on the first run (well inside 60 s).
+- `test:db` ✅, iOS + Android bundles ✅.
+
+**How PTR verifies on the phone**
+
+1. `git pull`, `npm start`, open in Expo Go, sign in.
+2. More → the sync card at the bottom says "Not synced yet · 0 pending" (or "Synced …").
+3. Turn on **airplane mode**. More → Developer → **Queue 200 ml water** five times → card: "Offline · 5 pending".
+4. Swipe Expo Go away (kill it), reopen the project → still "5 pending".
+5. Turn airplane mode off → within a few seconds (≤ 60 s) the card shows "Synced just now · 0 pending".
+6. Supabase → Table Editor → `water_log`: exactly 5 rows of 200 ml for today. (They're real entries; delete them in the Table Editor if you like — F07's water screen will also be able to.)
+
+**Known gaps**
+
+- No feature reads data yet (F04+), so the merge selector is only exercised by tests; RTK Query endpoints arrive with the features.
+- Tables with a per-day unique key (`day_log`, `weight_log`, `sleep_log`, …): features must reuse that day's row `client_id` when editing, otherwise a second device's row would be rejected (dead-lettered as a conflict). Each feature handles this when it adds its writes.
+- "Last synced / Pending: n" live on the More card; the PRD's Settings screen (F23) will show the same.
+- Expo Go uses AsyncStorage: a write is saved a few ms after the tap (MMKV in dev builds is synchronous).
+
 ## F01 — Supabase, auth, schema and seed · 2026-11-23 · done
 
 **Built**
@@ -96,4 +129,4 @@ One entry per feature, newest first: feature ID, what was built, how PTR verifie
 - Placeholder app icon/splash (Expo defaults) and bundle id `app.lifeos.ptr`.
 - Open questions from `REFERENCE_NOTES.md` (todo sort order, weight-trend insight, golden fixtures) still default as proposed until PTR answers.
 
-_Next: F02 (offline storage and sync engine). Waiting for PTR's "next"._
+_Next: F03 (onboarding and profile). Waiting for PTR's "next"._

@@ -1,8 +1,12 @@
 import { useRouter } from 'expo-router';
-import { LogOut, Palette } from 'lucide-react-native';
+import { Droplet, LogOut, Palette } from 'lucide-react-native';
 
 import { selectUser } from '@/features/auth/selectors';
 import { signOut } from '@/features/auth/slice';
+import { SyncStatusCard } from '@/features/sync/components/SyncStatusCard';
+import { selectSyncSummary } from '@/features/sync/selectors';
+import { queueUpsert, retryDead, runSync } from '@/features/sync/slice';
+import { todayLogical } from '@/lib/dates';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { setThemePreference } from '@/store/appSlice';
 import { Button, Card, SegmentedToggle, Screen, Text, type ThemePreference } from '@/ui';
@@ -19,6 +23,7 @@ export default function MoreScreen() {
   const preference = useAppSelector((s) => s.app.themePreference);
   const user = useAppSelector(selectUser);
   const offline = useAppSelector((s) => s.auth.offline);
+  const sync = useAppSelector(selectSyncSummary);
 
   return (
     <Screen title="More" subtitle="Routine, tasks, money and settings arrive from F04.">
@@ -47,6 +52,40 @@ export default function MoreScreen() {
           onPress={() => void dispatch(signOut())}
         />
       </Card>
+      <SyncStatusCard
+        summary={sync}
+        onSync={() => void dispatch(runSync())}
+        onRetry={() => {
+          dispatch(retryDead({ now: Date.now() }));
+          void dispatch(runSync());
+        }}
+      />
+      {__DEV__ ? (
+        <Card kicker="Developer" title="Sync test">
+          <Text variant="sub" tone="secondary">
+            Queues a real 200 ml water entry for today (F02 check: try it in airplane mode, kill the
+            app, reopen, reconnect).
+          </Text>
+          <Button
+            variant="water"
+            icon={Droplet}
+            label="Queue 200 ml water"
+            accessibilityLabel="Queue a 200 millilitre test water entry"
+            onPress={() =>
+              void dispatch(
+                queueUpsert({
+                  table: 'water_log',
+                  row: {
+                    date: todayLogical(),
+                    amount_ml: 200,
+                    logged_at: new Date().toISOString(),
+                  },
+                }),
+              )
+            }
+          />
+        </Card>
+      ) : null}
       {__DEV__ ? (
         <Card kicker="Developer" title="Component gallery">
           <Text variant="sub" tone="secondary">

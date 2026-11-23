@@ -43,6 +43,8 @@ export type AuthDeps = {
   isConfigured: boolean;
   authStorage?: AsyncKeyValue;
   storageKey: string;
+  /** Clock for the sync queue (tests pass a fake one). Defaults to Date.now. */
+  now?: () => number;
 };
 
 type ThunkConfig = { extra: AuthDeps; rejectValue: string };

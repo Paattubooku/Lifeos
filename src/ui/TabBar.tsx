@@ -37,10 +37,12 @@ export type TabBarItemsProps = {
   routes: { key: string; name: string }[];
   activeIndex: number;
   onSelect: (index: number) => void;
+  /** Red dot on a tab, e.g. More when changes failed to sync. */
+  badges?: Partial<Record<TabKey, boolean>>;
 };
 
 /** Presentational pill bar (tested on its own; `TabBar` adapts it to Expo Router). */
-export function TabBarItems({ routes, activeIndex, onSelect }: TabBarItemsProps) {
+export function TabBarItems({ routes, activeIndex, onSelect, badges }: TabBarItemsProps) {
   const { colors, scheme } = useTheme();
   return (
     <View
@@ -57,11 +59,12 @@ export function TabBarItems({ routes, activeIndex, onSelect }: TabBarItemsProps)
         const active = index === activeIndex;
         const color = active ? colors.accents.primary.text : colors.textSecondary;
         const Icon = meta.icon;
+        const badge = badges?.[route.name as TabKey] ?? false;
         return (
           <Pressable
             key={route.key}
             accessibilityRole="tab"
-            accessibilityLabel={meta.label}
+            accessibilityLabel={badge ? `${meta.label}, needs attention` : meta.label}
             accessibilityState={{ selected: active }}
             onPress={() => {
               if (!active) haptics.tap();
@@ -75,7 +78,18 @@ export function TabBarItems({ routes, activeIndex, onSelect }: TabBarItemsProps)
                 style={[styles.pill, { backgroundColor: colors.accents.primary.tint }]}
               />
             ) : null}
-            <Icon size={20} color={color} strokeWidth={2} />
+            <View>
+              <Icon size={20} color={color} strokeWidth={2} />
+              {badge ? (
+                <View
+                  testID={`tab-badge-${route.name}`}
+                  style={[
+                    styles.badge,
+                    { backgroundColor: colors.accents.danger.base, borderColor: colors.tabBar },
+                  ]}
+                />
+              ) : null}
+            </View>
             <Text variant="kicker" weight={active ? 600 : 500} style={[styles.label, { color }]}>
               {meta.label}
             </Text>
@@ -87,13 +101,18 @@ export function TabBarItems({ routes, activeIndex, onSelect }: TabBarItemsProps)
 }
 
 /** Floating tab bar for `<Tabs tabBar={(p) => <TabBar {...p} />}>`. */
-export function TabBar({ state, navigateToTab }: BottomTabBarProps) {
+export function TabBar({
+  state,
+  navigateToTab,
+  badges,
+}: BottomTabBarProps & { badges?: TabBarItemsProps['badges'] }) {
   const insets = useSafeAreaInsets();
   return (
     <View pointerEvents="box-none" style={[styles.float, { bottom: Math.max(insets.bottom, 12) }]}>
       <TabBarItems
         routes={state.routes}
         activeIndex={state.index}
+        badges={badges}
         onSelect={(index) => {
           const route = state.routes[index];
           if (route && index !== state.index) navigateToTab(route.key);
@@ -122,4 +141,13 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
   },
   label: { textTransform: 'none', letterSpacing: 0.11 },
+  badge: {
+    position: 'absolute',
+    top: -2,
+    right: -4,
+    width: 9,
+    height: 9,
+    borderRadius: 5,
+    borderWidth: 1.5,
+  },
 });
