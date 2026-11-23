@@ -4,9 +4,9 @@
   "private": true,
   "main": "expo-router/entry",
   "scripts": {
-    "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "start": "expo start --go",
+    "android": "expo start --go --android",
+    "ios": "expo start --go --ios",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --max-warnings 0 && prettier --check .",
     "format": "prettier --write .",
@@ -14,7 +14,8 @@
     "test:watch": "jest --watch",
     "e2e": "maestro test e2e",
     "test:db": "scripts/db-test.sh",
-    "gen:types": "scripts/db-test.sh --gen-types"
+    "gen:types": "scripts/db-test.sh --gen-types",
+    "start:dev-client": "expo start --dev-client"
   },
   "dependencies": {
     "@expo-google-fonts/inter": "^0.4.2",
