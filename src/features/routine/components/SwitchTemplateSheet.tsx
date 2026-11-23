@@ -3,7 +3,16 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { istMinutesOfDay } from '@/lib/dates';
 import { useAppDispatch } from '@/store';
-import { Button, SegmentedToggle, Sheet, StatusChip, Text, useSnackbar, useTheme } from '@/ui';
+import {
+  Button,
+  SegmentedToggle,
+  Sheet,
+  SheetCancel,
+  StatusChip,
+  Text,
+  useSnackbar,
+  useTheme,
+} from '@/ui';
 
 import { useRoutine } from '../hooks/useRoutine';
 import { type BlockLike, blocksOf, blocksSummary, dayMinutes } from '../lib/blocks';
@@ -138,13 +147,7 @@ export function SwitchTemplateSheet({
         fullWidth
         size="lg"
       />
-      <Button
-        variant="secondary"
-        label="Cancel"
-        accessibilityLabel="Cancel"
-        onPress={onClose}
-        fullWidth
-      />
+      <SheetCancel onCancel={onClose} />
     </Sheet>
   );
 }

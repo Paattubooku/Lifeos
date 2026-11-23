@@ -1,12 +1,22 @@
 import { BlurView } from 'expo-blur';
-import { type ReactNode } from 'react';
+import { createContext, type ReactNode, use, useEffect, useState } from 'react';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
-import Animated, { FadeIn, FadeOut, SlideInDown, SlideOutDown } from 'react-native-reanimated';
+import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
+import Animated, {
+  Easing,
+  interpolate,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { scheduleOnRN } from 'react-native-worklets';
 
 import { Text } from './Text';
 import { useTheme } from './ThemeProvider';
-import { motion, radius } from './theme';
+import { radius } from './theme';
 
 export type SheetProps = {
   visible: boolean;
@@ -20,10 +30,30 @@ export type SheetProps = {
   testID?: string;
 };
 
+/** Rises without bounce: critically damped, overshoot clamped. */
+const RISE = { damping: 34, stiffness: 320, mass: 1, overshootClamping: true } as const;
+const SINK = { duration: 220, easing: Easing.in(Easing.cubic) };
+/** Drag past this share of the panel (or flick) to close. */
+const DISMISS_SHARE = 0.25;
+const DISMISS_VELOCITY = 900;
+
+const SheetCloseContext = createContext<(() => void) | null>(null);
+
 /**
- * Bottom sheet: radius-24 top over a blurred, tinted scrim; springs up from below.
- * Tap the scrim or use Android back to close. Reanimated layout animations
- * respect the system Reduce Motion setting.
+ * Inside a Sheet: close it with the exit animation (e.g. a Cancel button).
+ * Falls back to `fallback` outside a sheet.
+ */
+export function useSheetClose(fallback: () => void): () => void {
+  return use(SheetCloseContext) ?? fallback;
+}
+
+/**
+ * Bottom sheet: radius-24 top over a blurred, tinted scrim.
+ * Opens with a soft lift — the scrim fades in, the panel rises and grows from
+ * 96 % without bouncing, and its content follows a beat later. Closes by
+ * sinking (scrim tap, Android back, the screen-reader escape gesture, or a
+ * downward swipe on the handle/header). Reduce Motion → a short fade only.
+ * The owner must hide the sheet in `onClose` (unmount it or pass visible={false}).
  */
 export function Sheet({
   visible,
@@ -36,36 +66,104 @@ export function Sheet({
 }: SheetProps) {
   const { colors, scheme } = useTheme();
   const insets = useSafeAreaInsets();
+  const reduceMotion = useReducedMotion();
+
+  // Stay mounted while the exit animation runs after `visible` turns false.
+  const [shown, setShown] = useState(visible);
+  if (visible && !shown) setShown(true);
+
+  const progress = useSharedValue(0);
+  const drag = useSharedValue(0);
+  const height = useSharedValue(600);
+  const closing = useSharedValue(false);
+
+  const sink = (done: () => void) => {
+    progress.set(
+      withTiming(0, reduceMotion ? { duration: 120 } : SINK, (finished) => {
+        if (finished) scheduleOnRN(done);
+      }),
+    );
+  };
+
+  /** Close from inside the sheet: animate out, then tell the owner. */
+  const requestClose = () => {
+    if (closing.get()) return;
+    closing.set(true);
+    sink(onClose);
+  };
+
+  useEffect(() => {
+    if (visible) {
+      closing.set(false);
+      drag.set(0);
+      progress.set(reduceMotion ? withTiming(1, { duration: 150 }) : withSpring(1, RISE));
+    } else if (shown) {
+      sink(() => setShown(false));
+    }
+    // `sink` only reads stable shared values; re-running on its identity would restart the animation.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible, reduceMotion]);
+
+  const pan = Gesture.Pan()
+    .activeOffsetY(8)
+    .failOffsetY(-8)
+    .onUpdate((e) => {
+      drag.set(Math.max(0, e.translationY));
+    })
+    .onEnd((e) => {
+      if (e.translationY > height.get() * DISMISS_SHARE || e.velocityY > DISMISS_VELOCITY) {
+        scheduleOnRN(requestClose);
+      } else {
+        drag.set(withSpring(0, RISE));
+      }
+    });
+
+  const scrimStyle = useAnimatedStyle(() => ({
+    opacity: progress.get() * (1 - Math.min(drag.get() / Math.max(height.get(), 1), 1) * 0.6),
+  }));
+  const panelStyle = useAnimatedStyle(() => {
+    const p = progress.get();
+    if (reduceMotion) return { opacity: p, transform: [{ translateY: drag.get() }] };
+    return {
+      transform: [
+        { translateY: (1 - p) * (height.get() + 40) + drag.get() },
+        { scale: interpolate(p, [0, 1], [0.96, 1]) },
+      ],
+    };
+  });
+  const contentStyle = useAnimatedStyle(() => {
+    const p = progress.get();
+    if (reduceMotion) return {};
+    return {
+      opacity: interpolate(p, [0.55, 1], [0, 1], 'clamp'),
+      transform: [{ translateY: interpolate(p, [0.55, 1], [12, 0], 'clamp') }],
+    };
+  });
 
   return (
     <Modal
-      visible={visible}
+      visible={shown}
       transparent
       animationType="none"
       statusBarTranslucent
-      onRequestClose={onClose}
+      onRequestClose={requestClose}
     >
-      {visible ? (
-        <View style={styles.root}>
-          <Animated.View
-            entering={FadeIn.duration(motion.scrim)}
-            exiting={FadeOut.duration(200)}
-            style={StyleSheet.absoluteFill}
-          >
+      {shown ? (
+        <GestureHandlerRootView style={styles.root}>
+          <Animated.View style={[StyleSheet.absoluteFill, scrimStyle]}>
             <BlurView intensity={20} tint={scheme} style={StyleSheet.absoluteFill} />
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Close sheet"
-              onPress={onClose}
+              onPress={requestClose}
               style={[StyleSheet.absoluteFill, { backgroundColor: colors.scrim }]}
             />
           </Animated.View>
           <Animated.View
             testID={testID}
             accessibilityViewIsModal
-            onAccessibilityEscape={onClose}
-            entering={SlideInDown.springify().damping(18).stiffness(160)}
-            exiting={SlideOutDown.duration(220)}
+            onAccessibilityEscape={requestClose}
+            onLayout={(e) => height.set(e.nativeEvent.layout.height)}
             style={[
               styles.panel,
               {
@@ -74,25 +172,32 @@ export function Sheet({
                 paddingBottom: Math.max(insets.bottom, 16) + 18,
                 shadowColor: colors.shadow,
               },
+              panelStyle,
             ]}
           >
-            <View style={[styles.handle, { backgroundColor: colors.border }]} />
-            <View style={styles.headerRow}>
-              <View style={[styles.header, styles.headerText]}>
-                <Text variant="heading" accessibilityRole="header">
-                  {title}
-                </Text>
-                {subtitle ? (
-                  <Text variant="sub" tone="secondary">
-                    {subtitle}
-                  </Text>
-                ) : null}
-              </View>
-              {accessory}
-            </View>
-            {children}
+            <SheetCloseContext value={requestClose}>
+              <GestureDetector gesture={pan}>
+                <View style={styles.grab}>
+                  <View style={[styles.handle, { backgroundColor: colors.border }]} />
+                  <View style={styles.headerRow}>
+                    <View style={[styles.header, styles.headerText]}>
+                      <Text variant="heading" accessibilityRole="header">
+                        {title}
+                      </Text>
+                      {subtitle ? (
+                        <Text variant="sub" tone="secondary">
+                          {subtitle}
+                        </Text>
+                      ) : null}
+                    </View>
+                    {accessory}
+                  </View>
+                </View>
+              </GestureDetector>
+              <Animated.View style={[styles.content, contentStyle]}>{children}</Animated.View>
+            </SheetCloseContext>
           </Animated.View>
-        </View>
+        </GestureHandlerRootView>
       ) : null}
     </Modal>
   );
@@ -114,6 +219,8 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: -12 },
     elevation: 12,
   },
+  grab: { gap: 16 },
+  content: { gap: 16 },
   handle: { width: 36, height: 5, borderRadius: radius.pill, alignSelf: 'center' },
   header: { gap: 2 },
 });

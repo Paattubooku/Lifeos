@@ -4,7 +4,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { hhmm } from '@/features/routine/lib/blocks';
 import { formatClock } from '@/lib/format';
-import { Button, Chip, Sheet, Text, Toggle } from '@/ui';
+import { Button, Chip, Sheet, SheetCancel, Text, Toggle } from '@/ui';
 
 import type { SkipReason } from '../selectors';
 
@@ -90,13 +90,7 @@ export function SkipSheet(p: SkipSheetProps) {
           fullWidth
         />
       ) : null}
-      <Button
-        variant="secondary"
-        label="Cancel"
-        accessibilityLabel="Cancel"
-        onPress={p.onClose}
-        fullWidth
-      />
+      <SheetCancel onCancel={p.onClose} />
     </Sheet>
   );
 }
