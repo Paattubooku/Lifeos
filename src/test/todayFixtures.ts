@@ -1,6 +1,6 @@
 import { profileApi } from '@/features/profile/api';
 import { todayApi } from '@/features/today/api';
-import { logicalMoment, weekStart } from '@/lib/dates';
+import { addDays, logicalMoment, weekStart } from '@/lib/dates';
 
 import { base } from './profileFixtures';
 import { routineStore } from './routineFixtures';
@@ -20,7 +20,14 @@ const PROGRAM_DAYS = [
  * to Upper A (session override), a lunch plan, nothing logged yet. Offline, so
  * every write stays in the queue. `at('05:20')` = that IST time today.
  */
-export async function todayStore() {
+export type TodayStoreOptions = {
+  /** day_log history rows: [daysAgo, score, extra fields]. */
+  history?: { daysAgo: number; score: number | null; template_id?: string | null }[];
+  /** Ticked blocks per day for the finaliser / per-block streaks. */
+  doneBlocks?: { daysAgo: number; blockId: string }[];
+};
+
+export async function todayStore(opts: TodayStoreOptions = {}) {
   const { store, today, blocks } = await routineStore();
   await store.dispatch(
     profileApi.util.upsertQueryData('getDayLog', today, {
@@ -77,6 +84,32 @@ export async function todayStore() {
       }),
     ),
   });
+  const history = (opts.history ?? []).map((h) => ({
+    client_id: `h${h.daysAgo}-c`,
+    date: addDays(today, -h.daysAgo),
+    score: h.score,
+    is_streak_day: h.score === null ? null : h.score >= 70,
+    template_id: h.template_id ?? null,
+    deleted_at: null,
+  }));
+  await put('getDayHistory', undefined, history);
+  const done = (opts.doneBlocks ?? []).map((d, i) => ({
+    ...base,
+    id: `bl${i}`,
+    client_id: `bl${i}-c`,
+    date: addDays(today, -d.daysAgo),
+    block_id: d.blockId,
+    status: 'done',
+    skip_reason: null,
+    done_at: null,
+  }));
+  await put('getLogsSince', addDays(today, -8), {
+    blockLogs: done,
+    water: [],
+    food: [],
+    sessions: [],
+  });
+  await put('getDoneBlocksSince', addDays(today, -90), done);
   const at = (hhmm: string) => logicalMoment(today, hhmm);
   return { store, today, blocks, at };
 }

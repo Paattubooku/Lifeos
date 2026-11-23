@@ -138,6 +138,8 @@ export function useToday(now: number) {
     dayLog: routine.todayDayLog,
     day,
     blockLogs,
+    blockLogsLoaded: blockLogsQ.isSuccess,
+    allBlocks: routine.blocks,
     water,
     waterMl: water.reduce((s, w) => s + w.amount_ml, 0),
     waterTargetMl,

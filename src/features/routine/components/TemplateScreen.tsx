@@ -29,6 +29,8 @@ import {
   useTheme,
 } from '@/ui';
 
+import { useBlockStreaks } from '@/features/today/hooks/useBlockStreaks';
+
 import { useRoutine } from '../hooks/useRoutine';
 import { type BlockLike, blockMeta, blocksOf, blocksSummary, hhmm } from '../lib/blocks';
 import {
@@ -51,6 +53,10 @@ import { KindIcon } from './KindIcon';
 /** Event-time clock (kept out of render for the React Compiler). */
 const clock = () => Date.now();
 
+/** "Habit · 10 min · 12 days" (PRD F06 per-block streaks; 2+ days). */
+export const withStreak = (meta: string, days: number) =>
+  days >= 2 ? `${meta} · ${days} days` : meta;
+
 const WEEKDAY_NAMES = [
   'Monday',
   'Tuesday',
@@ -70,6 +76,7 @@ export function TemplateScreen({ id }: { id: string }) {
   const showSnackbar = useSnackbar();
   const { colors } = useTheme();
   const { today, templates, blocks, recentDayLogs } = useRoutine();
+  const streaks = useBlockStreaks(today);
   const [editing, setEditing] = useState<Editing>(null);
   const [reorder, setReorder] = useState(false);
   const [name, setName] = useState<string | null>(null);
@@ -258,7 +265,7 @@ export function TemplateScreen({ id }: { id: string }) {
               style={styles.blockMain}
               disabled={reorder}
               accessibilityRole="button"
-              accessibilityLabel={`${formatClock(hhmm(b.start_time))}, ${b.title}, ${blockMeta(b)}. Edit`}
+              accessibilityLabel={`${formatClock(hhmm(b.start_time))}, ${b.title}, ${withStreak(blockMeta(b), streaks.get(b.id) ?? 0)}. Edit`}
               onPress={() => setEditing({ block: b, key: b.client_id })}
             >
               <Text variant="sub" weight={700} num style={styles.time}>
@@ -270,7 +277,7 @@ export function TemplateScreen({ id }: { id: string }) {
                   {b.title}
                 </Text>
                 <Text variant="caption" tone="secondary" numberOfLines={1}>
-                  {blockMeta(b)}
+                  {withStreak(blockMeta(b), streaks.get(b.id) ?? 0)}
                 </Text>
               </View>
               {reorder ? null : (

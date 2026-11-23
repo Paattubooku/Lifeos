@@ -9,6 +9,18 @@ export type SessionLogRow = Tables<'session_log'>;
 export type OverrideRow = Tables<'session_override'>;
 export type SleepLogRow = Tables<'sleep_log'>;
 
+export type DayScoreRow = Pick<
+  Tables<'day_log'>,
+  'client_id' | 'date' | 'score' | 'is_streak_day' | 'template_id' | 'deleted_at'
+>;
+
+export type LogsSince = {
+  blockLogs: BlockLogRow[];
+  water: WaterLogRow[];
+  food: FoodLogRow[];
+  sessions: SessionLogRow[];
+};
+
 export type MealPlanData = {
   meals: Pick<Tables<'meal'>, 'id' | 'slot' | 'time' | 'plan_id'>[];
   items: Pick<Tables<'meal_item'>, 'meal_id' | 'dish_id' | 'swap_group' | 'is_default' | 'sort'>[];
@@ -145,6 +157,57 @@ export const todayApi = baseApi.injectEndpoints({
       providesTags: ['Session'],
     }),
 
+    /** Every day_log's score (one small row per day) — streaks and the heatmap. Deleted rows included (unique per day). */
+    getDayHistory: b.query<DayScoreRow[], void>({
+      queryFn: (_arg, api) =>
+        supabaseQuery(api, ['day_log'], async (c) =>
+          unwrapList(
+            await c
+              .from('day_log')
+              .select('client_id, date, score, is_streak_day, template_id, deleted_at')
+              .order('date'),
+          ),
+        ),
+      providesTags: ['DayLog'],
+    }),
+
+    /** Logs from a date on — to finalise past days' scores and per-block streaks. */
+    getLogsSince: b.query<LogsSince, string>({
+      queryFn: (from, api) =>
+        supabaseQuery(api, ['block_log', 'water_log', 'food_log', 'session_log'], async (c) => ({
+          blockLogs: unwrapList(await c.from('block_log').select('*').gte('date', from)),
+          water: unwrapList(
+            await c.from('water_log').select('*').gte('date', from).is('deleted_at', null),
+          ),
+          food: unwrapList(
+            await c.from('food_log').select('*').gte('date', from).is('deleted_at', null),
+          ),
+          sessions: unwrapList(
+            await c.from('session_log').select('*').gte('date', from).is('deleted_at', null),
+          ),
+        })),
+      providesTags: ['BlockLog', 'Water', 'Food', 'Session'],
+    }),
+
+    /** Ticked blocks from a date on (per-block streaks in the routine editor). */
+    getDoneBlocksSince: b.query<
+      Pick<BlockLogRow, 'client_id' | 'block_id' | 'date' | 'status' | 'deleted_at'>[],
+      string
+    >({
+      queryFn: (from, api) =>
+        supabaseQuery(api, ['block_log'], async (c) =>
+          unwrapList(
+            await c
+              .from('block_log')
+              .select('client_id, block_id, date, status, deleted_at')
+              .gte('date', from)
+              .eq('status', 'done')
+              .is('deleted_at', null),
+          ),
+        ),
+      providesTags: ['BlockLog'],
+    }),
+
     getSleepOn: b.query<SleepLogRow | null, string>({
       queryFn: (date, api) =>
         supabaseQuery(api, ['sleep_log'], async (c) =>
@@ -164,4 +227,7 @@ export const {
   useGetSessionOnQuery,
   useGetOverridesSinceQuery,
   useGetSleepOnQuery,
+  useGetDayHistoryQuery,
+  useGetLogsSinceQuery,
+  useGetDoneBlocksSinceQuery,
 } = todayApi;

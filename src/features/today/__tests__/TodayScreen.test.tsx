@@ -12,8 +12,14 @@ jest.mock('expo-router', () => ({ useRouter: () => mockRouter }));
 beforeEach(() => jest.clearAllMocks());
 
 type Store = Awaited<ReturnType<typeof todayStore>>['store'];
+/** Queued writes except today's day_log (its live score is checked on its own). */
 const queue = (store: Store) =>
-  store.getState().sync.queue.map((m) => ({ table: m.table, op: m.op, row: m.row }));
+  store
+    .getState()
+    .sync.queue.filter((m) => m.table !== 'day_log')
+    .map((m) => ({ table: m.table, op: m.op, row: m.row }));
+const dayLogWrite = (store: Store) =>
+  store.getState().sync.queue.find((m) => m.table === 'day_log');
 const ring = () => screen.getByLabelText(/^Day score/);
 const row = (title: string) =>
   screen.getByRole('button', { name: new RegExp(`^\\d+:\\d+ [ap]m, ${title},`) });
@@ -77,6 +83,11 @@ describe('TodayScreen', () => {
       'accessibilityLabel',
       expect.stringMatching(/, done\. Done at /),
     );
+    // F06: today's day_log follows the live score (reusing today's row).
+    expect(dayLogWrite(store)).toMatchObject({
+      client_id: 'dl-c',
+      row: { score: 9, is_streak_day: false },
+    });
 
     await act(async () => {
       await fireEvent.press(screen.getByRole('button', { name: /^Undo: Wake up done/ }));
@@ -238,9 +249,9 @@ describe('TodayScreen', () => {
     await act(async () => {
       await fireEvent.press(screen.getByRole('button', { name: 'Save note' }));
     });
-    expect(queue(store).at(-1)).toMatchObject({
-      table: 'day_log',
-      row: { note: 'Long meeting day' },
+    expect(dayLogWrite(store)).toMatchObject({
+      client_id: 'dl-c',
+      row: { note: 'Long meeting day', score: 0 },
     });
     expect(screen.getByRole('button', { name: 'Edit today’s note' })).toBeOnTheScreen();
   });

@@ -14,12 +14,15 @@ import { formatClock } from '@/lib/format';
 import { useAppDispatch } from '@/store';
 import { Card, Chip, EmptyState, haptics, Screen, useSnackbar, useTheme } from '@/ui';
 
+import { useDayScoreSync } from '../hooks/useDayScoreSync';
 import { useNow } from '../hooks/useNow';
+import { useStreak } from '../hooks/useStreak';
 import { useToday } from '../hooks/useToday';
 import { type BlockStatus, planBlockStatus, planNote, planSleep, statusOf } from '../lib/changes';
 import { mealSummary } from '../lib/meals';
 import { canMoveToTomorrow, moveSummary, planMoveToTomorrow } from '../lib/program';
-import { dayKicker, type RowContext, rowTitle } from '../lib/present';
+import { streakLine } from '../lib/streak';
+import { dayKicker, type RowContext, rowTitle, shortDay } from '../lib/present';
 import { formatMinutes, nowDayMinutes, endOf } from '../lib/timeline';
 import { type DayRow, openRows, type SkipReason } from '../selectors';
 import { EndOfDayCard, type EndOfDayItem } from './EndOfDayCard';
@@ -39,6 +42,8 @@ export function TodayScreen({ now: fixedNow }: { now?: number } = {}) {
   const ticking = useNow();
   const now = fixedNow ?? ticking;
   const t = useToday(now);
+  useDayScoreSync(t);
+  const { streak } = useStreak(t.today, t.plan.blocks.length > 0 ? t.day.score.score : null);
   const dispatch = useAppDispatch();
   const router = useRouter();
   const showSnackbar = useSnackbar();
@@ -172,6 +177,11 @@ export function TodayScreen({ now: fixedNow }: { now?: number } = {}) {
         waterTargetMl={t.waterTargetMl}
         proteinG={t.foodTotals.protein}
         proteinTargetG={t.profile?.protein_target_g ?? 150}
+        streak={{
+          current: streak.current,
+          line: streakLine(streak, shortDay),
+          onPress: () => router.push('/streaks'),
+        }}
       />
 
       {t.plan.blocks.length === 0 ? (

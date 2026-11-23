@@ -2,6 +2,37 @@
 
 One entry per feature, newest first: feature ID, what was built, how PTR verifies it on the phone, known gaps.
 
+## F06 — Day scoring and streaks · 2026-11-23 · done
+
+**Built**
+
+- `src/features/today/lib/streak.ts` (100% covered): `classifyScore` (≥ 70 streak · 50–69 grace-eligible · < 50 or missing breaks), `computeStreak(dayLogs, today, todayScore)` → current (+ since), best (with date range), grace days used, grace available; heatmap bands, 30-day average, last break, per-block streaks. `computeScore` (F05 `selectors.ts`) is the PRD §4.2 score.
+- **`day_log.score` and `is_streak_day` are kept true**: today's row follows the live score whenever a block (or water / food / session) changes; on app open, past days without a score — and yesterday if it has no day_log — are scored from that day's logs (`lib/finalise.ts`). Days that already have a score are never re-scored.
+- **Today**: the score card's streak line "3-day streak · 1 grace left" / "· grace used Sat 21 Nov" → opens **Streaks**.
+- **Streaks screen** (`/streaks`, Prog-Streaks design): Current / Best / Grace tiles, 30-day calendar heatmap (< 50, 50–69, 70–79, 80–89, 90+, grace dot, today outlined) with the 30-day average, "What broke the last one", "How streaks work".
+- **Per-block streaks** in the routine editor: "Wake up · Habit · 10 min · 12 days" (2+ days in a row ticked).
+
+**Checks run here**
+
+- `typecheck` ✅ · `lint` ✅ · `test` ✅ 482 tests; coverage 97% overall, `streak.ts` / `finalise.ts` 100%.
+- **AC1** unit tests: perfect day; 69 vs 70; 49 vs 50; optional blocks ignored; skipped-with-reason excluded; empty plan = 100; a grace day keeps the streak; a second grace within 14 days breaks it; a grace day 15 days after the last is allowed (14 is not); < 50 breaks; a missing day_log breaks; today never breaks the streak.
+- Screen tests: streak line, finalising yesterday and an unscored day from their logs, Streaks screen values, per-block streak.
+- `test:db` ✅ · Android bundle export ✅.
+
+**How PTR verifies on the phone**
+
+1. `git pull`, `npm start`. On **Today**, the score card now ends with the streak line (it starts at 0 or 1 — earlier days have no scores).
+2. Tick blocks → Supabase `day_log` (today) shows `score` and `is_streak_day` changing with the ring (≥ 70 → true).
+3. Tap the streak line → **Streaks**: tiles, the heatmap with today outlined, the rules card.
+4. Tomorrow, open the app: yesterday's `day_log` keeps its score; the streak counts it if it was ≥ 70.
+5. More → Routine → Workday: blocks you ticked two days running show "· 2 days".
+
+**Known gaps**
+
+- "What broke the last one" shows the date and score only; the design's pattern analysis ("late night → missed workout") belongs to F16/F20.
+- The Progress tab (F16) will also link to Streaks; for now it opens from Today.
+- Days before the first day_log aren't counted (nothing to judge before the app was used); days the app was never opened (other than yesterday) stay missing and break the run, as the PRD says.
+
 ## F05 — Today screen · 2026-11-23 · done
 
 **Built**
@@ -236,4 +267,4 @@ One entry per feature, newest first: feature ID, what was built, how PTR verifie
 - Placeholder app icon/splash (Expo defaults) and bundle id `app.lifeos.ptr`.
 - Open questions from `REFERENCE_NOTES.md` (todo sort order, weight-trend insight, golden fixtures) still default as proposed until PTR answers.
 
-_Next: F06 (day scoring and streaks). Waiting for PTR's "next"._
+_Next: F07 (water) — last feature of milestone M1. Waiting for PTR's "next"._

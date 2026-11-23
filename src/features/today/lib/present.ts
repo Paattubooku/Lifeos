@@ -117,3 +117,32 @@ export function dayKicker(date: string, isoWeekday: number, done: number, counte
   const [, m, d] = date.split('-').map(Number) as [number, number, number];
   return `${DOW[isoWeekday - 1]} ${d} ${MON[m - 1]} · ${done} OF ${counted} DONE`;
 }
+
+const DOW_SHORT = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const MON_SHORT = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+];
+
+/** "Sun 20 Dec". */
+export function shortDay(date: string): string {
+  const [y, m, d] = date.split('-').map(Number) as [number, number, number];
+  const dow = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+  return `${DOW_SHORT[(dow + 6) % 7]} ${d} ${MON_SHORT[m - 1]}`;
+}
+
+/** "28 Nov". */
+export function dayMonth(date: string): string {
+  const [, m, d] = date.split('-').map(Number) as [number, number, number];
+  return `${d} ${MON_SHORT[m - 1]}`;
+}

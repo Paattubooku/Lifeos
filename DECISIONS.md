@@ -77,3 +77,10 @@ Decisions made during the build that the PRD left open. Format: date · feature 
 - 2026-11-23 · F05 · **Rollover**: `useNow` refreshes every 30 s and when the app returns to the foreground; the logical day comes from `logicalDate(now)`.
 - 2026-11-23 · F05 · Per-day logs (`block_log`, `session_override`, `sleep_log`) are read **with** deleted rows and merged with queued writes keeping deletions, so a re-tick reuses the row's `client_id` (unique per user/date/block).
 - 2026-11-23 · F05 · `Screen` got an optional `kicker` line (additive); new cache tags BlockLog, Water, Food, MealPlan, Session, Sleep.
+- 2026-11-23 · F06 · **A grace-eligible day (50–69) never starts a run**; it only keeps an existing one alive (PRD: grace "keeps the run alive"). Grace is used when it does that, and is available again 15+ days later (none in the previous 14).
+- 2026-11-23 · F06 · **Today only adds**: a ≥ 70 score today extends the current streak; anything lower neither breaks nor uses grace until the day ends.
+- 2026-11-23 · F06 · **`is_streak_day` = score ≥ 70** (PRD §4.2 definition); grace days are derived by `computeStreak`, not stored.
+- 2026-11-23 · F06 · **Score persistence**: today's `day_log` follows the live score (reusing today's row, keeping a manual template). On open, only days **without** a score are finalised (any of the last 8 with a null score, and yesterday if it has no day_log); a scored day is never re-scored, so editing a template can't rewrite the past (F04 AC1). Finalising uses only reads fetched in this session, never last session's cache.
+- 2026-11-23 · F06 · **The score sync runs inside the Today screen**, which is the first tab and stays mounted; later features that log away from Today (F07 water screen) still update the score because Today re-renders from the shared cache.
+- 2026-11-23 · F06 · **Per-block streaks** count manual ticks (`block_log` done) for 90 days back, ending today if ticked else yesterday; shown from 2 days. Auto-complete blocks have no per-day rows, so they show no per-block streak.
+- 2026-11-23 · F06 · **Streaks screen** built now (design rows F06/F16) at `/streaks`, opened from Today's streak line.
