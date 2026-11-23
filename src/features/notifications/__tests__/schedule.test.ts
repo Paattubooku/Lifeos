@@ -83,11 +83,13 @@ describe('F15 AC1: a workday', () => {
 
   it('deep links', () => {
     const byType = new Map(
-      buildSchedule(input()).map((r) => [r.id.split(':').slice(1).join(':'), r.url]),
+      buildSchedule(input())
+        .filter((r) => r.date === MON)
+        .map((r) => [r.id.split(':').slice(1).join(':'), r.url]),
     );
     expect(byType.get('wake')).toBe('/today');
     expect(byType.get('meal:lunch')).toBe('/meal/lunch');
-    expect(byType.get('workout')).toBe('/train');
+    expect(byType.get('workout')).toBe(`/session/${MON}`);
     expect(byType.get('phone_off')).toBe('/today');
   });
 });

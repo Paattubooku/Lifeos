@@ -27,8 +27,14 @@ beforeEach(() => jest.clearAllMocks());
 describe('applySchedule', () => {
   it('replaces every reminder with the future ones (date trigger, url in data)', async () => {
     granted();
+    N.getAllScheduledNotificationsAsync.mockResolvedValueOnce([
+      { identifier: 'old' },
+      { identifier: 'rest-timer' },
+    ] as never);
     await expect(applySchedule([r('past', -5), r('a', 10, '/meal/lunch')], NOW)).resolves.toBe(1);
-    expect(N.cancelAllScheduledNotificationsAsync).toHaveBeenCalled();
+    // reminders are replaced; the workout rest timer is left alone (F11)
+    expect(N.cancelScheduledNotificationAsync).toHaveBeenCalledWith('old');
+    expect(N.cancelScheduledNotificationAsync).not.toHaveBeenCalledWith('rest-timer');
     expect(N.scheduleNotificationAsync).toHaveBeenCalledWith({
       identifier: 'a',
       content: { title: 'a', body: 'b', data: { url: '/meal/lunch' } },
@@ -40,7 +46,7 @@ describe('applySchedule', () => {
     await expect(applySchedule([r('a', 10)], NOW)).resolves.toBe(0);
     N.getPermissionsAsync.mockRejectedValueOnce(new Error('x'));
     await expect(applySchedule([r('a', 10)], NOW)).resolves.toBe(0);
-    expect(N.cancelAllScheduledNotificationsAsync).not.toHaveBeenCalled();
+    expect(N.getAllScheduledNotificationsAsync).not.toHaveBeenCalled();
   });
 
   it('configureNotifications shows banners in the foreground', async () => {
@@ -61,6 +67,8 @@ describe('F15 AC3: tapping a notification opens the right screen', () => {
     expect(routeFor({ url: '/meal/breakfast' })).toBe('/meal/breakfast');
     expect(routeFor({ url: '/water' })).toBe('/water');
     expect(routeFor({ url: '/train' })).toBe('/train');
+    expect(routeFor({ url: '/session/2026-11-23' })).toBe('/session/2026-11-23');
+    expect(routeFor({ url: '/session/today' })).toBeNull();
     expect(routeFor({ url: '/meal/brunch' })).toBeNull();
     expect(routeFor({ url: 'https://evil.example' })).toBeNull();
     expect(routeFor({})).toBeNull();
@@ -102,17 +110,17 @@ describe('useReminderSync', () => {
     await act(async () => {
       jest.advanceTimersByTime(1600);
     });
-    expect(N.cancelAllScheduledNotificationsAsync).toHaveBeenCalledTimes(1);
+    expect(N.getAllScheduledNotificationsAsync).toHaveBeenCalledTimes(1);
     await rerender({ rs: [...a] }); // same content
     await act(async () => {
       jest.advanceTimersByTime(1600);
     });
-    expect(N.cancelAllScheduledNotificationsAsync).toHaveBeenCalledTimes(1);
+    expect(N.getAllScheduledNotificationsAsync).toHaveBeenCalledTimes(1);
     await rerender({ rs: [{ ...a[0]!, title: 'changed' }] });
     await act(async () => {
       jest.advanceTimersByTime(1600);
     });
-    expect(N.cancelAllScheduledNotificationsAsync).toHaveBeenCalledTimes(2);
+    expect(N.getAllScheduledNotificationsAsync).toHaveBeenCalledTimes(2);
     N.getPermissionsAsync.mockReset();
   });
 });

@@ -1,6 +1,7 @@
 import { profileApi } from '@/features/profile/api';
 import { foodApi } from '@/features/food/api';
 import { todayApi } from '@/features/today/api';
+import { trainApi } from '@/features/train/api';
 import { waterApi } from '@/features/water/api';
 import { addDays, logicalMoment, weekStart } from '@/lib/dates';
 
@@ -32,6 +33,10 @@ export type TodayStoreOptions = {
   water?: [string, number][];
   /** Past days' water totals (one entry per day). */
   waterHistory?: { daysAgo: number; ml: number }[];
+  /** Today's program day (session override), default Upper A ('d1'). */
+  todaySession?: string;
+  /** Past sets: [daysAgo, exerciseId, setNo, weight, reps]. */
+  pastSets?: [number, string, number, number | null, number | null][];
 };
 
 export async function todayStore(opts: TodayStoreOptions = {}) {
@@ -71,7 +76,13 @@ export async function todayStore(opts: TodayStoreOptions = {}) {
   await put('getSessionOn', today, null);
   await put('getSleepOn', today, null);
   await put('getOverridesSince', weekStart(today), [
-    { ...base, id: 'o1', client_id: 'o1-c', date: today, workout_day_id: 'd1' },
+    {
+      ...base,
+      id: 'o1',
+      client_id: 'o1-c',
+      date: today,
+      workout_day_id: opts.todaySession ?? 'd1',
+    },
   ]);
   await store.dispatch(foodApi.util.upsertQueryData('getMealPlan', undefined, seedMealPlan()));
   await store.dispatch(foodApi.util.upsertQueryData('getCoffeeLogs', today, []));
@@ -129,6 +140,84 @@ export async function todayStore(opts: TodayStoreOptions = {}) {
       })),
     ),
   );
+  await store.dispatch(trainApi.util.upsertQueryData('getProgram', 'prog', TRAIN_PROGRAM));
+  await store.dispatch(
+    trainApi.util.upsertQueryData(
+      'getSetLogsSince',
+      addDays(today, -60),
+      (opts.pastSets ?? []).map(([ago, ex, no, w, reps], i) => ({
+        client_id: `ps${i}`,
+        session_id: `past-${ago}`,
+        date: addDays(today, -ago),
+        exercise_id: ex,
+        set_no: no,
+        weight_kg: w,
+        reps,
+        duration_sec: null,
+        created_at: '2026-11-01T00:00:00Z',
+        deleted_at: null,
+      })),
+    ),
+  );
+  await store.dispatch(trainApi.util.upsertQueryData('getSessionsSince', addDays(today, -13), []));
   const at = (hhmm: string) => logicalMoment(today, hhmm);
   return { store, today, blocks, at };
 }
+
+const ex = (id: string, name: string, muscle: string, equipment: string, unilateral = false) => ({
+  id,
+  name,
+  muscle,
+  equipment,
+  unilateral,
+  cue: `${name} cue`,
+});
+const wi = (
+  day: string,
+  exId: string,
+  sets: number,
+  rmin: number | null,
+  rmax: number | null,
+  rest: number,
+  sort: number,
+  dur: number | null = null,
+) => ({
+  id: `wi-${day}-${exId}`,
+  workout_day_id: day,
+  exercise_id: exId,
+  sets,
+  rep_min: rmin,
+  rep_max: rmax,
+  duration_sec: dur,
+  rest_sec: rest,
+  sort,
+});
+
+/** A trimmed PRD §6.4 program: Upper A (2 exercises), Lower A (plank), Walk, Circuit (2 stations × 2 rounds), Rest. */
+export const TRAIN_PROGRAM = {
+  days: [
+    { id: 'd1', weekday: 1, title: 'Upper A', kind: 'strength', rounds: null },
+    { id: 'd2', weekday: 2, title: 'Lower A', kind: 'strength', rounds: null },
+    { id: 'd3', weekday: 3, title: 'Walk', kind: 'walk', rounds: null },
+    { id: 'd4', weekday: 4, title: 'Upper B', kind: 'strength', rounds: null },
+    { id: 'd5', weekday: 5, title: 'Lower B', kind: 'strength', rounds: null },
+    { id: 'd6', weekday: 6, title: 'Full Body Circuit', kind: 'circuit', rounds: 2 },
+    { id: 'd7', weekday: 7, title: 'Rest', kind: 'rest', rounds: null },
+  ],
+  items: [
+    wi('d1', 'bench', 3, 8, 12, 90, 0),
+    wi('d1', 'row', 2, 8, 12, 75, 1),
+    wi('d2', 'plank', 2, 30, 45, 45, 0, 45),
+    wi('d3', 'walk', 1, null, null, 0, 0, 1800),
+    wi('d6', 'thruster', 2, 10, 10, 0, 0),
+    wi('d6', 'pushup', 2, 10, 10, 60, 1),
+  ],
+  exercises: [
+    ex('bench', 'DB bench press', 'chest', 'dumbbells + bench'),
+    ex('row', 'One-arm DB row', 'back', 'dumbbell + bench', true),
+    ex('plank', 'Plank', 'core', 'bodyweight'),
+    ex('walk', 'Brisk walk', 'cardio', 'none'),
+    ex('thruster', 'DB thruster', 'full body', 'dumbbells'),
+    ex('pushup', 'Push-up', 'chest', 'bodyweight'),
+  ],
+};

@@ -128,6 +128,9 @@ function Navigator() {
               <Stack.Screen name="meal/[slot]" />
               <Stack.Screen name="meal-plan" />
               <Stack.Screen name="dish/[id]" />
+              <Stack.Screen name="session/[date]" />
+              <Stack.Screen name="program" />
+              <Stack.Screen name="exercises" />
               <Stack.Screen name="dev/gallery" />
             </Stack.Protected>
             <Stack.Protected guard={signedIn && gate === 'onboard'}>

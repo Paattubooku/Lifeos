@@ -62,6 +62,8 @@ jest.mock('expo-notifications', () => ({
   setNotificationHandler: jest.fn(),
   setNotificationChannelAsync: jest.fn(() => Promise.resolve(null)),
   cancelAllScheduledNotificationsAsync: jest.fn(() => Promise.resolve()),
+  getAllScheduledNotificationsAsync: jest.fn(() => Promise.resolve([])),
+  cancelScheduledNotificationAsync: jest.fn(() => Promise.resolve()),
   scheduleNotificationAsync: jest.fn((req: { identifier?: string }) =>
     Promise.resolve(req.identifier ?? 'id'),
   ),

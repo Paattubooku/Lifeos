@@ -167,7 +167,7 @@ export function dayCandidates(
           type: 'workout',
           title: `${day.session.title} in ${WORKOUT_LEAD_MIN} min`,
           body: 'Shoes on. Dumbbells out.',
-          url: '/train',
+          url: `/session/${day.date}`,
         },
         PRIORITY.workout,
       );

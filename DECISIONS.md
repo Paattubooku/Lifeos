@@ -116,3 +116,11 @@ Decisions made during the build that the PRD left open. Format: date · feature 
 - 2026-11-23 · F15 · **No 03:05 background task**: expo-background-task / BackgroundFetch need a native module Expo Go can't load; the two-day window rebuilt on every open covers normal use. Revisit with the development build.
 - 2026-11-23 · F15 · **Reminder switches and Quiet today are per phone** (persisted locally, like the notifications themselves). Quiet today mutes the rest of the logical day; tomorrow's reminders stay.
 - 2026-11-23 · F15 · **Tap routing** accepts only known app paths (Today, Water, Train, Streaks, Progress, `/meal/<slot>`); workout reminders open the Train tab until F11's session screen.
+- 2026-11-23 · F11 · **Completion = sets logged ÷ sets planned** (PRD), extra sets capped per exercise; updated on every set so ≥ 80 % ticks Today's workout block without pressing Finish. The summary design's reps-based % is not used.
+- 2026-11-23 · F11 · **Pre-fill order**: this session's previous set → last time's same set number (or its last set) → plan target with 0 kg. A re-logged set number replaces the earlier row.
+- 2026-11-23 · F11 · **Opening `/session/<date>` starts the session** (`session_log` with a client-made id, reused if the day already has one); leaving doesn't end it — Finish does (sets `finished_at`). Walk days log a finished 100 % session from the Train tab.
+- 2026-11-23 · F11 · **Rest timer from timestamps** (`train` slice, persisted) + a local notification at the end (`rest-timer` id) scheduled on each set, rescheduled by +15 s, cancelled by Skip / Finish. F15's reminder rebuild now cancels only its own notifications. No rest after the session's last set.
+- 2026-11-23 · F11 · **Circuit**: stations = the day's exercises, rounds = their sets (seed); a station's set number = the round; rest only after the last station of a round (its `rest_sec`).
+- 2026-11-23 · F11 · **Timed sets** log `duration_sec` (no reps / weight); a started hold is persisted so it survives a kill.
+- 2026-11-23 · F11 · **Estimated time** = Σ sets × (40 s + rest); a single long timed set (walk) is its duration. Rounded to 5 min.
+- 2026-11-23 · F11 · **Week strip** = the 7 days ending today; done at ≥ 80 %; a past training day without that is "missed"; rest days don't count. "This week" counts Mon–Sun.

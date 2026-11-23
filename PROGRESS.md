@@ -2,6 +2,46 @@
 
 One entry per feature, newest first: feature ID, what was built, how PTR verifies it on the phone, known gaps.
 
+## F11 — Workout program and session logger · 2026-11-23 · done
+
+**Built**
+
+- **Train tab** (Train-Tab / WalkDay / RestDay designs): today's session card — "TODAY · 5:30 AM", title, "5 exercises · ~30 min · 17 sets", the numbered exercises with targets ("4 × 8–12", "3 × 30–45 s", "/ side"), **Start / Resume / done · 92%**; walk days "Done (30 min)"; rest days "Rest day — nothing to do"; before the program starts, "Program starts Mon 30 Nov". **Last 7 days** strip (done ✓ / missed ✕ / rest ☾ / today, "4 of 5 sessions · Thu missed"), tiles (this week's sessions, 7-day volume, 7-day sets), links to **Program** and **Exercise library**.
+- **Session** `/session/[date]` (Train-Logger): opening it starts (or resumes) the day's session. Exercise strip (done / current / to do, tap to switch), "Exercise 1 of 5" + muscle, "Set 2 of 4 · 8–12 · rest 90 s", the cue, **Last time (Mon 16) 14 kg × 12 · 14 kg × 11**, weight stepper (0.5 kg below 10 kg, 1 kg above, max 20 kg per hand; "per side" for unilateral), reps stepper, **Log set 2 · 14 kg × 11**, the set list (done with time, Now, the rest with last time's numbers), "Next: …". Bodyweight exercises hide the weight.
+- **Pre-fill** (AC1): each next set starts from the set you just logged; the first set from last time's same set; otherwise the plan's target.
+- **Rest timer** (Train-RestTimer): ring countdown from timestamps, **+15 s**, **Skip rest**, Up next; it schedules a local notification "Rest over" for the end time (AC2), so it rings with the app in the background or killed. Reminder rebuilds (F15) no longer cancel it.
+- **Timed exercises** (Train-Timed, plank): Start set → ring counts the hold → **Stop & log 42 s**.
+- **Circuit** (Train-Circuit): "Round 2 of 4", round bars, the stations with ticks, weight per station, **Station done**; no rest between stations, the plan's rest between rounds.
+- **Completion** = sets logged ÷ sets planned, kept current on every set: at **≥ 80 %** Today's workout block ticks itself (AC3). **Finish** → summary (Train-Summary): completion ring, "Workout block ticked on Today", volume / sets / time, per-exercise sets and %.
+- Leaving mid-session keeps it open; reopening resumes where you left off (sets, rest timer and plank hold survive an app kill — they're timestamps, persisted).
+- **Program** view (days, exercises, sets, time; today marked) and **Exercise library** (by muscle, equipment, cue, "per side").
+- F15 follow-up: workout reminders now open `/session/<date>`.
+
+**Checks run here**
+
+- `typecheck` ✅ · `lint` ✅ · `test` ✅ 609 tests; `features/train/lib` 100% coverage.
+- **AC1**: pre-fill from last time, then from the previous set (logic + session test: set 3 reads "15 kg × 11" after changing set 2).
+- **AC2**: logging a set schedules the "Rest over" notification at the end time; +15 s reschedules, Skip cancels (session test with mocked notifications).
+- **AC3**: 4 of 5 sets → completion 80 → Today's "Workout · Upper A" row is done (screen test across Session → Today).
+- `test:db` ✅ · iOS + Android bundle export ✅.
+
+**How PTR verifies on the phone**
+
+1. `git pull`, `npm install`, `npm start` → **Train**.
+2. Today's card shows the session (if the program has started). Tap **Start**.
+3. Log a set → the rest ring starts; lock the phone → it rings when rest ends (needs notification permission). Unlock → the next set is pre-filled with what you just did.
+4. Close (✕) mid-session, kill the app, reopen → Train → **Resume** → you're on the right set.
+5. Log ≥ 80 % of the sets → Today's workout block is ticked. **Finish** → summary.
+6. On a walk day: **Done (30 min)**. On Saturday: the circuit rounds.
+
+**Known gaps / left for later**
+
+- F12 owns progression: "Try 15 kg" suggestions, personal records, "bench best" — not shown yet.
+- Program editing (sets / reps / rest / swap exercise) is F23; the Program screen is read-only.
+- The walk card has no step count or "indoor swap" (steps are F21).
+- Rest notifications, like reminders, may need the development build if Expo Go doesn't deliver them.
+- The summary's completion follows the PRD (sets), not the design's reps-based % ; the estimate uses 40 s per set plus rest, so it reads shorter than the design's mock "~55 min".
+
 ## F15 — Notifications · 2026-11-23 · done
 
 **Built**
@@ -419,4 +459,4 @@ _M1's 7-day trial was skipped at PTR's request ("I don't have time to test it fo
 - Placeholder app icon/splash (Expo defaults) and bundle id `app.lifeos.ptr`.
 - Open questions from `REFERENCE_NOTES.md` (todo sort order, weight-trend insight, golden fixtures) still default as proposed until PTR answers.
 
-_Next: F11 (workout program and session logger), milestone M3. Waiting for PTR's "next"._
+_Next: F12 (progressive overload and exercise history). Waiting for PTR's "next"._
