@@ -1,5 +1,6 @@
 import { type ReactNode } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ChevronLeft } from 'lucide-react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { tabBarClearance } from './TabBar';
@@ -15,10 +16,22 @@ export type ScreenProps = {
   withTabBar?: boolean;
   /** Right side of the title row (e.g. a chip). */
   accessory?: ReactNode;
+  /** "‹ More" link above the title (pushed screens). */
+  back?: { label: string; onPress: () => void };
+  /** Top-right action above the title (e.g. "+ New"). */
+  action?: ReactNode;
 };
 
 /** Canvas + safe area + scroll + 36 px screen title. */
-export function Screen({ title, subtitle, children, withTabBar = true, accessory }: ScreenProps) {
+export function Screen({
+  title,
+  subtitle,
+  children,
+  withTabBar = true,
+  accessory,
+  back,
+  action,
+}: ScreenProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   return (
@@ -32,6 +45,27 @@ export function Screen({ title, subtitle, children, withTabBar = true, accessory
         },
       ]}
     >
+      {back || action ? (
+        <View style={styles.topRow}>
+          {back ? (
+            <Pressable
+              onPress={back.onPress}
+              accessibilityRole="button"
+              accessibilityLabel={`Back to ${back.label}`}
+              hitSlop={12}
+              style={styles.back}
+            >
+              <ChevronLeft size={20} color={colors.accents.primary.text} strokeWidth={2.2} />
+              <Text variant="body" tone="primary">
+                {back.label}
+              </Text>
+            </Pressable>
+          ) : (
+            <View />
+          )}
+          {action}
+        </View>
+      ) : null}
       <View style={styles.titleRow}>
         <View style={styles.titles}>
           <Text variant="title" accessibilityRole="header">
@@ -52,6 +86,13 @@ export function Screen({ title, subtitle, children, withTabBar = true, accessory
 
 const styles = StyleSheet.create({
   content: { paddingHorizontal: space.lg, gap: space.lg },
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: -space.sm,
+  },
+  back: { flexDirection: 'row', alignItems: 'center', gap: 2, minHeight: 44 },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   titles: { flex: 1, gap: 2 },
 });

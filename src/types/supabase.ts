@@ -845,6 +845,7 @@ export type Database = {
       };
       routine_template: {
         Row: {
+          archived_at: string | null;
           client_id: string;
           created_at: string;
           deleted_at: string | null;
@@ -857,6 +858,7 @@ export type Database = {
           weekdays: number[];
         };
         Insert: {
+          archived_at?: string | null;
           client_id?: string;
           created_at?: string;
           deleted_at?: string | null;
@@ -869,6 +871,7 @@ export type Database = {
           weekdays?: number[];
         };
         Update: {
+          archived_at?: string | null;
           client_id?: string;
           created_at?: string;
           deleted_at?: string | null;

@@ -2,6 +2,41 @@
 
 One entry per feature, newest first: feature ID, what was built, how PTR verifies it on the phone, known gaps.
 
+## F04 — Routine templates and editor · 2026-11-23 · done
+
+**Built**
+
+- **Routine** (More → Routine; Routine-Templates design): week strip (which template runs each weekday, distinct letters W/E…), legend, one card per template ("Mon–Fri · 12 blocks · 5:00 am – 10:00 pm", **Active today** on today's), **+ New**, **Switch today's template**, a warning banner when two templates claim the same weekday ("Sat is claimed by … — X (last edited) wins"), and an Archived list with Restore.
+- **Template** screen (Routine-Blocks design): blocks in time order with time, kind icon and "Meal · 30 min" / "Water · auto" / "· optional"; **Add block**; **Reorder** mode (↑/↓ swaps a block's time with its neighbour — times are absolute); a Template card to rename, pick the weekdays it runs on, **Duplicate** (copy with no weekdays), and **Delete** (with confirm + Undo) — or **Archive** when a day in the last 7 days used it; your only template can't be removed.
+- **Block sheet** (Routine-BlockEdit design): title, kind (Habit / Water / Workout / Meal / Sleep / Task → PRD kinds, wake and phone-off kept), start (wheel, 5-min steps), duration, meal slot B/L/S/D for meal blocks, Notify at start, Optional (never counted). Save / Delete with Undo.
+- **Switch template** sheet (Sheet-SwitchTemplate design): pick a template, **Today only** (stores `day_log.template_id`) or **From now on** (also gives today's weekday to it), "Switching now: n blocks left today change".
+- Logic in `src/features/routine/lib/` (99% covered): which template a date runs (manual switch > weekday, last edited wins > default; archived never matches a weekday), the date's plan + counted blocks (score denominator) + block reminders (F15 will schedule them), every write planned as pure data. New rows get a client-made `id` so blocks can be added to a template that hasn't synced yet.
+- Migration `20261123130835_routine_template_archived_at.sql` (adds `routine_template.archived_at`, additive) — applied to the live project, types regenerated.
+- New `src/ui`: `Toggle`, `MenuRow`; `Screen` gained `back` / `action`, `Sheet` gained `accessory`.
+
+**Checks run here**
+
+- `typecheck` ✅ · `lint` ✅ · `test` ✅ 399 tests; coverage 97% overall, `features/routine/lib` 99.6%.
+- **AC1**: editing Workday's 05:30 block to 05:45 queues exactly one write (`start_time`), tomorrow's plan shows 5:45 and its reminder moves to 05:45 IST; no other block or log row is touched (logic + screen tests).
+- **AC2**: switching today to Rest day stores it on today's `day_log`, today's plan drops the workout from the counted blocks (11 → 10) and tomorrow is unchanged (logic + screen tests).
+- `test:db` ✅ · Android bundle export ✅.
+
+**How PTR verifies on the phone**
+
+1. `git pull`, `npm start`, open in Expo Go.
+2. More → **Routine**: Mon–Fri show W, Sat–Sun show E; Workday (or Weekend at the weekend) says **Active today**.
+3. Open **Workday** → tap **5:30 am Workout** → set the start to 5:45 → **Save block** → the list shows 5:45 am. In Supabase `routine_block`, only that row changed.
+4. Back on Routine → **Switch today's template** → **Rest day** → **Switch to Rest day** → Rest day is now Active today; Supabase `day_log` (today) has `template_id` = Rest day's id. (Today's score itself arrives with F05.)
+5. Open **Rest day** → **Delete** is replaced by **Archive** (today used it). Try **Duplicate** on Weekend, toggle a weekday, rename, add and delete a block (Undo brings it back).
+
+**Known gaps / left on purpose vs the designs**
+
+- Today's timeline and score are F05; reminders are scheduled in F15 (the reminder times are already computed).
+- Reorder is ↑/↓ buttons, not drag (drag in LATER.md).
+- Not built from the designs: the "Walk moved to 8:30 pm" banner (weekly review, F19), "No meal plan linked" (no such link in the PRD schema — LATER.md), the third description line in the switch sheet, and the notification preview copy in the block sheet (shows "Reminder at 1:00 pm." instead).
+- Routine opens as a full-screen page without the tab bar (like Settings → Profile); the design shows the tab bar.
+- Template name/weekdays are edited on the template screen (no design for it).
+
 ## F03 — Onboarding and profile · 2026-11-23 · done
 
 **Built**
@@ -163,4 +198,4 @@ One entry per feature, newest first: feature ID, what was built, how PTR verifie
 - Placeholder app icon/splash (Expo defaults) and bundle id `app.lifeos.ptr`.
 - Open questions from `REFERENCE_NOTES.md` (todo sort order, weight-trend insight, golden fixtures) still default as proposed until PTR answers.
 
-_Next: F04 (routine templates and editor), milestone M1. Waiting for PTR's "next"._
+_Next: F05 (Today screen). Waiting for PTR's "next"._

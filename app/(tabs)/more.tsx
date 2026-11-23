@@ -1,17 +1,19 @@
 import { useRouter } from 'expo-router';
-import { Droplet, LogOut, Palette } from 'lucide-react-native';
+import { Clock, Droplet, LogOut, Palette } from 'lucide-react-native';
 
 import { selectUser } from '@/features/auth/selectors';
 import { signOut } from '@/features/auth/slice';
 import { ProfileCard } from '@/features/profile/components/ProfileCard';
 import { useProfile } from '@/features/profile/hooks/useProfileData';
+import { useRoutine } from '@/features/routine/hooks/useRoutine';
+import { blocksSummary } from '@/features/routine/lib/blocks';
 import { SyncStatusCard } from '@/features/sync/components/SyncStatusCard';
 import { selectSyncSummary } from '@/features/sync/selectors';
 import { queueUpsert, retryDead, runSync } from '@/features/sync/slice';
 import { todayLogical } from '@/lib/dates';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { setThemePreference } from '@/store/appSlice';
-import { Button, Card, SegmentedToggle, Screen, Text, type ThemePreference } from '@/ui';
+import { Button, Card, MenuRow, SegmentedToggle, Screen, Text, type ThemePreference } from '@/ui';
 
 const THEME_OPTIONS = [
   { value: 'system', label: 'System' },
@@ -27,9 +29,10 @@ export default function MoreScreen() {
   const offline = useAppSelector((s) => s.auth.offline);
   const sync = useAppSelector(selectSyncSummary);
   const { profile } = useProfile();
+  const { todayPlan } = useRoutine();
 
   return (
-    <Screen title="More" subtitle="Routine, tasks, money and settings arrive from F04.">
+    <Screen title="More" subtitle="Tasks, money and settings arrive in later features.">
       <ProfileCard
         email={user?.email ?? null}
         startWeightKg={profile?.start_weight_kg ?? null}
@@ -37,6 +40,18 @@ export default function MoreScreen() {
         onboardedAt={profile?.onboarded_at ?? null}
         onPress={() => router.push('/settings/profile')}
       />
+      <Card padding={14} gap={0}>
+        <MenuRow
+          icon={Clock}
+          title="Routine"
+          sub={
+            todayPlan.template
+              ? `${todayPlan.template.name} · ${blocksSummary(todayPlan.blocks).split(' · ')[0]}`
+              : 'Templates for your day'
+          }
+          onPress={() => router.push('/routine')}
+        />
+      </Card>
       <Card kicker="Appearance" title="Theme">
         <SegmentedToggle
           accessibilityLabel="Theme"

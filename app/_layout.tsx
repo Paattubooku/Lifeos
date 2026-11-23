@@ -118,6 +118,8 @@ function Navigator() {
             <Stack.Protected guard={signedIn && gate === 'done'}>
               <Stack.Screen name="(tabs)" />
               <Stack.Screen name="settings/profile" />
+              <Stack.Screen name="routine/index" />
+              <Stack.Screen name="routine/[id]" />
               <Stack.Screen name="dev/gallery" />
             </Stack.Protected>
             <Stack.Protected guard={signedIn && gate === 'onboard'}>

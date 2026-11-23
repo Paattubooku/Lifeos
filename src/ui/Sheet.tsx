@@ -15,6 +15,8 @@ export type SheetProps = {
   /** One line of context with the number that matters. */
   subtitle?: string;
   children?: ReactNode;
+  /** Right side of the header (e.g. a Delete button). */
+  accessory?: ReactNode;
   testID?: string;
 };
 
@@ -23,7 +25,15 @@ export type SheetProps = {
  * Tap the scrim or use Android back to close. Reanimated layout animations
  * respect the system Reduce Motion setting.
  */
-export function Sheet({ visible, onClose, title, subtitle, children, testID }: SheetProps) {
+export function Sheet({
+  visible,
+  onClose,
+  title,
+  subtitle,
+  children,
+  accessory,
+  testID,
+}: SheetProps) {
   const { colors, scheme } = useTheme();
   const insets = useSafeAreaInsets();
 
@@ -67,15 +77,18 @@ export function Sheet({ visible, onClose, title, subtitle, children, testID }: S
             ]}
           >
             <View style={[styles.handle, { backgroundColor: colors.border }]} />
-            <View style={styles.header}>
-              <Text variant="heading" accessibilityRole="header">
-                {title}
-              </Text>
-              {subtitle ? (
-                <Text variant="sub" tone="secondary">
-                  {subtitle}
+            <View style={styles.headerRow}>
+              <View style={[styles.header, styles.headerText]}>
+                <Text variant="heading" accessibilityRole="header">
+                  {title}
                 </Text>
-              ) : null}
+                {subtitle ? (
+                  <Text variant="sub" tone="secondary">
+                    {subtitle}
+                  </Text>
+                ) : null}
+              </View>
+              {accessory}
             </View>
             {children}
           </Animated.View>
@@ -86,6 +99,8 @@ export function Sheet({ visible, onClose, title, subtitle, children, testID }: S
 }
 
 const styles = StyleSheet.create({
+  headerRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  headerText: { flex: 1 },
   root: { flex: 1, justifyContent: 'flex-end' },
   panel: {
     borderTopLeftRadius: radius.sheet,

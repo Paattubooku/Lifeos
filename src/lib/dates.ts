@@ -74,3 +74,15 @@ export function weekStart(date: DateString): DateString {
 export function daysBetween(a: DateString, b: DateString): number {
   return Math.round((parseDate(b).getTime() - parseDate(a).getTime()) / DAY);
 }
+
+/**
+ * The instant of an 'HH:mm' plan time on a logical day. Times before 03:00
+ * belong to the night after the calendar date (logical day rule).
+ */
+export function logicalMoment(date: DateString, hhmm: string): number {
+  const m = /^(\d{2}):(\d{2})/.exec(hhmm);
+  if (!m) throw new Error(`Invalid time "${hhmm}"`);
+  const minutes = Number(m[1]) * 60 + Number(m[2]);
+  const day = minutes < LOGICAL_DAY_START_HOUR * 60 ? addDays(date, 1) : date;
+  return parseDate(day).getTime() + (minutes - IST_OFFSET_MIN) * MINUTE;
+}

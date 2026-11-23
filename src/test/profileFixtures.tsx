@@ -13,7 +13,7 @@ import { SnackbarProvider, ThemeProvider } from '@/ui';
 
 import { fakeSupabase, SESSION } from './fakeSupabase';
 
-const base = {
+export const base = {
   user_id: SESSION.user.id,
   created_at: '2026-11-23T00:00:00Z',
   updated_at: '2026-11-23T00:00:00Z',
@@ -57,6 +57,7 @@ const template = (id: string, name: string, weekdays: number[], isDefault = fals
   weekdays,
   is_default: isDefault,
   sort: 0,
+  archived_at: null,
 });
 
 const block = (id: string, templateId: string, kind: string, start: string) => ({

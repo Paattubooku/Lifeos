@@ -1,4 +1,5 @@
 import {
+  logicalMoment,
   addDays,
   daysBetween,
   istDate,
@@ -74,5 +75,17 @@ describe('day arithmetic', () => {
     expect(parseDate('2026-11-23').getUTCDate()).toBe(23);
     expect(() => parseDate('2026-02-30')).toThrow('Invalid date');
     expect(() => parseDate('23/11/2026')).toThrow('Invalid date');
+  });
+});
+
+describe('logicalMoment', () => {
+  it('IST plan time on a logical day; before 03:00 is the next calendar night', () => {
+    expect(new Date(logicalMoment('2026-11-23', '05:30')).toISOString()).toBe(
+      '2026-11-23T00:00:00.000Z',
+    );
+    expect(new Date(logicalMoment('2026-11-23', '02:00:00')).toISOString()).toBe(
+      '2026-11-23T20:30:00.000Z',
+    );
+    expect(() => logicalMoment('2026-11-23', '5:30')).toThrow();
   });
 });
