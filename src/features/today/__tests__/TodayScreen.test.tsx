@@ -236,7 +236,7 @@ describe('TodayScreen', () => {
     await fireEvent.press(within(card).getByRole('button', { name: 'Log weight' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Decrease Weight' }));
     await act(async () => {
-      await fireEvent.press(screen.getByRole('button', { name: 'Save weight' }));
+      await fireEvent.press(screen.getByRole('button', { name: 'Save 90.9 kilograms' }));
     });
     expect(queue(store).at(-1)).toMatchObject({
       table: 'weight_log',

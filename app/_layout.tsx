@@ -132,6 +132,7 @@ function Navigator() {
               <Stack.Screen name="program" />
               <Stack.Screen name="exercises" />
               <Stack.Screen name="exercise/[id]" />
+              <Stack.Screen name="weight" />
               <Stack.Screen name="dev/gallery" />
             </Stack.Protected>
             <Stack.Protected guard={signedIn && gate === 'onboard'}>

@@ -2,41 +2,9 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { formatDuration } from '@/features/profile/lib/targets';
-import { Button, NumberStepper, Sheet, Text, TextField, TimePicker } from '@/ui';
+import { Button, Sheet, Text, TextField, TimePicker } from '@/ui';
 
 type Base = { visible: boolean; onClose: () => void };
-
-/** Today's weight (F13 adds trends; this is the end-of-day quick log). */
-export function WeightSheet(p: Base & { initialKg: number; onSave: (kg: number) => void }) {
-  const [kg, setKg] = useState(p.initialKg);
-  return (
-    <Sheet
-      visible={p.visible}
-      onClose={p.onClose}
-      title="Log weight"
-      subtitle="Today, after the toilet, same scale."
-      testID="weight-sheet"
-    >
-      <NumberStepper
-        value={kg}
-        onChange={setKg}
-        accessibilityLabel="Weight"
-        step={0.1}
-        min={20}
-        max={300}
-        decimals={1}
-        unit="kg"
-      />
-      <Button
-        label="Save weight"
-        accessibilityLabel="Save weight"
-        onPress={() => p.onSave(kg)}
-        fullWidth
-        size="lg"
-      />
-    </Sheet>
-  );
-}
 
 /** Last night: bed and wake times (F14 builds the full sleep screen). */
 export function SleepSheet(

@@ -2,6 +2,39 @@
 
 One entry per feature, newest first: feature ID, what was built, how PTR verifies it on the phone, known gaps.
 
+## F13 — Body: weight and energy balance · 2026-11-23 · done
+
+**Built**
+
+- **Weigh-in sheet** (Prog-WeighIn): 0.1 kg stepper, −0.1 / last / +0.1 chips, the weigh-in checklist (after toilet · same scale · after a salty or late dinner → marked on the chart, A20), "7-day average becomes 88.4 kg (−0.6 vs last week)", Save with Undo. One per logical day — editing replaces it. Opens from the Weight screen and from Today's end-of-day "Log weight" (replaces F05's quick sheet).
+- **Weight screen** `/weight` (Prog-Weight; More → Weight, Progress tab): 7-day avg / vs last week / total tiles; chart with faint daily dots, bold 7-day average, dashed trend toward the goal, dashed goal line labelled "Goal 75 kg", salty-dinner rings, tap a day to read it, **4W / 12W / All**; legend.
+- **Projection** (`body/lib/projection.ts`, regression ported from Food-Tracker `prediction.js`): (a) trend over the last 28 days of 7-day averages → kg/week and the date to 75 kg; (b) intake: avg deficit of the last 14 logged days ÷ 7,700. "Not enough data" under 14 points; "Trend is flat or rising" when the slope ≥ 0.
+- **Energy card** (Prog-Energy): BMR (Mifflin, latest 7-day avg, age = year − birth year), TDEE × activity factor (1.4), eaten today (food + 20 kcal coffees), deficit in zones < 300 Too small / 300–700 On target / > 700 Too aggressive with a one-line fix; shown after dinner is logged or from 21:00. **Check against the scale**: after 28 days with ≥ 20 weigh-ins and ≥ 20 food days, measured TDEE = avg intake + (−trend kg/day × 7,700) and the card switches to it.
+- Progress tab now links to Weight and Streaks until F16 builds it.
+
+**Checks run here**
+
+- `typecheck` ✅ · `lint` ✅ · `test` ✅ 643 tests; `features/body/lib` 100% coverage.
+- **AC1**: the app's 7-day averages for a test series equal `v_weight_trend`'s exactly (unit test + the same rows in `supabase/tests/views.sql`).
+- **AC2**: projection hidden under 14 points; regression matches the reference implementation's slope/intercept for the same inputs (values produced by running the reference code).
+- **AC3**: BMR 91 kg / 170 cm / 29 y / male = 1,833; 88.4 kg = 1,807; age from `birth_year`.
+- Chart palette run through the dataviz validator for both themes (dark #3B82F6 / #059669, light #2563EB / #047857: all checks pass).
+- `test:db` ✅ · iOS + Android bundle export ✅.
+
+**How PTR verifies on the phone**
+
+1. `git pull`, `npm install`, `npm start` → More → **Weight** (or the Progress tab).
+2. **Weigh in** → adjust, tick "salty dinner" if it applies → Save. Weigh in again today → it replaces the first one.
+3. With fewer than 14 weigh-ins in 4 weeks the projection says "Not enough data"; after that it shows the trend date and the intake-based date.
+4. After dinner is logged (or after 9 pm) the Energy card shows today's deficit and its zone.
+5. Supabase SQL: `select date, weight_kg, avg7 from v_weight_trend order by date desc limit 7;` — the 7-day avg tile matches the latest `avg7`.
+
+**Known gaps**
+
+- The chart hasn't been looked at on a device yet; tell me if labels collide.
+- The design's projection commentary ("The scale is ahead of your logs by ~250 kcal/day…") isn't generated.
+- Weigh-in reminders already exist (F15, per `weigh_in_mode`).
+
 ## F12 — Progressive overload and exercise history · 2026-11-23 · done
 
 **Built**
@@ -490,4 +523,4 @@ _M1's 7-day trial was skipped at PTR's request ("I don't have time to test it fo
 - Placeholder app icon/splash (Expo defaults) and bundle id `app.lifeos.ptr`.
 - Open questions from `REFERENCE_NOTES.md` (todo sort order, weight-trend insight, golden fixtures) still default as proposed until PTR answers.
 
-_Next: F13 (body: weight and energy balance). Waiting for PTR's "next"._
+_Next: F14 (sleep and phone-off). Waiting for PTR's "next"._

@@ -13,6 +13,7 @@ do $$
 declare
   s record;
   n int;
+  avgs text;
 begin
   insert into public.coffee_log (client_id, date) values
     (gen_random_uuid(), '2026-11-23'),
@@ -34,6 +35,19 @@ begin
 
   select count(*) into n from public.v_daily_summary;
   if n <> 1 then raise exception 'expected one summary day, got %', n; end if;
+  -- F13 AC1: the app's 7-day average (body/lib/weight.ts) uses the same window;
+  -- these weigh-ins and averages are the ones in weight.test.ts.
+  insert into public.weight_log (client_id, date, weight_kg) values
+    (gen_random_uuid(), '2026-12-01', 91), (gen_random_uuid(), '2026-12-02', 90.8),
+    (gen_random_uuid(), '2026-12-04', 90.5), (gen_random_uuid(), '2026-12-05', 90.4),
+    (gen_random_uuid(), '2026-12-06', 90.1), (gen_random_uuid(), '2026-12-07', 90.2),
+    (gen_random_uuid(), '2026-12-08', 89.9);
+  select string_agg(avg7::text, ',' order by date) into avgs
+    from public.v_weight_trend where date between '2026-12-01' and '2026-12-08';
+  if avgs <> '91.00,90.90,90.77,90.68,90.56,90.50,90.32' then
+    raise exception 'v_weight_trend avg7 should match the app, got %', avgs;
+  end if;
+
   raise notice 'views.sql: all checks passed';
 end $$;
 

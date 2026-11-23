@@ -4,7 +4,9 @@ import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { weightWrite } from '@/features/profile/lib/plan';
+import { WeighInSheet } from '@/features/body/components/WeighInSheet';
+import { useBody } from '@/features/body/hooks/useBody';
+import { planWeighIn } from '@/features/body/lib/weight';
 import { SwitchTemplateSheet } from '@/features/routine/components/SwitchTemplateSheet';
 import { dayMinutes, hhmm } from '@/features/routine/lib/blocks';
 import type { Change } from '@/features/routine/lib/changes';
@@ -44,7 +46,7 @@ import { dayKicker, type RowContext, rowTitle, shortDay } from '../lib/present';
 import { formatMinutes, nowDayMinutes, endOf } from '../lib/timeline';
 import { type DayRow, openRows, type SkipReason } from '../selectors';
 import { EndOfDayCard, type EndOfDayItem } from './EndOfDayCard';
-import { NoteSheet, SleepSheet, WeightSheet } from './LogSheets';
+import { NoteSheet, SleepSheet } from './LogSheets';
 import { NowCard } from './NowCard';
 import { ScoreCard } from './ScoreCard';
 import { SkipSheet } from './SkipSheet';
@@ -61,6 +63,7 @@ export function TodayScreen({ now: fixedNow }: { now?: number } = {}) {
   const now = fixedNow ?? ticking;
   const t = useToday(now);
   const water = useWater(now);
+  const body = useBody(now);
   const food = useFood(now);
   const foodActions = useFoodActions(food);
   // F15: keep the phone's reminders in step with today's and tomorrow's plan.
@@ -299,22 +302,19 @@ export function TodayScreen({ now: fixedNow }: { now?: number } = {}) {
         ) : null}
         {open === 'switch' ? <SwitchTemplateSheet visible onClose={() => setOpen(null)} /> : null}
         {open === 'weight' ? (
-          <WeightSheet
-            visible
+          <WeighInSheet
+            today={body.today}
+            points={body.points}
+            initialKg={
+              body.todayRow && !body.todayRow.deleted_at
+                ? Number(body.todayRow.weight_kg)
+                : (body.points.at(-1)?.weight ?? Number(t.profile?.start_weight_kg ?? 80))
+            }
+            initialSalty={body.todayRow?.note === 'salty'}
             onClose={() => setOpen(null)}
-            initialKg={t.latestWeightKg ?? t.profile?.start_weight_kg ?? 80}
-            onSave={(kg) => {
+            onSave={(kg, salty) => {
               setOpen(null);
-              const w = weightWrite(t.today, kg, t.weightToday ?? null);
-              if (w)
-                void apply([
-                  {
-                    op: 'upsert',
-                    table: w.table,
-                    row: w.row,
-                    ...(w.clientId ? { clientId: w.clientId } : {}),
-                  },
-                ]);
+              void apply([{ op: 'upsert', ...planWeighIn(body.today, kg, salty, body.todayRow) }]);
               showSnackbar({ message: `${kg.toFixed(1)} kg logged` });
             }}
           />

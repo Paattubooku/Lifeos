@@ -1,4 +1,5 @@
 import { profileApi } from '@/features/profile/api';
+import { bodyApi } from '@/features/body/api';
 import { foodApi } from '@/features/food/api';
 import { todayApi } from '@/features/today/api';
 import { trainApi } from '@/features/train/api';
@@ -35,6 +36,10 @@ export type TodayStoreOptions = {
   waterHistory?: { daysAgo: number; ml: number }[];
   /** Today's program day (session override), default Upper A ('d1'). */
   todaySession?: string;
+  /** Weigh-ins: [daysAgo, kg, note?]. */
+  weights?: [number, number, string?][];
+  /** kcal logged per day: [daysAgo, kcal]. */
+  intake?: [number, number][];
   /** Past sets: [daysAgo, exerciseId, setNo, weight, reps]. */
   pastSets?: [number, string, number, number | null, number | null][];
 };
@@ -160,6 +165,31 @@ export async function todayStore(opts: TodayStoreOptions = {}) {
     ),
   );
   await store.dispatch(trainApi.util.upsertQueryData('getSessionsSince', addDays(today, -13), []));
+  await store.dispatch(
+    bodyApi.util.upsertQueryData(
+      'getWeights',
+      undefined,
+      (opts.weights ?? []).map(([ago, kg, note], i) => ({
+        ...base,
+        id: `wt${i}`,
+        client_id: `wt${ago}-c`,
+        date: addDays(today, -ago),
+        weight_kg: kg,
+        note: note ?? null,
+      })),
+    ),
+  );
+  await store.dispatch(
+    bodyApi.util.upsertQueryData('getIntakeSince', addDays(today, -29), {
+      food: (opts.intake ?? []).map(([ago, kcal]) => ({
+        client_id: `in${ago}`,
+        date: addDays(today, -ago),
+        kcal,
+        deleted_at: null,
+      })),
+      coffee: [],
+    }),
+  );
   const at = (hhmm: string) => logicalMoment(today, hhmm);
   return { store, today, blocks, at };
 }
