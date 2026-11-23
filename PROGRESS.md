@@ -2,6 +2,37 @@
 
 One entry per feature, newest first: feature ID, what was built, how PTR verifies it on the phone, known gaps.
 
+## F12 — Progressive overload and exercise history · 2026-11-23 · done
+
+**Built**
+
+- **Overload rules** `src/features/train/lib/overload.ts` (PRD F12), from last session's sets of an exercise:
+  - every working set hit `rep_max` → **+1 kg** (+0.5 kg under 10 kg), never past 20 kg;
+  - already at **20 kg** (or bodyweight) → **+1 rep** past the range and "slow 3-second lowering";
+  - **≥ 2 sets missed `rep_min`** → stay at the same weight;
+  - otherwise (or timed exercises / no history) → nothing.
+- **Chip in the set logger**: "Try 15 kg · Every set hit 12 last time at 14 kg." with **Apply**, which sets the steppers in one tap.
+- **Exercise history** `/exercise/[id]` (Train-History): Best set (by est. 1RM), Est. 1RM (Epley `w × (1 + reps/30)`), 8-week change; **Best set trend** line chart (one series, tap a point for its date and set); **Sessions** table (date, every set, best set, volume). Opens from the exercise name in the logger and from the Exercise library.
+
+**Checks run here**
+
+- `typecheck` ✅ · `lint` ✅ · `test` ✅ 627 tests; `overload.ts` 100% lines.
+- **AC**: unit tests for every rule branch — +1 kg, +0.5 kg under 10 kg (9.5 → 10), 19.5 → 20 cap, at 20 kg → +1 rep + slow lowering, bodyweight → +1 rep, ≥ 2 misses → same weight (1 miss → nothing), not every set at the top / a set missing → nothing, timed / no history → nothing.
+- Screen tests: chip shows and Apply changes "14 kg × 12" → "15 kg × 12"; history tiles, table, chart point tap.
+- `test:db` ✅ · iOS + Android bundle export ✅.
+
+**How PTR verifies on the phone**
+
+1. `git pull`, `npm install`, `npm start`.
+2. After a session where every set of an exercise reached the top of its range, start the next session with it: a green **Try … kg** chip appears; **Apply** fills the weight.
+3. In a session tap the exercise name (or Train → Exercise library → an exercise) → its history: tiles, the trend line (tap a point), the table.
+
+**Known gaps**
+
+- The chart hasn't been looked at on a device yet (only tested); tell me if labels collide.
+- PRs on the session summary and a "bench best" tile on the Train tab (designs) aren't in the PRD's F12 scope and weren't built.
+- The design's in-session hint ("You hit 12 reps on set 1. Try 15 kg for this set") isn't built: the PRD rule is per session, applied to the next one.
+
 ## F11 — Workout program and session logger · 2026-11-23 · done
 
 **Built**
@@ -459,4 +490,4 @@ _M1's 7-day trial was skipped at PTR's request ("I don't have time to test it fo
 - Placeholder app icon/splash (Expo defaults) and bundle id `app.lifeos.ptr`.
 - Open questions from `REFERENCE_NOTES.md` (todo sort order, weight-trend insight, golden fixtures) still default as proposed until PTR answers.
 
-_Next: F12 (progressive overload and exercise history). Waiting for PTR's "next"._
+_Next: F13 (body: weight and energy balance). Waiting for PTR's "next"._

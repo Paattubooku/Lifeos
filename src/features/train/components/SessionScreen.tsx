@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { Check, ChevronRight, Play, Square, X } from 'lucide-react-native';
+import { Check, ChevronRight, Play, Square, X, Zap } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -12,6 +12,7 @@ import type { ReactNode } from 'react';
 import { formatClock } from '@/lib/format';
 import { useAppDispatch, useAppSelector } from '@/store';
 import {
+  Banner,
   Button,
   Card,
   EmptyState,
@@ -43,6 +44,7 @@ import {
   type SetLogRow,
   setsOf,
 } from '../lib/session';
+import { suggestionReason, suggestNext } from '../lib/overload';
 import { focused, restEnded } from '../slice';
 import { ExerciseTabs, mmss, RestView, SummaryView } from './SessionParts';
 
@@ -283,6 +285,9 @@ function ExercisePanel({ ctx, index, now }: { ctx: Ctx; index: number; now: numb
   const fill = prefill(item, done, last?.sets ?? null);
   const [weight, setWeight] = useState(fill.weight);
   const [reps, setReps] = useState(fill.reps);
+  const suggestion = suggestNext(item, last?.sets ?? null);
+  const [applied, setApplied] = useState(false);
+  const router = useRouter();
   const timed = isTimed(item);
   const bodyweight = isBodyweight(ex);
   const next = ctx.items[index + 1];
@@ -319,7 +324,15 @@ function ExercisePanel({ ctx, index, now }: { ctx: Ctx; index: number; now: numb
         >{`Exercise ${index + 1} of ${ctx.items.length}`}</Text>
         {ex?.muscle ? <StatusChip label={ex.muscle} tone="protein" /> : null}
       </View>
-      <Text variant="title">{label(ex)}</Text>
+      <Pressable
+        onPress={() =>
+          router.push({ pathname: '/exercise/[id]', params: { id: item.exercise_id } })
+        }
+        accessibilityRole="button"
+        accessibilityLabel={`${label(ex)}. History`}
+      >
+        <Text variant="title">{label(ex)}</Text>
+      </Pressable>
       <Text variant="sub" tone="secondary">
         {complete
           ? `All ${item.sets} sets done`
@@ -347,6 +360,33 @@ function ExercisePanel({ ctx, index, now }: { ctx: Ctx; index: number; now: numb
               .join(' · ')}
           </Text>
         </View>
+      ) : null}
+
+      {suggestion && !complete && !timed ? (
+        <Banner
+          tone="success"
+          icon={Zap}
+          title={
+            suggestion.kind === 'add_rep'
+              ? `${suggestion.text} · ${suggestion.cue.toLowerCase()}`
+              : suggestion.text
+          }
+          body={suggestionReason(suggestion, item)}
+          action={
+            applied
+              ? undefined
+              : {
+                  label: 'Apply',
+                  accessibilityLabel: `Apply suggestion: ${suggestion.text}`,
+                  onPress: () => {
+                    setWeight(suggestion.weight);
+                    if (suggestion.kind === 'add_rep') setReps(suggestion.reps);
+                    setApplied(true);
+                  },
+                }
+          }
+          testID="overload-chip"
+        />
       ) : null}
 
       {complete ? null : timed ? (

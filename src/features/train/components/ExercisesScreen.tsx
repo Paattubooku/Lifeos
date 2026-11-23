@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { useNow } from '@/features/today/hooks/useNow';
 import { useToday } from '@/features/today/hooks/useToday';
@@ -29,8 +29,11 @@ export function ExercisesScreen({ now: fixedNow }: { now?: number } = {}) {
       {groups.map(([muscle, list]) => (
         <Card key={muscle} kicker={muscle} padding={14} gap={0} testID={`muscle-${muscle}`}>
           {list.map((e, n) => (
-            <View
+            <Pressable
               key={e.id}
+              onPress={() => router.push({ pathname: '/exercise/[id]', params: { id: e.id } })}
+              accessibilityRole="button"
+              accessibilityLabel={`${e.name}. History`}
               style={[
                 styles.row,
                 n > 0 ? { borderTopWidth: 1, borderColor: colors.hairline } : null,
@@ -46,7 +49,7 @@ export function ExercisesScreen({ now: fixedNow }: { now?: number } = {}) {
                 {e.equipment}
               </Text>
               {e.cue ? <Text variant="sub">{e.cue}</Text> : null}
-            </View>
+            </Pressable>
           ))}
         </Card>
       ))}

@@ -124,3 +124,8 @@ Decisions made during the build that the PRD left open. Format: date · feature 
 - 2026-11-23 · F11 · **Timed sets** log `duration_sec` (no reps / weight); a started hold is persisted so it survives a kill.
 - 2026-11-23 · F11 · **Estimated time** = Σ sets × (40 s + rest); a single long timed set (walk) is its duration. Rounded to 5 min.
 - 2026-11-23 · F11 · **Week strip** = the 7 days ending today; done at ≥ 80 %; a past training day without that is "missed"; rest days don't count. "This week" counts Mon–Sun.
+- 2026-11-23 · F12 · **"Every working set"** = at least the planned number of sets were logged last time and all reached `rep_max`; a missing set means no +weight. "Current weight" = the heaviest set last time. Weight steps follow F11 (0.5 kg below 10, 1 kg from 10), capped at 20 kg.
+- 2026-11-23 · F12 · **At the 20 kg cap (or bodyweight)** both PRD options are offered together: target rep_max + 1 and the slow 3-second lowering cue.
+- 2026-11-23 · F12 · **No suggestion** for timed exercises (plank), "max" rep ranges, or when only one set missed rep_min.
+- 2026-11-23 · F12 · **Suggestions are a chip with Apply**, never applied automatically; they read last session only (not within the current session).
+- 2026-11-23 · F12 · **History**: one row per day; best set = highest Epley est. 1RM (ties → more reps); 8-week change = latest vs first session in the last 56 days. The chart follows the dataviz skill: one series in the primary token, 2 px line, 8 px ringed markers, recessive grid, one axis, only the shown point labelled, tap-to-inspect; the sessions table is the table view.

@@ -64,4 +64,22 @@ describe('trainApi', () => {
     expect(calls[0]).toContainEqual(['is', 'deleted_at', null]);
     expect(calls[1]).not.toContainEqual(['is', 'deleted_at', null]); // sessions keep deleted rows
   });
+
+  it('getExerciseSets: one exercise, live, by date', async () => {
+    const { store, calls } = setup({ set_log: [{ client_id: 'a' }] });
+    expect(
+      (
+        await store.dispatch(
+          trainApi.endpoints.getExerciseSets.initiate('bench', { subscribe: false }),
+        )
+      ).data,
+    ).toEqual([{ client_id: 'a' }]);
+    expect(calls[0]).toEqual([
+      ['from', 'set_log'],
+      ['select', '*'],
+      ['eq', 'exercise_id', 'bench'],
+      ['is', 'deleted_at', null],
+      ['order', 'date'],
+    ]);
+  });
 });

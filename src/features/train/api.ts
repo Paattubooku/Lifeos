@@ -57,7 +57,27 @@ export const trainApi = baseApi.injectEndpoints({
         ),
       providesTags: ['Session'],
     }),
+    /** Every set ever logged for one exercise (history screen). */
+    getExerciseSets: b.query<SetLogRow[], string>({
+      queryFn: (exerciseId, api) =>
+        supabaseQuery(api, ['set_log'], async (c) =>
+          unwrapList(
+            await c
+              .from('set_log')
+              .select('*')
+              .eq('exercise_id', exerciseId)
+              .is('deleted_at', null)
+              .order('date'),
+          ),
+        ),
+      providesTags: ['Session'],
+    }),
   }),
 });
 
-export const { useGetProgramQuery, useGetSetLogsSinceQuery, useGetSessionsSinceQuery } = trainApi;
+export const {
+  useGetProgramQuery,
+  useGetSetLogsSinceQuery,
+  useGetSessionsSinceQuery,
+  useGetExerciseSetsQuery,
+} = trainApi;
