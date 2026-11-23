@@ -3,6 +3,7 @@ import { persistReducer } from 'redux-persist';
 
 import { authSlice } from '@/features/auth/slice';
 import { foodSlice } from '@/features/food/slice';
+import { notificationsSlice } from '@/features/notifications/slice';
 import { profileSlice } from '@/features/profile/slice';
 import { syncSlice } from '@/features/sync/slice';
 
@@ -17,6 +18,7 @@ export const rootReducer = combineReducers({
   [syncSlice.name]: persistReducer(syncPersistConfig, syncSlice.reducer),
   [profileSlice.name]: profileSlice.reducer,
   [foodSlice.name]: foodSlice.reducer,
+  [notificationsSlice.name]: notificationsSlice.reducer,
   [baseApi.reducerPath]: baseApi.reducer,
 });
 

@@ -2,6 +2,42 @@
 
 One entry per feature, newest first: feature ID, what was built, how PTR verifies it on the phone, known gaps.
 
+## F15 — Notifications · 2026-11-23 · done
+
+**Built**
+
+- **Schedule builder** `src/features/notifications/schedule.ts` (pure, tested): today's and tomorrow's local reminders from the day's template, profile, meal plan, program and logs —
+  - wake ("Good morning · 500 ml water first.") and other block starts (Pack lunch box, Lights out…; water blocks are left to the water checks),
+  - workout −5 min ("Upper A in 5 min") on strength / circuit days,
+  - each meal ("Breakfast: Idli + Sambar + Boiled eggs"), **skipped once that meal has anything logged**,
+  - water checks at 09:00, 10:30 … 19:30 (90 min apart), **only when you'd be ≥ 300 ml behind** with no more water; blunt copy per urgency (ported from My-Tracker `URGENCY_MESSAGES`),
+  - phone away at phone-off time with today's score, and weigh-in 15 min after wake (daily, or on the weigh-in weekday).
+  - Hard cap **10 per logical day**: lowest priority dropped first (water checks, then plain block starts). Past times are skipped; "Quiet today" mutes the whole day.
+- **Kept in sync with the phone**: Today rebuilds the schedule whenever anything it depends on changes — app open, template / profile / meal-plan edits, logging water or a meal — and replaces the OS schedule (debounced, untouched when unchanged). Only with notification permission.
+- **Tapping a reminder opens its screen** (Today, Water, Train, the meal), also when the tap launches the app. Unknown links are ignored.
+- **More → Reminders** (Reminders design): Quiet today, "Today: 7 of 10 scheduled · 3 spare" with the cap explained, a switch per type (Block start, Water pace, Workout in 5 min, Meals, Phone away, Weigh-in), and "Reminders off — enable" when the OS permission is off. Switches live on this phone.
+
+**Checks run here**
+
+- `typecheck` ✅ · `lint` ✅ · `test` ✅ 587 tests; `features/notifications` 98% coverage.
+- **AC1**: a Workday gives exactly 10 reminders in time order (wake 5:00, weigh-in 5:15, Upper A 5:25, breakfast 7:00, pack lunch 7:30, lunch, snack, dinner, phone away 9:30, lights out 10:00); water checks are what the cap drops.
+- **AC2**: logging breakfast at 06:30 removes the 07:00 breakfast reminder (unit test + end-to-end through the Food tab).
+- **AC3**: tapping a reminder pushes its screen (listener and cold start); bad links are ignored.
+- `test:db` ✅ · iOS + Android bundle export ✅.
+
+**How PTR verifies on the phone**
+
+1. `git pull`, `npm install`, `npm start`. Make sure notifications are allowed (More → Profile → "Reminders off — enable", or More → **Reminders**).
+2. More → **Reminders**: "Today: n of 10 scheduled". Switch off Meals → the count changes; Quiet today → 0.
+3. In More → Routine, set a block a few minutes from now (e.g. Pack lunch box), go back to Today, lock the phone: the reminder arrives at that time; tap it → the app opens on Today.
+4. Before a meal time, tap **Eaten as planned** for it on the Food tab → that meal's reminder doesn't fire.
+
+**Known gaps**
+
+- Expo Go: local reminders should work, but Expo Go warns that notifications are "not fully supported" (remote push was removed in SDK 53 — LifeOS uses only local ones). If they don't arrive, it needs the development build (planned around F11).
+- The PRD's daily 03:05 background rebuild (BackgroundFetch) isn't built: it needs a native module that Expo Go can't load. The schedule covers today + tomorrow and is rebuilt every time the app opens, so it only runs dry if the app isn't opened for over a day.
+- "Weekly review" (F20) and "Failure interrupt" (F24) reminders come with those features. Workout reminders open the Train tab until F11's session screen exists.
+
 ## F10 — Shopping list · 2026-11-23 · dropped at PTR's request
 
 PTR decided not to build F10 ("I really don't want this feature"). Nothing in the build order depends on it.
@@ -383,4 +419,4 @@ _M1's 7-day trial was skipped at PTR's request ("I don't have time to test it fo
 - Placeholder app icon/splash (Expo defaults) and bundle id `app.lifeos.ptr`.
 - Open questions from `REFERENCE_NOTES.md` (todo sort order, weight-trend insight, golden fixtures) still default as proposed until PTR answers.
 
-_Next: F15 (notifications). F10 was dropped. Waiting for PTR's "next"._
+_Next: F11 (workout program and session logger), milestone M3. Waiting for PTR's "next"._

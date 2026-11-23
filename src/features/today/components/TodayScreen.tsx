@@ -13,6 +13,8 @@ import { istClock, isoWeekday, logicalMoment } from '@/lib/dates';
 import { formatClock } from '@/lib/format';
 import { useFood } from '@/features/food/hooks/useFood';
 import { useFoodActions } from '@/features/food/hooks/useFoodActions';
+import { useReminderSchedule } from '@/features/notifications/hooks/useReminderSchedule';
+import { useReminderSync } from '@/features/notifications/hooks/useReminderSync';
 import { WaterAddSheet } from '@/features/water/components/WaterAddSheet';
 import { WaterCard } from '@/features/water/components/WaterCard';
 import { useLogWater } from '@/features/water/hooks/useLogWater';
@@ -61,6 +63,8 @@ export function TodayScreen({ now: fixedNow }: { now?: number } = {}) {
   const water = useWater(now);
   const food = useFood(now);
   const foodActions = useFoodActions(food);
+  // F15: keep the phone's reminders in step with today's and tomorrow's plan.
+  useReminderSync(useReminderSchedule({ t, food, water }));
   const { log: logWaterEntry } = useLogWater();
   useDayScoreSync(t);
   const { streak } = useStreak(t.today, t.plan.blocks.length > 0 ? t.day.score.score : null);

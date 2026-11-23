@@ -19,6 +19,7 @@ import { Provider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
 
 import { useAuthListener } from '@/features/auth/hooks/useAuthListener';
+import { useNotificationRouting } from '@/features/notifications/hooks/useNotificationRouting';
 import { useOnboardingGate } from '@/features/profile/hooks/useOnboardingGate';
 import { useSyncWorker } from '@/features/sync/hooks/useSyncWorker';
 import { useAppSelector } from '@/store';
@@ -69,6 +70,7 @@ function Navigator() {
   const status = useAppSelector((s) => s.auth.status);
   const signedIn = status === 'signedIn';
   const gate = useOnboardingGate(signedIn);
+  useNotificationRouting(signedIn && gate === 'done');
 
   // Keep the splash up until fonts are in and the stored session is restored.
   useEffect(() => {
@@ -118,6 +120,7 @@ function Navigator() {
             <Stack.Protected guard={signedIn && gate === 'done'}>
               <Stack.Screen name="(tabs)" />
               <Stack.Screen name="settings/profile" />
+              <Stack.Screen name="settings/reminders" />
               <Stack.Screen name="routine/index" />
               <Stack.Screen name="routine/[id]" />
               <Stack.Screen name="streaks" />
