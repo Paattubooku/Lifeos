@@ -55,6 +55,17 @@ export const selectSyncSummary = createSelector(
   },
 );
 
+/**
+ * This device's not-yet-confirmed writes for `table`: recently pushed ones
+ * (until the next server read) followed by pending ones, so pending wins.
+ */
+export const makeSelectLocalWrites = (table: SyncTable) =>
+  createSelector(
+    [selectQueue, (s: Root) => s.sync.recent ?? [], selectOwner],
+    (queue, recent, owner): Mutation[] =>
+      owner ? [...pendingFor(recent, table, owner), ...pendingFor(queue, table, owner)] : [],
+  );
+
 /** Pending writes for one table (for merging into server reads). */
 export const makeSelectPending = (table: SyncTable) =>
   createSelector([selectQueue, selectOwner], (queue, owner): Mutation[] =>

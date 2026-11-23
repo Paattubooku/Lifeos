@@ -3,6 +3,8 @@ import { Droplet, LogOut, Palette } from 'lucide-react-native';
 
 import { selectUser } from '@/features/auth/selectors';
 import { signOut } from '@/features/auth/slice';
+import { ProfileCard } from '@/features/profile/components/ProfileCard';
+import { useProfile } from '@/features/profile/hooks/useProfileData';
 import { SyncStatusCard } from '@/features/sync/components/SyncStatusCard';
 import { selectSyncSummary } from '@/features/sync/selectors';
 import { queueUpsert, retryDead, runSync } from '@/features/sync/slice';
@@ -24,9 +26,17 @@ export default function MoreScreen() {
   const user = useAppSelector(selectUser);
   const offline = useAppSelector((s) => s.auth.offline);
   const sync = useAppSelector(selectSyncSummary);
+  const { profile } = useProfile();
 
   return (
     <Screen title="More" subtitle="Routine, tasks, money and settings arrive from F04.">
+      <ProfileCard
+        email={user?.email ?? null}
+        startWeightKg={profile?.start_weight_kg ?? null}
+        goalWeightKg={profile?.goal_weight_kg ?? null}
+        onboardedAt={profile?.onboarded_at ?? null}
+        onPress={() => router.push('/settings/profile')}
+      />
       <Card kicker="Appearance" title="Theme">
         <SegmentedToggle
           accessibilityLabel="Theme"

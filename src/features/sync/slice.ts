@@ -3,6 +3,7 @@ import { createAsyncThunk, createSlice, type PayloadAction } from '@reduxjs/tool
 import type { AuthDeps, AuthState } from '@/features/auth/slice';
 import { newClientId } from '@/lib/ids';
 import {
+  addRecent,
   classifyError,
   dueMutations,
   enqueue,
@@ -11,6 +12,7 @@ import {
   markSynced,
   type Mutation,
   type NewWrite,
+  pruneRecent,
   resetNetworkBackoff,
   reviveDead,
   type Row,
@@ -19,6 +21,8 @@ import {
 
 export type SyncState = {
   queue: Mutation[];
+  /** Pushed writes still overlaying server data until the next read of their table. */
+  recent: Mutation[];
   dead: Mutation[];
   lastSyncedAt: number | null;
   syncing: boolean;
@@ -29,6 +33,7 @@ export type SyncState = {
 
 export const initialSyncState: SyncState = {
   queue: [],
+  recent: [],
   dead: [],
   lastSyncedAt: null,
   syncing: false,
@@ -36,7 +41,7 @@ export const initialSyncState: SyncState = {
   lastError: null,
 };
 
-type SyncRoot = { sync: SyncState; auth: AuthState };
+export type SyncRoot = { sync: SyncState; auth: AuthState };
 type ThunkConfig = { extra: AuthDeps; state: SyncRoot; rejectValue: string };
 
 const clock = (deps: AuthDeps) => deps.now?.() ?? Date.now();
@@ -90,7 +95,9 @@ export const runSync = createAsyncThunk<
       if (!next) break;
       const error = await push(client, next, clock(extra));
       if (!error) {
-        dispatch(syncSlice.actions.pushed({ client_id: next.client_id, rev: next.rev }));
+        dispatch(
+          syncSlice.actions.pushed({ client_id: next.client_id, rev: next.rev, at: clock(extra) }),
+        );
         pushed++;
         continue;
       }
@@ -187,8 +194,14 @@ export const syncSlice = createSlice({
     enqueued(state, { payload }: PayloadAction<{ write: NewWrite; now: number }>) {
       state.queue = enqueue(state.queue, payload.write, payload.now);
     },
-    pushed(state, { payload }: PayloadAction<{ client_id: string; rev: number }>) {
+    pushed(state, { payload }: PayloadAction<{ client_id: string; rev: number; at: number }>) {
+      const m = state.queue.find((q) => q.client_id === payload.client_id && q.rev === payload.rev);
       state.queue = markSynced(state.queue, payload.client_id, payload.rev);
+      if (m) state.recent = addRecent(state.recent ?? [], m, payload.at);
+    },
+    /** A server read of `table` started at `startedAt` — it already contains older pushes. */
+    serverRead(state, { payload }: PayloadAction<{ table: SyncTable; startedAt: number }>) {
+      state.recent = pruneRecent(state.recent ?? [], payload.table, payload.startedAt);
     },
     failed(
       state,
@@ -243,4 +256,4 @@ export const syncSlice = createSlice({
   },
 });
 
-export const { connectivityChanged, retryDead } = syncSlice.actions;
+export const { connectivityChanged, retryDead, serverRead } = syncSlice.actions;

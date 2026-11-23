@@ -19,8 +19,8 @@ describe('store', () => {
     expect(makeStore().getState()).toHaveProperty('api');
   });
 
-  it('persists only the local app slice', () => {
-    expect(persistConfig.whitelist).toEqual(['app']);
+  it('persists the app slice, the API cache and the onboarding draft', () => {
+    expect(persistConfig.whitelist).toEqual(['app', 'api', 'profile']);
     expect(persistConfig.key).toBe('lifeos-root');
   });
 });

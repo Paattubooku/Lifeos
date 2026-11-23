@@ -51,3 +51,12 @@ jest.mock('@react-native-community/netinfo', () =>
 jest.mock('expo-crypto', () => ({
   randomUUID: () => globalThis.crypto.randomUUID(),
 }));
+
+jest.mock('expo-notifications', () => ({
+  getPermissionsAsync: jest.fn(() =>
+    Promise.resolve({ granted: false, canAskAgain: true, status: 'undetermined' }),
+  ),
+  requestPermissionsAsync: jest.fn(() =>
+    Promise.resolve({ granted: true, canAskAgain: true, status: 'granted' }),
+  ),
+}));

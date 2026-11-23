@@ -13,11 +13,13 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import * as SystemUI from 'expo-system-ui';
 import { useEffect, useMemo } from 'react';
+import { ActivityIndicator, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Provider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
 
 import { useAuthListener } from '@/features/auth/hooks/useAuthListener';
+import { useOnboardingGate } from '@/features/profile/hooks/useOnboardingGate';
 import { useSyncWorker } from '@/features/sync/hooks/useSyncWorker';
 import { useAppSelector } from '@/store';
 import { persistor, store } from '@/store/root';
@@ -66,6 +68,7 @@ function Navigator() {
   useSyncWorker();
   const status = useAppSelector((s) => s.auth.status);
   const signedIn = status === 'signedIn';
+  const gate = useOnboardingGate(signedIn);
 
   // Keep the splash up until fonts are in and the stored session is restored.
   useEffect(() => {
@@ -95,14 +98,30 @@ function Navigator() {
     <NavThemeProvider value={navTheme}>
       <SnackbarProvider>
         <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
-        {status === 'restoring' ? null : (
+        {status === 'restoring' ? null : signedIn && gate === 'loading' ? (
+          <View
+            style={{
+              flex: 1,
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: colors.canvas,
+            }}
+            accessibilityLabel="Loading your profile"
+          >
+            <ActivityIndicator color={colors.accents.primary.base} />
+          </View>
+        ) : (
           <Stack
             screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.canvas } }}
           >
             <Stack.Screen name="index" />
-            <Stack.Protected guard={signedIn}>
+            <Stack.Protected guard={signedIn && gate === 'done'}>
               <Stack.Screen name="(tabs)" />
+              <Stack.Screen name="settings/profile" />
               <Stack.Screen name="dev/gallery" />
+            </Stack.Protected>
+            <Stack.Protected guard={signedIn && gate === 'onboard'}>
+              <Stack.Screen name="onboarding/[step]" />
             </Stack.Protected>
             <Stack.Protected guard={!signedIn}>
               <Stack.Screen name="(auth)/sign-in" />

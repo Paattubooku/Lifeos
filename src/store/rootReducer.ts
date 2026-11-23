@@ -1,0 +1,21 @@
+import { combineReducers } from '@reduxjs/toolkit';
+import { persistReducer } from 'redux-persist';
+
+import { authSlice } from '@/features/auth/slice';
+import { profileSlice } from '@/features/profile/slice';
+import { syncSlice } from '@/features/sync/slice';
+
+import { appSlice } from './appSlice';
+import { baseApi } from './baseApi';
+import { syncPersistConfig } from './syncPersist';
+
+/** Own module so `persist.ts` can type its config without importing the store (no type cycle). */
+export const rootReducer = combineReducers({
+  [appSlice.name]: appSlice.reducer,
+  [authSlice.name]: authSlice.reducer,
+  [syncSlice.name]: persistReducer(syncPersistConfig, syncSlice.reducer),
+  [profileSlice.name]: profileSlice.reducer,
+  [baseApi.reducerPath]: baseApi.reducer,
+});
+
+export type RootReducerState = ReturnType<typeof rootReducer>;

@@ -2,6 +2,40 @@
 
 One entry per feature, newest first: feature ID, what was built, how PTR verifies it on the phone, known gaps.
 
+## F03 — Onboarding and profile · 2026-11-23 · done
+
+**Built**
+
+- **Onboarding** (`/onboarding/1…4`, designs Onboarding 1–4): Body (height, current weight, goal weight; to-lose / BMI / "≈ 32 weeks (early Jul 2027)" at 0.5 kg/week), Day (wake, sleep, phone-off on one time picker; sleep-window line; blocks Continue if wake = sleep, the night is under 4 h, or phone-off is more than 4 h before sleep), Targets (water, kcal, protein, coffee prefilled from the seed; maintenance estimate and "~350 kcal deficit ≈ 0.3 kg/week" banner with a one-tap "Use 2,000"), Notifications + summary ("Allow notifications" / "Not now"). Back / dots / "n/4" header; the in-progress answers survive an app kill.
+- **Finishing** (AC1) writes through the sync queue: profile fields that changed + `start_weight_kg` + `onboarded_at`; today's `weight_log`; today's `day_log` with today's template (Workday/Weekend/Rest by weekday); wake block moved if wake changed; program `start_date` = first Monday on/after today. Then lands on Today.
+- **Routing gate**: signed in + `onboarded_at` empty → onboarding; else tabs. Uses the queued profile write, so it works offline and doesn't bounce back to onboarding before the push lands.
+- **Settings → Profile** (`/settings/profile`, opened from the new profile card at the top of More): the same three sections, a Reminders card ("Reminders off — enable" → asks the OS, or opens system Settings after a "Don't allow" — AC2), Save ("No changes" when nothing changed) → snackbar "Profile saved". Changing **wake time updates only the `wake` block in every template** (AC3); sleep / phone-off don't move blocks. A new current weight logs today's weight (re-using today's row if any).
+- First data reads: `src/features/profile/api.ts` (RTK Query: profile, routine, today's day_log / weight, latest weight, active program), cached offline (RTK Query cache persisted), merged with unsynced queued writes so the UI shows your edits immediately. A short "recently pushed" overlay hides the gap between a push and the next read.
+- Pure logic with tests: `features/body/lib/energy.ts` (Mifflin BMR, TDEE, BMI, 7,700 kcal/kg), `features/profile/lib/{targets,plan,gate}.ts`, `features/routine/lib/templates.ts` (which template a date uses). `src/ui/InlineStepper`. `src/lib/notifications.ts`.
+- Fixes found by the new tests: the onboarding draft could be re-created right after finishing; Settings could re-log an untouched weight; the Redux store's state type had silently become `any` since F02 (redux-persist + thunk extra argument) — now fully typed (`src/store/rootReducer.ts`, `syncPersist.ts` split out).
+
+**Checks run here**
+
+- `typecheck` ✅ · `lint` ✅ · `test` ✅ 338 tests; coverage 97% statements, every `lib/`, selectors and slice file ≥ 90%.
+- AC1 / AC2 / AC3 each have screen tests (`OnboardingScreen.test.tsx`, `ProfileSettingsScreen.test.tsx`) plus pure tests in `plan.test.ts`.
+- `test:db` ✅ · Android bundle export ✅.
+
+**How PTR verifies on the phone**
+
+1. `git pull`, `npm install`, `npm start`, open in Expo Go, sign in. Your profile has no `onboarded_at` yet, so onboarding opens.
+2. Step 1: change current weight (e.g. 90.8). Step 2: tap Wake, set 5:15 am. Step 3: try "Use 2,000". Step 4: tap **Not now** → you land on Today.
+3. More → the card at the top ("ptr · 90.8 → 75 kg · day 1 · single account") → **Profile**: the Reminders card says **"Reminders off — enable"** (AC2). Tap it to allow notifications → "Reminders on".
+4. In Profile change Wake to 5:30 am → **Save** → "Profile saved".
+5. Supabase → Table Editor: `profile.onboarded_at` set and `wake_time` 05:30; `weight_log` one row for today; `day_log` one row for today (AC1); `routine_block` where `kind = 'wake'`: 3 rows (one per template) at 05:30, all other blocks unchanged (AC3); `workout_program.start_date` = next Monday.
+6. Kill the app and reopen → goes straight to Today (no onboarding again).
+
+**Known gaps / left on purpose vs the designs**
+
+- Today, Routine etc. are still placeholders (F04/F05), so "lands on Today" lands on the placeholder tab.
+- The permission is only asked; reminders are scheduled in F15.
+- Coffee hint says "Max 10 a day" (PRD cap) where the design says 8; summary on step 4 is a plain list rather than the design's illustration card; no avatar photo (initial letter only).
+- Height/weight are steppers (design), no free typing; birth year, sex and activity factor keep their seeded values (not in the PRD's 4 steps).
+
 ## F02 — Offline storage and sync engine · 2026-11-23 · done
 
 **Built**
@@ -129,4 +163,4 @@ One entry per feature, newest first: feature ID, what was built, how PTR verifie
 - Placeholder app icon/splash (Expo defaults) and bundle id `app.lifeos.ptr`.
 - Open questions from `REFERENCE_NOTES.md` (todo sort order, weight-trend insight, golden fixtures) still default as proposed until PTR answers.
 
-_Next: F03 (onboarding and profile). Waiting for PTR's "next"._
+_Next: F04 (routine templates and editor), milestone M1. Waiting for PTR's "next"._

@@ -29,6 +29,8 @@ export type Mutation = {
   rev: number;
   last_error?: string;
   last_error_kind?: ErrorKind;
+  /** Set once pushed (kept briefly as an overlay until the next server read). */
+  pushed_at?: number;
 };
 
 export type ErrorKind = 'network' | 'retry' | 'permanent';
@@ -100,6 +102,27 @@ export function enqueue(queue: readonly Mutation[], write: NewWrite, now: number
     rev: existing.rev + 1,
   };
   return next;
+}
+
+export const RECENT_LIMIT = 300;
+
+/**
+ * Pushed writes stay visible as an overlay until a server read that started
+ * after the push replaces them — otherwise the UI would flash the old value
+ * between "pushed" and "refetched".
+ */
+export function addRecent(recent: readonly Mutation[], m: Mutation, at: number): Mutation[] {
+  const rest = recent.filter((r) => !(r.client_id === m.client_id && r.table === m.table));
+  return [...rest, { ...m, pushed_at: at }].slice(-RECENT_LIMIT);
+}
+
+/** Drops overlay entries for `table` that a server read started at `startedAt` already includes. */
+export function pruneRecent(
+  recent: readonly Mutation[],
+  table: SyncTable,
+  startedAt: number,
+): Mutation[] {
+  return recent.filter((r) => !(r.table === table && (r.pushed_at ?? 0) <= startedAt));
 }
 
 /** Writes ready to push for `owner`, oldest first. */

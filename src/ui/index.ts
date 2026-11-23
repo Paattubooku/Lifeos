@@ -27,3 +27,4 @@ export { TabBar, TabBarItems, TABS, TAB_BAR_HEIGHT, tabBarClearance } from './Ta
 export { Screen, type ScreenProps } from './Screen';
 export { haptics } from './haptics';
 export { TextField, type TextFieldProps } from './TextField';
+export { InlineStepper, type InlineStepperProps } from './InlineStepper';
