@@ -12,3 +12,4 @@ Ideas parked out of scope. Nothing here gets built until v1 (F00–F24) is done 
 - One-line template description in the Switch-template sheet ("Workout, packed lunch, phone away 9:30 pm").
 - Per-template meal plans (Workday / Weekend / Rest day tabs, "Copy Workday plan" from the Food-Empty design): needs a template ↔ meal plan link.
 - Pick an existing dish from the library to add to another meal; drag-to-reorder dishes in the plan editor.
+- Shopping list (PRD F10) — dropped by PTR on 2026-11-23. If ever revived: `dish.buy` and `dish.shopping_items` columns still exist; a dish-level list (no ingredient entry) would work with today's data.

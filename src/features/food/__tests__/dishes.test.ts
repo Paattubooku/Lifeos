@@ -12,7 +12,6 @@ import {
   planRestoreDish,
   planRestoreItems,
   planSetGroup,
-  shoppingItems,
   validateDish,
 } from '../lib/dishes';
 
@@ -21,19 +20,12 @@ const dish = (id: string) => plan.dishes.find((d) => d.id === id)!;
 const item = (id: string) => plan.items.find((i) => i.id === id)!;
 
 describe('dish drafts', () => {
-  it('draftFromDish, shoppingItems', () => {
+  it('draftFromDish', () => {
     expect(draftFromDish(dish('d-lunch-chicken-curry'))).toMatchObject({
       name: 'Chicken curry',
       kcal: 300,
       protein_g: 46,
-      buy: 'daily',
-      shopping_items: [],
     });
-    expect(draftFromDish({ ...dish('d-lunch-curd'), buy: 'odd' }).buy).toBe('daily');
-    expect(shoppingItems([{ item: 'Onion', qty: 1 }, null, 'x'])).toEqual([
-      { item: 'Onion', qty: '1', unit: '' },
-    ]);
-    expect(shoppingItems('nope')).toEqual([]);
   });
 
   it('validateDish', () => {
@@ -67,10 +59,6 @@ describe('saving dishes', () => {
       ...EMPTY_DISH,
       name: ' Upma ',
       kcal: 250,
-      shopping_items: [
-        { item: 'Rava', qty: '50', unit: 'g' },
-        { item: ' ', qty: '', unit: '' },
-      ],
     };
     expect(
       planDishSave(null, draft, {
@@ -92,8 +80,6 @@ describe('saving dishes', () => {
           protein_g: 0,
           carbs_g: 0,
           fat_g: 0,
-          buy: 'daily',
-          shopping_items: [{ item: 'Rava', qty: '50', unit: 'g' }],
         },
       },
       {
@@ -127,7 +113,7 @@ describe('saving dishes', () => {
     expect(
       planDishSave(
         d,
-        { ...draftFromDish(d), kcal: 260, buy: 'weekly' },
+        { ...draftFromDish(d), kcal: 260 },
         { newDishId: '', newItemId: '', items: [] },
       ),
     ).toEqual([
@@ -135,7 +121,7 @@ describe('saving dishes', () => {
         op: 'upsert',
         table: 'dish',
         clientId: 'd-breakfast-idli-c',
-        row: { kcal: 260, buy: 'weekly' },
+        row: { kcal: 260 },
       },
     ]);
   });

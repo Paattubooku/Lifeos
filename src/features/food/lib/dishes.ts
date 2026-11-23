@@ -2,9 +2,6 @@ import type { Change } from '@/features/routine/lib/changes';
 
 import { type DishRow, type ItemRow, num } from './plan';
 
-export type ShoppingItem = { item: string; qty: string; unit: string };
-export type Buy = 'daily' | 'weekly' | 'pantry';
-
 export type DishDraft = {
   name: string;
   serving_text: string;
@@ -12,26 +9,7 @@ export type DishDraft = {
   protein_g: number;
   carbs_g: number;
   fat_g: number;
-  buy: Buy;
-  shopping_items: ShoppingItem[];
 };
-
-export const BUY_OPTIONS: readonly { value: Buy; label: string }[] = [
-  { value: 'daily', label: 'Daily' },
-  { value: 'weekly', label: 'Weekly' },
-  { value: 'pantry', label: 'Pantry' },
-];
-
-export function shoppingItems(v: unknown): ShoppingItem[] {
-  if (!Array.isArray(v)) return [];
-  return v
-    .filter((x): x is Record<string, unknown> => typeof x === 'object' && x !== null)
-    .map((x) => ({
-      item: String(x.item ?? ''),
-      qty: String(x.qty ?? ''),
-      unit: String(x.unit ?? ''),
-    }));
-}
 
 export function draftFromDish(d: DishRow): DishDraft {
   return {
@@ -41,8 +19,6 @@ export function draftFromDish(d: DishRow): DishDraft {
     protein_g: num(d.protein_g),
     carbs_g: num(d.carbs_g),
     fat_g: num(d.fat_g),
-    buy: (['daily', 'weekly', 'pantry'].includes(d.buy) ? d.buy : 'daily') as Buy,
-    shopping_items: shoppingItems(d.shopping_items),
   };
 }
 
@@ -53,8 +29,6 @@ export const EMPTY_DISH: DishDraft = {
   protein_g: 0,
   carbs_g: 0,
   fat_g: 0,
-  buy: 'daily',
-  shopping_items: [],
 };
 
 export function validateDish(d: DishDraft): string | null {
@@ -96,10 +70,6 @@ function dishRow(d: DishDraft) {
     protein_g: d.protein_g,
     carbs_g: d.carbs_g,
     fat_g: d.fat_g,
-    buy: d.buy,
-    shopping_items: d.shopping_items
-      .filter((s) => s.item.trim())
-      .map((s) => ({ item: s.item.trim(), qty: s.qty.trim(), unit: s.unit.trim() })),
   };
 }
 

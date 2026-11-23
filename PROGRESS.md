@@ -2,6 +2,15 @@
 
 One entry per feature, newest first: feature ID, what was built, how PTR verifies it on the phone, known gaps.
 
+## F10 — Shopping list · 2026-11-23 · dropped at PTR's request
+
+PTR decided not to build F10 ("I really don't want this feature"). Nothing in the build order depends on it.
+
+- Removed the two F10-only parts that F08 had added to the dish editor: **Buy frequency** and **Shopping items** (UI, logic, tests). The dish editor now edits name, serving, kcal / protein / carbs / fat and the swap group.
+- Kept the database columns `dish.buy` and `dish.shopping_items` untouched (dropping them would be a destructive migration on existing data). The app no longer reads or writes them; new dishes get the column defaults.
+- Checks: `typecheck` ✅ · `lint` ✅ · `test` ✅ 569 · `test:db` ✅ · iOS bundle ✅.
+- Next in the build order: **F15 (notifications)**.
+
 ## F09 — Off-plan food and coffee · 2026-11-23 · done
 
 **Built**
@@ -42,7 +51,7 @@ _M1's 7-day trial was skipped at PTR's request ("I don't have time to test it fo
 - **Swap sheet** (Food-SwapSheet): alternatives with deltas and "Most protein", **Today only** or **Make default** (updates `meal_item.is_default`), "Breakfast becomes 724 kcal · 40 g. Day plan: 2,309 kcal (109 over)." Swapping an eaten dish rewrites its log; before eating, the choice is today's plan only.
 - **Insights** `food/lib/insights.ts` (port of Food-Tracker `api/insights.js` with the PRD thresholds): kcal over target (danger), ≤ 200 kcal left before dinner (warning), protein < 70% after 16:30 (warning, suggests eggs / chicken / paneer / sundal), carbs > 55% of kcal (info), fat > 35% (warning); macro rules only above 200 kcal; max 2 chips, most serious first.
 - **Meal plan editor** (More → Meal plan, or "Plan" on the Food tab; Food-PlanEditor): plan kcal / protein vs targets, every meal's dishes by swap group (default first, "swaps" mark), remove from meal with Undo, **Add dish**.
-- **Dish editor** `/dish/[id]` (Food-DishEditor): name, serving, kcal / protein / carbs / fat with a 4/4/9 macro check ("Macros add to 334 kcal. Matches 330 within 2%"), buy frequency, swap group (pick or create), shopping items, Save, Delete with Undo. Changes apply from today on; past logs keep their stored kcal / protein.
+- **Dish editor** `/dish/[id]` (Food-DishEditor): name, serving, kcal / protein / carbs / fat with a 4/4/9 macro check ("Macros add to 334 kcal. Matches 330 within 2%"), swap group (pick or create), Save, Delete with Undo. (Buy frequency and shopping items were removed when F10 was dropped.) Changes apply from today on; past logs keep their stored kcal / protein.
 - **Today**: meal rows show the plan's dishes; the NOW card for a meal block offers **Eaten as planned**, which ticks the block (auto-complete).
 
 **Checks run here**
@@ -66,7 +75,7 @@ _M1's 7-day trial was skipped at PTR's request ("I don't have time to test it fo
 **Known gaps / left on purpose vs the designs**
 
 - One meal plan for every day: the designs' Workday / Weekend / Rest day plan tabs and "Copy Workday plan" need a template ↔ plan link that isn't in the PRD schema (LATER.md).
-- Coffee chip and "Off-plan" are F09; the shopping-cart button is F10.
+- Coffee chip and "Off-plan" are F09; the shopping-cart button was F10 (dropped).
 - "Make this the default" lives in the swap sheet, not as a toggle + Save at the bottom of meal detail.
 - Dishes are added by creating them (from a meal); picking an existing dish from the library for another meal isn't built. Drag-to-reorder dishes isn't built.
 - Dish serving is free text (the design's separate number + g/ml/pcs unit isn't in the schema).
@@ -374,4 +383,4 @@ _M1's 7-day trial was skipped at PTR's request ("I don't have time to test it fo
 - Placeholder app icon/splash (Expo defaults) and bundle id `app.lifeos.ptr`.
 - Open questions from `REFERENCE_NOTES.md` (todo sort order, weight-trend insight, golden fixtures) still default as proposed until PTR answers.
 
-_Next: F10 (shopping list). Waiting for PTR's "next"._
+_Next: F15 (notifications). F10 was dropped. Waiting for PTR's "next"._

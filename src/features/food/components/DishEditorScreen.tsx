@@ -1,29 +1,15 @@
 import { useRouter } from 'expo-router';
-import { Check, Plus, TriangleAlert, X } from 'lucide-react-native';
+import { Check, TriangleAlert } from 'lucide-react-native';
 import { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { applyChanges } from '@/features/routine/slice';
 import { newClientId } from '@/lib/ids';
 import { useAppDispatch } from '@/store';
-import {
-  Banner,
-  Button,
-  Card,
-  Chip,
-  EmptyState,
-  Screen,
-  SegmentedToggle,
-  Text,
-  TextField,
-  useSnackbar,
-  useTheme,
-} from '@/ui';
+import { Banner, Button, Card, Chip, EmptyState, Screen, Text, TextField, useSnackbar } from '@/ui';
 
 import { useMealPlan } from '../hooks/useFood';
 import {
-  BUY_OPTIONS,
-  type Buy,
   type DishDraft,
   draftFromDish,
   EMPTY_DISH,
@@ -33,7 +19,6 @@ import {
   planDishSave,
   planRestoreDish,
   planSetGroup,
-  type ShoppingItem,
   validateDish,
 } from '../lib/dishes';
 import { SLOT_NAME } from '../lib/plan';
@@ -60,7 +45,6 @@ export function DishEditorScreen({
   const router = useRouter();
   const dispatch = useAppDispatch();
   const showSnackbar = useSnackbar();
-  const { colors } = useTheme();
   const { plan } = useMealPlan();
   const dish = id === 'new' ? null : (plan.dishes.find((d) => d.id === id) ?? null);
   const item = itemId ? (plan.items.find((i) => i.id === itemId) ?? null) : null;
@@ -71,8 +55,6 @@ export function DishEditorScreen({
   const [form, setForm] = useState({
     name: start.name,
     serving_text: start.serving_text,
-    buy: start.buy,
-    shopping: start.shopping_items,
     nums: Object.fromEntries(NUMS.map((n) => [n.key, dish ? String(start[n.key]) : ''])) as Record<
       NumKey,
       string
@@ -80,7 +62,6 @@ export function DishEditorScreen({
   });
   const [group, setGroup] = useState(item?.swap_group ?? groups[0] ?? 'main');
   const [newGroup, setNewGroup] = useState('');
-  const [newItem, setNewItem] = useState<ShoppingItem>({ item: '', qty: '', unit: '' });
   const [busy, setBusy] = useState(false);
 
   const back = { label: 'Meal plan', onPress: () => router.back() };
@@ -99,8 +80,6 @@ export function DishEditorScreen({
   const draft: DishDraft = {
     name: form.name,
     serving_text: form.serving_text,
-    buy: form.buy,
-    shopping_items: form.shopping,
     kcal: parse(form.nums.kcal),
     protein_g: parse(form.nums.protein_g),
     carbs_g: parse(form.nums.carbs_g),
@@ -206,15 +185,6 @@ export function DishEditorScreen({
         ) : null}
       </Card>
 
-      <Card kicker="Buy frequency">
-        <SegmentedToggle<Buy>
-          accessibilityLabel="Buy frequency"
-          options={BUY_OPTIONS}
-          value={form.buy}
-          onChange={(buy) => setForm((f) => ({ ...f, buy }))}
-        />
-      </Card>
-
       {meal ? (
         <Card kicker="Swap group">
           <Text variant="caption" tone="secondary">
@@ -244,64 +214,6 @@ export function DishEditorScreen({
         </Card>
       ) : null}
 
-      <Card kicker="Shopping items · per serving" padding={14}>
-        {form.shopping.map((s, i) => (
-          <View key={`${s.item}-${i}`} style={[styles.shop, { borderTopColor: colors.hairline }]}>
-            <Text variant="body" style={styles.flex}>
-              {s.item}
-            </Text>
-            <Text variant="body" weight={700}>
-              {[s.qty, s.unit].filter(Boolean).join(' ')}
-            </Text>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={`Remove ${s.item}`}
-              onPress={() =>
-                setForm((f) => ({ ...f, shopping: f.shopping.filter((_, j) => j !== i) }))
-              }
-              style={styles.x}
-            >
-              <X size={16} color={colors.textSecondary} strokeWidth={2} />
-            </Pressable>
-          </View>
-        ))}
-        <View style={styles.addRow}>
-          <View style={styles.flex2}>
-            <TextField
-              label="Item"
-              value={newItem.item}
-              onChangeText={(item) => setNewItem((n) => ({ ...n, item }))}
-            />
-          </View>
-          <View style={styles.flex}>
-            <TextField
-              label="Qty"
-              value={newItem.qty}
-              onChangeText={(qty) => setNewItem((n) => ({ ...n, qty }))}
-            />
-          </View>
-          <View style={styles.flex}>
-            <TextField
-              label="Unit"
-              value={newItem.unit}
-              onChangeText={(unit) => setNewItem((n) => ({ ...n, unit }))}
-            />
-          </View>
-        </View>
-        <Button
-          variant="ghost"
-          size="sm"
-          icon={Plus}
-          label="Add item"
-          accessibilityLabel="Add shopping item"
-          disabled={!newItem.item.trim()}
-          onPress={() => {
-            setForm((f) => ({ ...f, shopping: [...f.shopping, newItem] }));
-            setNewItem({ item: '', qty: '', unit: '' });
-          }}
-        />
-      </Card>
-
       <View style={styles.actions}>
         {dish ? (
           <Button
@@ -327,10 +239,6 @@ const styles = StyleSheet.create({
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   cell: { width: '47%' },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  shop: { flexDirection: 'row', alignItems: 'center', gap: 8, borderTopWidth: 1, minHeight: 44 },
-  x: { width: 36, height: 44, alignItems: 'center', justifyContent: 'center' },
-  addRow: { flexDirection: 'row', gap: 8 },
   flex: { flex: 1, minWidth: 0 },
-  flex2: { flex: 2, minWidth: 0 },
   actions: { flexDirection: 'row', gap: 12 },
 });

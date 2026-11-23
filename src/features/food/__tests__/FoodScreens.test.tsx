@@ -228,7 +228,7 @@ describe('Dish editor', () => {
     expect(mockRouter.back).toHaveBeenCalled();
   });
 
-  it('new dish in a new swap group with a shopping item; validation', async () => {
+  it('new dish in a new swap group; validation; no shopping fields (F10 dropped)', async () => {
     const { store } = await todayStore();
     await renderWithStore(store, <DishEditorScreen id="new" mealId="m-snack" />);
     expect(screen.getByRole('button', { name: 'Add dish' })).toBeDisabled();
@@ -239,11 +239,8 @@ describe('Dish editor', () => {
     await fireEvent.changeText(screen.getByLabelText('Protein (g)'), '0.5');
     await fireEvent.changeText(screen.getByLabelText('Fat (g)'), '0');
     await fireEvent.changeText(screen.getByLabelText('New group'), 'sweet');
-    await fireEvent.changeText(screen.getByLabelText('Item'), 'Dates');
-    await fireEvent.changeText(screen.getByLabelText('Qty'), '3');
-    await fireEvent.press(screen.getByRole('button', { name: 'Add shopping item' }));
-    expect(screen.getByRole('button', { name: 'Remove Dates' })).toBeOnTheScreen();
-    await fireEvent.press(screen.getByRole('radio', { name: 'Weekly' }));
+    expect(screen.queryByLabelText('Buy frequency')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Add shopping item' })).toBeNull();
     await press('Add dish');
     const [dish] = writes(store, 'dish');
     expect(dish?.row).toMatchObject({
@@ -251,9 +248,9 @@ describe('Dish editor', () => {
       kcal: 70,
       protein_g: 0.5,
       carbs_g: 18,
-      buy: 'weekly',
-      shopping_items: [{ item: 'Dates', qty: '3', unit: '' }],
     });
+    expect(dish?.row).not.toHaveProperty('buy');
+    expect(dish?.row).not.toHaveProperty('shopping_items');
     expect(writes(store, 'meal_item')[0]?.row).toMatchObject({
       meal_id: 'm-snack',
       swap_group: 'sweet',

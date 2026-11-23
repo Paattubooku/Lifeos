@@ -17,8 +17,6 @@ export type DishRow = {
   protein_g: number | string;
   carbs_g: number | string;
   fat_g: number | string;
-  buy: string;
-  shopping_items: unknown;
   deleted_at?: string | null;
 };
 export type MealRow = {

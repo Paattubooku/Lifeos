@@ -65,7 +65,7 @@ export function seedMealPlan(): MealPlanFull {
   }));
   const dishes: MealPlanFull['dishes'] = [];
   const items: MealPlanFull['items'] = [];
-  SEED.forEach(([slot, group, name, serving, kcal, p, c, f, buy, isDefault], i) => {
+  SEED.forEach(([slot, group, name, serving, kcal, p, c, f, , isDefault], i) => {
     const key = `${slot}-${slug(name)}`;
     dishes.push({
       id: `d-${key}`,
@@ -76,8 +76,6 @@ export function seedMealPlan(): MealPlanFull {
       protein_g: p,
       carbs_g: c,
       fat_g: f,
-      buy,
-      shopping_items: [],
       deleted_at: null,
     });
     items.push({
