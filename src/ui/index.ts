@@ -8,7 +8,7 @@ export { StatTile, type StatTileProps } from './StatTile';
 export { Ring, TripleRing, type RingProps, type TripleRingProps } from './Ring';
 export { ProgressBar, type ProgressBarProps } from './ProgressBar';
 export { Sheet, type SheetProps, useSheetClose } from './Sheet';
-export { Chip, StatusChip, type ChipProps, type StatusChipProps } from './Chip';
+export { Chip, StatusChip, type ChipProps, type StatusChipProps, type StatusTone } from './Chip';
 export { SegmentedToggle, type SegmentedToggleProps } from './SegmentedToggle';
 export { Banner, type BannerProps } from './Banner';
 export { Checkbox, type CheckboxProps } from './Checkbox';

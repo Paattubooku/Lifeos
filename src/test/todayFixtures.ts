@@ -1,8 +1,10 @@
 import { profileApi } from '@/features/profile/api';
+import { foodApi } from '@/features/food/api';
 import { todayApi } from '@/features/today/api';
 import { waterApi } from '@/features/water/api';
 import { addDays, logicalMoment, weekStart } from '@/lib/dates';
 
+import { seedMealPlan } from './foodFixtures';
 import { base } from './profileFixtures';
 import { routineStore } from './routineFixtures';
 
@@ -71,19 +73,7 @@ export async function todayStore(opts: TodayStoreOptions = {}) {
   await put('getOverridesSince', weekStart(today), [
     { ...base, id: 'o1', client_id: 'o1-c', date: today, workout_day_id: 'd1' },
   ]);
-  await put('getActiveMealPlan', undefined, {
-    meals: [{ id: 'meal-lunch', slot: 'lunch', time: '13:00:00', plan_id: 'plan' }],
-    items: [
-      { meal_id: 'meal-lunch', dish_id: 'rice', swap_group: 'base', is_default: true, sort: 0 },
-      { meal_id: 'meal-lunch', dish_id: 'curry', swap_group: 'curry', is_default: true, sort: 1 },
-      { meal_id: 'meal-lunch', dish_id: 'roti', swap_group: 'base', is_default: false, sort: 2 },
-    ],
-    dishes: [
-      { id: 'rice', name: 'Rice 1 cup', serving_text: '', kcal: 200, protein_g: 4 },
-      { id: 'curry', name: 'Chicken curry', serving_text: '', kcal: 350, protein_g: 30 },
-      { id: 'roti', name: 'Roti', serving_text: '', kcal: 100, protein_g: 3 },
-    ],
-  });
+  await store.dispatch(foodApi.util.upsertQueryData('getMealPlan', undefined, seedMealPlan()));
   await put('getProgramDays', 'prog', {
     days: PROGRAM_DAYS.map(([id, weekday, title, kind]) => ({
       id,

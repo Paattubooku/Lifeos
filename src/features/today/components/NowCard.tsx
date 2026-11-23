@@ -19,6 +19,8 @@ export type NowCardProps = {
   onDone: (row: DayRow) => void;
   onSkip: (row: DayRow) => void;
   onLogWater: (ml: number) => void;
+  /** Meal blocks: log the meal as planned (F08). */
+  onEatMeal?: (row: DayRow) => void;
 };
 
 const clockOf = (min: number) => {
@@ -37,6 +39,7 @@ export function NowCard({
   onDone,
   onSkip,
   onLogWater,
+  onEatMeal,
 }: NowCardProps) {
   const { colors } = useTheme();
   if (!current) {
@@ -82,7 +85,15 @@ export function NowCard({
         {rowText({ ...current, state: 'upcoming' }, ctx, false).sub}
       </Text>
       <View style={styles.actions}>
-        {drink ? (
+        {b.kind === 'meal' && onEatMeal && !current.auto.done ? (
+          <Button
+            icon={Check}
+            label="Eaten as planned"
+            accessibilityLabel={`${title} eaten as planned`}
+            onPress={() => onEatMeal(current)}
+            style={styles.flex}
+          />
+        ) : drink ? (
           <Button
             variant="water"
             icon={Droplet}

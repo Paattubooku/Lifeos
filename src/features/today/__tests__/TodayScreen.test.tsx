@@ -45,7 +45,7 @@ describe('TodayScreen', () => {
     );
     expect(row('Lunch')).toHaveProp(
       'accessibilityLabel',
-      expect.stringContaining('Rice 1 cup, Chicken curry · 550 kcal'),
+      expect.stringContaining('Ponni rice, Chicken curry, Vegetable poriyal, Curd · 700 kcal'),
     );
     expect(row('Evening walk')).toHaveProp(
       'accessibilityLabel',
@@ -198,8 +198,19 @@ describe('TodayScreen', () => {
     await fireEvent.press(screen.getByRole('button', { name: 'Skip Lunch' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Cancel' }));
     expect(screen.queryByTestId('skip-sheet')).toBeNull();
+    // F08: a meal block's NOW action logs the meal as planned, which ticks the block.
     await act(async () => {
-      await fireEvent.press(screen.getByRole('button', { name: 'Mark Lunch done' }));
+      await fireEvent.press(screen.getByRole('button', { name: 'Lunch eaten as planned' }));
+    });
+    expect(queue(store).filter((w) => w.table === 'food_log')).toHaveLength(4);
+    expect(row('Lunch')).toHaveProp('accessibilityLabel', expect.stringContaining(', done.'));
+  });
+
+  it('Mark done on a plain block', async () => {
+    const { store, at } = await todayStore();
+    await renderWithStore(store, <TodayScreen now={at('07:35')} />);
+    await act(async () => {
+      await fireEvent.press(screen.getByRole('button', { name: 'Mark Pack lunch box done' }));
     });
     expect(queue(store)[0]).toMatchObject({ table: 'block_log', row: { status: 'done' } });
   });

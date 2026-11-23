@@ -49,28 +49,6 @@ describe('todayApi', () => {
     expect(calls[1]).toContainEqual(['is', 'deleted_at', null]);
   });
 
-  it('active meal plan: only that plan’s items; none → empty', async () => {
-    const { run } = setup({
-      meal_plan: [{ id: 'p' }],
-      meal: [{ id: 'm1', slot: 'lunch', plan_id: 'p' }],
-      meal_item: [
-        { meal_id: 'm1', dish_id: 'd' },
-        { meal_id: 'other', dish_id: 'd' },
-      ],
-      dish: [{ id: 'd', name: 'Rice' }],
-    });
-    expect((await run('getActiveMealPlan', undefined)).data).toEqual({
-      meals: [{ id: 'm1', slot: 'lunch', plan_id: 'p' }],
-      items: [{ meal_id: 'm1', dish_id: 'd' }],
-      dishes: [{ id: 'd', name: 'Rice' }],
-    });
-    expect((await setup({}).run('getActiveMealPlan', undefined)).data).toEqual({
-      meals: [],
-      items: [],
-      dishes: [],
-    });
-  });
-
   it('program days with exercise names', async () => {
     const { run } = setup({
       workout_day: [{ id: 'd1', weekday: 1, title: 'Upper A' }],

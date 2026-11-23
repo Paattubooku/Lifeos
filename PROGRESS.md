@@ -2,6 +2,46 @@
 
 One entry per feature, newest first: feature ID, what was built, how PTR verifies it on the phone, known gaps.
 
+## F08 — Food: meal plan, logging and swaps · 2026-11-23 · done
+
+_M1's 7-day trial was skipped at PTR's request ("I don't have time to test it for 7 days"); M2 started straight after F07._
+
+**Built**
+
+- **Food tab** (Food-Tab design): "Eaten today" kcal and protein bars with the plan's pace tick ("what the plan says you should have eaten by now"), up to 2 insight chips, "Rest of plan lands the day at … kcal · … g", and the four meal cards — time, status (Eaten / Partly eaten / Now / Upcoming / Not logged), kcal + protein, each dish with a tick, its serving, "ate ½", a swap button where the group has alternatives, and **Eaten as planned** (one `food_log` per dish). Every change has Undo.
+- **Meal detail** `/meal/[slot]` (Food-MealDetail): calories / protein / dishes-ticked tiles, each swap group with the chosen dish (tick), its alternatives with "+90 kcal / +6 g", and an **All / ¾ / ½ / None** portion picker per dish (kcal and protein scale; None keeps a 0 row).
+- **Swap sheet** (Food-SwapSheet): alternatives with deltas and "Most protein", **Today only** or **Make default** (updates `meal_item.is_default`), "Breakfast becomes 724 kcal · 40 g. Day plan: 2,309 kcal (109 over)." Swapping an eaten dish rewrites its log; before eating, the choice is today's plan only.
+- **Insights** `food/lib/insights.ts` (port of Food-Tracker `api/insights.js` with the PRD thresholds): kcal over target (danger), ≤ 200 kcal left before dinner (warning), protein < 70% after 16:30 (warning, suggests eggs / chicken / paneer / sundal), carbs > 55% of kcal (info), fat > 35% (warning); macro rules only above 200 kcal; max 2 chips, most serious first.
+- **Meal plan editor** (More → Meal plan, or "Plan" on the Food tab; Food-PlanEditor): plan kcal / protein vs targets, every meal's dishes by swap group (default first, "swaps" mark), remove from meal with Undo, **Add dish**.
+- **Dish editor** `/dish/[id]` (Food-DishEditor): name, serving, kcal / protein / carbs / fat with a 4/4/9 macro check ("Macros add to 334 kcal. Matches 330 within 2%"), buy frequency, swap group (pick or create), shopping items, Save, Delete with Undo. Changes apply from today on; past logs keep their stored kcal / protein.
+- **Today**: meal rows show the plan's dishes; the NOW card for a meal block offers **Eaten as planned**, which ticks the block (auto-complete).
+
+**Checks run here**
+
+- `typecheck` ✅ · `lint` ✅ · `test` ✅ 556 tests; `features/food/lib` 100% coverage.
+- **AC1**: all four meals "Eaten as planned" → 2,219 kcal / 157 g (logic + Food tab test).
+- **AC2**: Idli → Dosa at breakfast → +90 kcal, both as today's plan and on an eaten log.
+- **AC3**: editing a dish's kcal only writes the dish; a past day's totals come from stored log values and don't change.
+- **AC4**: unit tests at every insight threshold (2,200/2,201; 200 kcal; 70% at 16:29/16:30; 55%; 35%; 200 kcal macro floor; 2-chip cap).
+- `test:db` ✅ · iOS bundle export ✅.
+
+**How PTR verifies on the phone**
+
+1. `git pull`, `npm install`, `npm start` → **Food** tab.
+2. Tap **Eaten as planned** on all four meals → about 2,219 kcal / 157 g; the red "… kcal over" chip appears (target 2,200). Undo works on each.
+3. On a meal not yet eaten, tap the ⇄ next to Idli → Dosa → **Swap to Dosa**: breakfast goes up 90 kcal.
+4. Open Lunch → tick dishes, set Ponni rice to ½ → the card says "ate ½" and the totals drop.
+5. More → **Meal plan** → open Chicken curry → change Calories → Save. Yesterday's totals (Supabase `food_log`) keep the old number.
+6. Today → during a meal time the NOW card offers **Eaten as planned**; the meal block ticks itself.
+
+**Known gaps / left on purpose vs the designs**
+
+- One meal plan for every day: the designs' Workday / Weekend / Rest day plan tabs and "Copy Workday plan" need a template ↔ plan link that isn't in the PRD schema (LATER.md).
+- Coffee chip and "Off-plan" are F09; the shopping-cart button is F10.
+- "Make this the default" lives in the swap sheet, not as a toggle + Save at the bottom of meal detail.
+- Dishes are added by creating them (from a meal); picking an existing dish from the library for another meal isn't built. Drag-to-reorder dishes isn't built.
+- Dish serving is free text (the design's separate number + g/ml/pcs unit isn't in the schema).
+
 ## F07 — Water · 2026-11-23 · done
 
 **Built**
@@ -305,4 +345,4 @@ One entry per feature, newest first: feature ID, what was built, how PTR verifie
 - Placeholder app icon/splash (Expo defaults) and bundle id `app.lifeos.ptr`.
 - Open questions from `REFERENCE_NOTES.md` (todo sort order, weight-trend insight, golden fixtures) still default as proposed until PTR answers.
 
-_Next: F08 (food: meal plan, logging and swaps), milestone M2 — after PTR's 7-day M1 trial. Waiting for PTR's "next"._
+_Next: F09 (off-plan food and coffee). Waiting for PTR's "next"._

@@ -11,6 +11,8 @@ import type { Change } from '@/features/routine/lib/changes';
 import { applyChanges } from '@/features/routine/slice';
 import { istClock, isoWeekday, logicalMoment } from '@/lib/dates';
 import { formatClock } from '@/lib/format';
+import { useFood } from '@/features/food/hooks/useFood';
+import { useFoodActions } from '@/features/food/hooks/useFoodActions';
 import { WaterAddSheet } from '@/features/water/components/WaterAddSheet';
 import { WaterCard } from '@/features/water/components/WaterCard';
 import { useLogWater } from '@/features/water/hooks/useLogWater';
@@ -57,6 +59,8 @@ export function TodayScreen({ now: fixedNow }: { now?: number } = {}) {
   const now = fixedNow ?? ticking;
   const t = useToday(now);
   const water = useWater(now);
+  const food = useFood(now);
+  const foodActions = useFoodActions(food);
   const { log: logWaterEntry } = useLogWater();
   useDayScoreSync(t);
   const { streak } = useStreak(t.today, t.plan.blocks.length > 0 ? t.day.score.score : null);
@@ -222,6 +226,10 @@ export function TodayScreen({ now: fixedNow }: { now?: number } = {}) {
             onDone={(row) => onTap(row)}
             onSkip={setSkipping}
             onLogWater={logWater}
+            onEatMeal={(row) => {
+              const meal = food.day.meals.find((m) => m.meal.slot === row.block.ref_slot);
+              if (meal) void foodActions.eatMeal(meal);
+            }}
           />
         )}
 

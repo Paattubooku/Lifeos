@@ -20,7 +20,7 @@ describe('store', () => {
   });
 
   it('persists the app slice, the API cache and the onboarding draft', () => {
-    expect(persistConfig.whitelist).toEqual(['app', 'api', 'profile']);
+    expect(persistConfig.whitelist).toEqual(['app', 'api', 'profile', 'food']);
     expect(persistConfig.key).toBe('lifeos-root');
   });
 });

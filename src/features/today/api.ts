@@ -21,12 +21,6 @@ export type LogsSince = {
   sessions: SessionLogRow[];
 };
 
-export type MealPlanData = {
-  meals: Pick<Tables<'meal'>, 'id' | 'slot' | 'time' | 'plan_id'>[];
-  items: Pick<Tables<'meal_item'>, 'meal_id' | 'dish_id' | 'swap_group' | 'is_default' | 'sort'>[];
-  dishes: Pick<Tables<'dish'>, 'id' | 'name' | 'serving_text' | 'kcal' | 'protein_g'>[];
-};
-
 export type ProgramData = {
   days: Pick<Tables<'workout_day'>, 'id' | 'program_id' | 'weekday' | 'title' | 'kind'>[];
   exercises: { workout_day_id: string; name: string; sort: number }[];
@@ -64,45 +58,6 @@ export const todayApi = baseApi.injectEndpoints({
           unwrapList(await c.from('food_log').select('*').eq('date', date).is('deleted_at', null)),
         ),
       providesTags: ['Food'],
-    }),
-
-    /** The active meal plan's meals, items and dishes (names + kcal for the timeline). */
-    getActiveMealPlan: b.query<MealPlanData, void>({
-      queryFn: (_arg, api) =>
-        supabaseQuery(api, ['meal_plan', 'meal', 'meal_item', 'dish'], async (c) => {
-          const plan = unwrapOne(
-            await c
-              .from('meal_plan')
-              .select('id')
-              .eq('is_active', true)
-              .is('deleted_at', null)
-              .limit(1)
-              .maybeSingle(),
-          );
-          if (!plan) return { meals: [], items: [], dishes: [] };
-          const meals = unwrapList(
-            await c
-              .from('meal')
-              .select('id, slot, time, plan_id')
-              .eq('plan_id', plan.id)
-              .is('deleted_at', null),
-          );
-          const items = unwrapList(
-            await c
-              .from('meal_item')
-              .select('meal_id, dish_id, swap_group, is_default, sort')
-              .is('deleted_at', null),
-          );
-          const dishes = unwrapList(
-            await c
-              .from('dish')
-              .select('id, name, serving_text, kcal, protein_g')
-              .is('deleted_at', null),
-          );
-          const mealIds = new Set(meals.map((m) => m.id));
-          return { meals, items: items.filter((i) => mealIds.has(i.meal_id)), dishes };
-        }),
-      providesTags: ['MealPlan'],
     }),
 
     getProgramDays: b.query<ProgramData, string>({
@@ -222,7 +177,6 @@ export const {
   useGetBlockLogsQuery,
   useGetWaterLogsQuery,
   useGetFoodLogsQuery,
-  useGetActiveMealPlanQuery,
   useGetProgramDaysQuery,
   useGetSessionOnQuery,
   useGetOverridesSinceQuery,

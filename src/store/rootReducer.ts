@@ -2,6 +2,7 @@ import { combineReducers } from '@reduxjs/toolkit';
 import { persistReducer } from 'redux-persist';
 
 import { authSlice } from '@/features/auth/slice';
+import { foodSlice } from '@/features/food/slice';
 import { profileSlice } from '@/features/profile/slice';
 import { syncSlice } from '@/features/sync/slice';
 
@@ -15,6 +16,7 @@ export const rootReducer = combineReducers({
   [authSlice.name]: authSlice.reducer,
   [syncSlice.name]: persistReducer(syncPersistConfig, syncSlice.reducer),
   [profileSlice.name]: profileSlice.reducer,
+  [foodSlice.name]: foodSlice.reducer,
   [baseApi.reducerPath]: baseApi.reducer,
 });
 

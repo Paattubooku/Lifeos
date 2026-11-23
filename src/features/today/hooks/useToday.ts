@@ -1,12 +1,12 @@
 import { useMemo } from 'react';
 
+import { useMealPlan } from '@/features/food/hooks/useFood';
 import { useGetActiveProgramQuery } from '@/features/profile/api';
 import { useLocalWrites, useProfileContext } from '@/features/profile/hooks/useProfileData';
 import { useRoutine } from '@/features/routine/hooks/useRoutine';
 import { addDays, logicalDate, weekStart } from '@/lib/dates';
 
 import {
-  useGetActiveMealPlanQuery,
   useGetBlockLogsQuery,
   useGetFoodLogsQuery,
   useGetOverridesSinceQuery,
@@ -21,8 +21,6 @@ import { sessionFor } from '../lib/program';
 import { nowDayMinutes } from '../lib/timeline';
 import { buildDay } from '../selectors';
 
-const EMPTY_PLAN = { meals: [], items: [], dishes: [] };
-
 /** Everything the Today screen shows for the logical day containing `now`. */
 export function useToday(now: number) {
   const today = logicalDate(now);
@@ -32,7 +30,7 @@ export function useToday(now: number) {
   const blockLogsQ = useGetBlockLogsQuery(today);
   const waterQ = useGetWaterLogsQuery(today);
   const foodQ = useGetFoodLogsQuery(today);
-  const planQ = useGetActiveMealPlanQuery();
+  const { plan: mealPlan } = useMealPlan();
   const programQ = useGetActiveProgramQuery();
   const program = profileCtx.program ?? programQ.data ?? null;
   const daysQ = useGetProgramDaysQuery(program?.id ?? '', { skip: !program?.id });
@@ -79,7 +77,6 @@ export function useToday(now: number) {
     return rows.find((s) => s.date === today) ?? null;
   }, [sleepQ.data, sleepWrites, today]);
 
-  const mealPlan = planQ.data ?? EMPTY_PLAN;
   const programCtx = useMemo(
     () => ({ program, days: daysQ.data?.days ?? [], overrides }),
     [program, daysQ.data, overrides],

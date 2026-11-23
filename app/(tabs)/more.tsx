@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { Clock, Droplet, LogOut, Palette } from 'lucide-react-native';
+import { Clock, Droplet, LogOut, Palette, Soup } from 'lucide-react-native';
 
 import { selectUser } from '@/features/auth/selectors';
 import { signOut } from '@/features/auth/slice';
@@ -58,6 +58,15 @@ export default function MoreScreen() {
           title="Water"
           sub="Today’s log, pace and 7-day stats"
           onPress={() => router.push('/water')}
+        />
+      </Card>
+      <Card padding={14} gap={0}>
+        <MenuRow
+          icon={Soup}
+          accent="calories"
+          title="Meal plan"
+          sub="Dishes, swaps and default meals"
+          onPress={() => router.push('/meal-plan')}
         />
       </Card>
       <Card kicker="Appearance" title="Theme">
