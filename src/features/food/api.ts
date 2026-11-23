@@ -1,6 +1,8 @@
 import { baseApi } from '@/store/baseApi';
 import { supabaseQuery, unwrapList, unwrapOne } from '@/store/supabaseQuery';
 
+import type { Tables } from '@/types/supabase';
+
 import type { MealPlanFull } from './lib/plan';
 
 export const foodApi = baseApi.injectEndpoints({
@@ -31,7 +33,21 @@ export const foodApi = baseApi.injectEndpoints({
         }),
       providesTags: ['MealPlan'],
     }),
+    getCoffeeLogs: b.query<Tables<'coffee_log'>[], string>({
+      queryFn: (date, api) =>
+        supabaseQuery(api, ['coffee_log'], async (c) =>
+          unwrapList(
+            await c
+              .from('coffee_log')
+              .select('*')
+              .eq('date', date)
+              .is('deleted_at', null)
+              .order('logged_at'),
+          ),
+        ),
+      providesTags: ['Food'],
+    }),
   }),
 });
 
-export const { useGetMealPlanQuery } = foodApi;
+export const { useGetMealPlanQuery, useGetCoffeeLogsQuery } = foodApi;

@@ -8,7 +8,8 @@ import { nowDayMinutes } from '@/features/today/lib/timeline';
 import { logicalDate } from '@/lib/dates';
 import { useAppSelector } from '@/store';
 
-import { useGetMealPlanQuery } from '../api';
+import { useGetCoffeeLogsQuery, useGetMealPlanQuery } from '../api';
+import { COFFEE_KCAL } from '../lib/extras';
 import { topInsights } from '../lib/insights';
 import { dayFood, type FoodLogRow, type MealPlanFull } from '../lib/plan';
 import { selectDaySwaps } from '../slice';
@@ -52,9 +53,28 @@ export function useFood(now: number) {
       ),
     [logsQ.data, writes, today],
   );
-  const day = useMemo(() => dayFood(plan, logs, swaps, nowMin), [plan, logs, swaps, nowMin]);
+  const coffeeQ = useGetCoffeeLogsQuery(today);
+  const coffeeWrites = useLocalWrites('coffee_log');
+  const coffees = useMemo(
+    () =>
+      live(mergeKeepingDeleted(coffeeQ.data ?? [], coffeeWrites))
+        .filter((c) => c.date === today)
+        .sort((a, b) => String(a.logged_at).localeCompare(String(b.logged_at))),
+    [coffeeQ.data, coffeeWrites, today],
+  );
+  // Coffee adds 20 kcal each on top of food (PRD §6.3; v_daily_summary.kcal is food only).
+  const day = useMemo(() => {
+    const d = dayFood(plan, logs, swaps, nowMin);
+    const extra = coffees.length * COFFEE_KCAL;
+    return {
+      ...d,
+      eaten: { ...d.eaten, kcal: d.eaten.kcal + extra },
+      projected: { ...d.projected, kcal: d.projected.kcal + extra },
+    };
+  }, [plan, logs, swaps, nowMin, coffees.length]);
 
   const kcalTarget = profile?.kcal_target ?? 2200;
+  const coffeeLimit = profile?.coffee_limit ?? 2;
   const proteinTarget = profile?.protein_target_g ?? 150;
   const dinner = plan.meals.find((m) => m.slot === 'dinner');
   const chips = topInsights({
@@ -65,5 +85,18 @@ export function useFood(now: number) {
     dinnerMin: dinner ? dayMinutes(hhmm(dinner.time)) : 20 * 60,
   });
 
-  return { today, nowMin, plan, logs, swaps, day, kcalTarget, proteinTarget, chips, isLoading };
+  return {
+    today,
+    nowMin,
+    plan,
+    logs,
+    swaps,
+    day,
+    coffees,
+    coffeeLimit,
+    kcalTarget,
+    proteinTarget,
+    chips,
+    isLoading,
+  };
 }

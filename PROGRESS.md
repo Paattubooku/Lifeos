@@ -2,6 +2,35 @@
 
 One entry per feature, newest first: feature ID, what was built, how PTR verifies it on the phone, known gaps.
 
+## F09 — Off-plan food and coffee · 2026-11-23 · done
+
+**Built**
+
+- **Coffee chip** on the Food header (Food-Coffee design): "1/2" — **tap** +1, **hold** −1 (Undo). Grey under the limit, amber at it, red over it; over the limit it still logs, with a warning toast ("Coffee 3 of 2. Over limit — still logged.") and Undo. Each coffee adds 20 kcal / 0 g to the day's totals (PTR's coffee: black, half sugar — DESIGN_NOTES B3). A Coffee card under the meals says "2 of 2. That was the last one." and the rules (A22).
+- **+ Off-plan** (Food-OffPlanSheet): what you ate (required), calories (100 / 250 / 500 chips or ±10 stepper), protein (optional), meal slot (Breakfast / Lunch / Snack / Dinner / Other; defaults to the meal on now or next), and **Replaces planned snack** (marks that meal's planned dishes as not eaten, so the plan stops counting them). Opens from the button under the totals or "Off-plan" on each meal card.
+- Off-plan entries show **under their meal with an OFF-PLAN tag** (or in an **Other** card), count in the meal and day totals and insights, and can be removed with Undo. A meal replaced by off-plan food reads "Eaten · off-plan instead of the plan".
+- `supabase/tests/views.sql`: 3 coffees → `v_daily_summary.coffee_count = 3` (a deleted one doesn't count); off-plan food is in the day's kcal / protein.
+
+**Checks run here**
+
+- `typecheck` ✅ · `lint` ✅ · `test` ✅ 569 tests; `features/food/lib` 99% coverage.
+- **AC1**: off-plan entries appear in totals and under their meal marked off-plan (logic + screen tests, "Replaces" and "Other" included).
+- **AC2**: the third coffee is logged with the warning (screen test) and `v_daily_summary.coffee_count = 3` (SQL test).
+- `test:db` ✅ (rls, seed, views) · iOS bundle export ✅.
+
+**How PTR verifies on the phone**
+
+1. `git pull`, `npm install`, `npm start` → **Food**.
+2. Tap the ☕ chip three times: grey 1/2 → amber 2/2 → red 3/2 with "Over limit — still logged". Hold it → back to 2/2 (Undo restores). The kcal total rises 20 per coffee.
+3. Supabase SQL editor: `select date, coffee_count from v_daily_summary order by date desc limit 1;` → 3 after three coffees.
+4. Tap **+ Off-plan** → "Masala vada ×2", 250, protein 8 → **Add 250 kcal to Snack**: it appears under Snack tagged OFF-PLAN and the totals include it. The ✕ removes it (Undo brings it back).
+5. Off-plan for Dinner with **Replaces planned dinner** on → Dinner shows Eaten with just your entry.
+
+**Known gaps**
+
+- The over-limit toast is the standard snackbar (dark), not the design's red-bordered card with "caffeine this late cuts into sleep"; F24 (nudges) can add the sleep-aware copy.
+- Coffee times aren't listed anywhere yet (only the count); the coffee kcal isn't stored per entry (always 20).
+
 ## F08 — Food: meal plan, logging and swaps · 2026-11-23 · done
 
 _M1's 7-day trial was skipped at PTR's request ("I don't have time to test it for 7 days"); M2 started straight after F07._
@@ -345,4 +374,4 @@ _M1's 7-day trial was skipped at PTR's request ("I don't have time to test it fo
 - Placeholder app icon/splash (Expo defaults) and bundle id `app.lifeos.ptr`.
 - Open questions from `REFERENCE_NOTES.md` (todo sort order, weight-trend insight, golden fixtures) still default as proposed until PTR answers.
 
-_Next: F09 (off-plan food and coffee). Waiting for PTR's "next"._
+_Next: F10 (shopping list). Waiting for PTR's "next"._

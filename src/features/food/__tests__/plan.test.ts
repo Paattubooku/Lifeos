@@ -151,7 +151,7 @@ describe('ticks and portions', () => {
     expect(day.projected).toEqual({ kcal: 700 + 405 + 480, protein: 58 + 21 + 38 }); // breakfast missed
   });
 
-  it('a meal without items, deleted dishes and off-plan logs are ignored by meal views', () => {
+  it('a meal without items; off-plan logs count in the meal (F09)', () => {
     const p = { ...plan, items: plan.items.filter((i) => i.meal_id !== 'm-snack') };
     expect(dayFood(p, [], {}, 0).meals[2]!.groups).toEqual([]);
     const off: FoodLogRow = {
@@ -168,7 +168,10 @@ describe('ticks and portions', () => {
       free_text: 'Samosa',
     };
     const day = dayFood(plan, [off], {}, MIN('13:10'));
-    expect(day.meals[1]!.status).toBe('now');
+    expect(day.meals[1]!.status).toBe('partly');
+    expect(day.meals[1]!.offPlan.map((l) => l.free_text)).toEqual(['Samosa']);
+    expect(day.meals[1]!.eaten.kcal).toBe(300);
+    expect(day.other).toEqual([]);
     expect(day.eaten.kcal).toBe(300);
     expect(day.eaten.carbs).toBe(0);
   });

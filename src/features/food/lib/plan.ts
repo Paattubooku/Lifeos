@@ -107,6 +107,8 @@ export type MealView = {
   eaten: { kcal: number; protein: number };
   status: MealStatus;
   tickedAt: string | null;
+  /** Off-plan entries logged to this meal (F09). */
+  offPlan: FoodLogRow[];
 };
 
 const live = <T extends { deleted_at?: string | null }>(rows: readonly T[]) =>
@@ -127,6 +129,9 @@ export function mealView(
     .filter((i) => i.meal_id === meal.id && dishes.has(i.dish_id))
     .sort((a, b) => a.sort - b.sort);
   const mealLogs = live(logs).filter((l) => l.meal_id === meal.id && !l.is_off_plan);
+  const offPlan = live(logs)
+    .filter((l) => l.meal_id === meal.id && l.is_off_plan)
+    .sort((a, b) => a.logged_at.localeCompare(b.logged_at));
   const order: string[] = [];
   for (const i of items) if (!order.includes(i.swap_group)) order.push(i.swap_group);
 
@@ -153,22 +158,25 @@ export function mealView(
     { kcal: 0, protein: 0 },
   );
   const eatenLogs = mealLogs.filter((l) => num(l.portion) > 0);
-  const eaten = mealLogs.reduce(
+  const eaten = [...mealLogs, ...offPlan].reduce(
     (s, l) => ({ kcal: s.kcal + l.kcal, protein: s.protein + num(l.protein_g) }),
     { kcal: 0, protein: 0 },
   );
   const allFull = groups.length > 0 && groups.every((g) => g.log && num(g.log.portion) === 1);
+  // An off-plan meal that replaced the plan (every dish logged, some at 0) counts as eaten.
+  const replaced = offPlan.length > 0 && groups.every((g) => g.log);
   const start = dayMinutes(hhmm(meal.time));
-  const status: MealStatus = allFull
-    ? 'eaten'
-    : mealLogs.length > 0
-      ? 'partly'
-      : nowMin < start
-        ? 'upcoming'
-        : nowMin < start + MEAL_WINDOW_MIN
-          ? 'now'
-          : 'missed';
-  const times = eatenLogs.map((l) => l.logged_at).sort();
+  const status: MealStatus =
+    allFull || replaced
+      ? 'eaten'
+      : mealLogs.length > 0 || offPlan.length > 0
+        ? 'partly'
+        : nowMin < start
+          ? 'upcoming'
+          : nowMin < start + MEAL_WINDOW_MIN
+            ? 'now'
+            : 'missed';
+  const times = [...eatenLogs, ...offPlan].map((l) => l.logged_at).sort();
   return {
     meal,
     name: SLOT_NAME[meal.slot] ?? meal.slot,
@@ -177,11 +185,14 @@ export function mealView(
     eaten: { kcal: eaten.kcal, protein: Math.round(eaten.protein) },
     status,
     tickedAt: times[times.length - 1] ?? null,
+    offPlan,
   };
 }
 
 export type DayFood = {
   meals: MealView[];
+  /** Off-plan entries not tied to a meal ("Other"). */
+  other: FoodLogRow[];
   eaten: { kcal: number; protein: number; carbs: number; fat: number };
   /** Plan for the whole day (what the meals add up to with today's choices). */
   planned: { kcal: number; protein: number };
@@ -224,8 +235,13 @@ export function dayFood(
   const untouched = meals.filter((m) => m.status === 'upcoming' || m.status === 'now');
   const left = sum(untouched, (m) => m.planned);
   const due = meals.filter((m) => dayMinutes(hhmm(m.meal.time)) <= nowMin);
+  const mealIds = new Set(meals.map((m) => m.meal.id));
+  const other = liveLogs
+    .filter((l) => l.is_off_plan && (!l.meal_id || !mealIds.has(l.meal_id)))
+    .sort((a, b) => a.logged_at.localeCompare(b.logged_at));
   return {
     meals,
+    other,
     eaten: {
       kcal: eaten.kcal,
       protein: Math.round(eaten.protein),

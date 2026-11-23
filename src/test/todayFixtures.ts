@@ -74,6 +74,7 @@ export async function todayStore(opts: TodayStoreOptions = {}) {
     { ...base, id: 'o1', client_id: 'o1-c', date: today, workout_day_id: 'd1' },
   ]);
   await store.dispatch(foodApi.util.upsertQueryData('getMealPlan', undefined, seedMealPlan()));
+  await store.dispatch(foodApi.util.upsertQueryData('getCoffeeLogs', today, []));
   await put('getProgramDays', 'prog', {
     days: PROGRAM_DAYS.map(([id, weekday, title, kind]) => ({
       id,

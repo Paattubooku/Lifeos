@@ -175,5 +175,21 @@ export function planRestoreMeal(before: MealView, current: MealView): Change[] {
       changes.push({ op: 'delete', table: 'food_log', clientId: now.client_id });
     }
   }
+  // Off-plan entries added since go; ones removed since come back.
+  const beforeIds = new Set((before.offPlan ?? []).map((l) => l.client_id));
+  const currentIds = new Set((current.offPlan ?? []).map((l) => l.client_id));
+  for (const l of current.offPlan ?? [])
+    if (!beforeIds.has(l.client_id))
+      changes.push({ op: 'delete', table: 'food_log', clientId: l.client_id });
+  for (const l of before.offPlan ?? [])
+    if (!currentIds.has(l.client_id)) {
+      const { client_id, ...row } = l;
+      changes.push({
+        op: 'upsert',
+        table: 'food_log',
+        clientId: client_id,
+        row: { ...row, deleted_at: null },
+      });
+    }
   return changes;
 }

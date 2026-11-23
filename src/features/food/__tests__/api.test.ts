@@ -45,3 +45,26 @@ describe('foodApi.getMealPlan', () => {
     expect(res.data).toEqual({ plan: null, meals: [], items: [], dishes: [{ id: 'd1' }] });
   });
 });
+
+describe('foodApi.getCoffeeLogs', () => {
+  it('reads today’s live coffees in order', async () => {
+    const fake = fakeSupabase();
+    const db = fakeFrom({ coffee_log: [{ client_id: 'c1', date: '2026-11-23' }] });
+    const { store } = storeWithFake({
+      ...fake,
+      client: { ...fake.client, from: db.from } as unknown as LifeosClient,
+    });
+    stores.push(store);
+    const res = await store.dispatch(
+      foodApi.endpoints.getCoffeeLogs.initiate('2026-11-23', { subscribe: false }),
+    );
+    expect(res.data).toEqual([{ client_id: 'c1', date: '2026-11-23' }]);
+    expect(db.calls[0]).toEqual([
+      ['from', 'coffee_log'],
+      ['select', '*'],
+      ['eq', 'date', '2026-11-23'],
+      ['is', 'deleted_at', null],
+      ['order', 'logged_at'],
+    ]);
+  });
+});

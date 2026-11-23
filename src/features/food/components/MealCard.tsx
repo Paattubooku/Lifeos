@@ -1,4 +1,4 @@
-import { Check, ChevronRight, Repeat } from 'lucide-react-native';
+import { Check, ChevronRight, Plus, Repeat } from 'lucide-react-native';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { istClock } from '@/lib/dates';
@@ -6,7 +6,15 @@ import { formatClock } from '@/lib/format';
 import { hhmm } from '@/features/routine/lib/blocks';
 import { Button, Card, Checkbox, StatusChip, type StatusTone, Text, useTheme } from '@/ui';
 
-import { type GroupView, type MealStatus, type MealView, num, PORTIONS } from '../lib/plan';
+import {
+  type FoodLogRow,
+  type GroupView,
+  type MealStatus,
+  type MealView,
+  num,
+  PORTIONS,
+} from '../lib/plan';
+import { OffPlanRows } from './OffPlanRows';
 
 const STATUS: Record<MealStatus, { label: string; tone: StatusTone; beacon?: boolean }> = {
   eaten: { label: 'Eaten', tone: 'success' },
@@ -25,12 +33,16 @@ export function MealCard({
   onEat,
   onToggle,
   onSwap,
+  onOffPlan,
+  onRemoveOffPlan,
 }: {
   view: MealView;
   onOpen: () => void;
   onEat: () => void;
   onToggle: (g: GroupView) => void;
   onSwap: (g: GroupView) => void;
+  onOffPlan: () => void;
+  onRemoveOffPlan: (log: FoodLogRow) => void;
 }) {
   const { colors } = useTheme();
   const [time, period] = formatClock(hhmm(view.meal.time)).split(' ') as [string, string];
@@ -126,23 +138,36 @@ export function MealCard({
         );
       })}
 
+      <OffPlanRows logs={view.offPlan} onRemove={onRemoveOffPlan} />
+
       {view.groups.length === 0 ? (
         <Text variant="sub" tone="secondary">
           No dishes yet — add some in the meal plan.
         </Text>
       ) : view.status === 'eaten' || ticked === view.groups.length ? (
         <Text variant="caption" tone="secondary">
-          {`Ticked ${view.tickedAt ? formatClock(istClock(view.tickedAt)) : ''} · all ${view.groups.length} dishes`}
+          {ticked === view.groups.length
+            ? `Ticked ${view.tickedAt ? formatClock(istClock(view.tickedAt)) : ''} · all ${view.groups.length} dishes`
+            : `Logged ${view.tickedAt ? formatClock(istClock(view.tickedAt)) : ''} · off-plan instead of the plan`}
         </Text>
       ) : (
-        <Button
-          variant={view.status === 'now' ? 'primary' : 'outline'}
-          icon={Check}
-          label="Eaten as planned"
-          accessibilityLabel={`${view.name} eaten as planned`}
-          onPress={onEat}
-          fullWidth
-        />
+        <View style={styles.actions}>
+          <Button
+            variant={view.status === 'now' ? 'primary' : 'outline'}
+            icon={Check}
+            label="Eaten as planned"
+            accessibilityLabel={`${view.name} eaten as planned`}
+            onPress={onEat}
+            style={styles.flex}
+          />
+          <Button
+            variant="secondary"
+            icon={Plus}
+            label="Off-plan"
+            accessibilityLabel={`Log off-plan food for ${view.name}`}
+            onPress={onOffPlan}
+          />
+        </View>
       )}
     </Card>
   );
@@ -156,4 +181,5 @@ const styles = StyleSheet.create({
   dish: { flexDirection: 'row', alignItems: 'center', gap: 8, borderTopWidth: 1, paddingTop: 8 },
   numbers: { alignItems: 'flex-end' },
   swap: { width: 32, height: 44, alignItems: 'center', justifyContent: 'center' },
+  actions: { flexDirection: 'row', gap: 10 },
 });
