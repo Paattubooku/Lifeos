@@ -86,3 +86,9 @@ export function logicalMoment(date: DateString, hhmm: string): number {
   const day = minutes < LOGICAL_DAY_START_HOUR * 60 ? addDays(date, 1) : date;
   return parseDate(day).getTime() + (minutes - IST_OFFSET_MIN) * MINUTE;
 }
+
+/** 'HH:mm' wall-clock time in IST of an instant. */
+export function istClock(ts: Date | number | string): string {
+  const m = istMinutesOfDay(ts);
+  return `${pad(Math.floor(m / 60))}:${pad(m % 60)}`;
+}

@@ -2,7 +2,19 @@ import { createApi, fakeBaseQuery } from '@reduxjs/toolkit/query/react';
 import type { Action } from '@reduxjs/toolkit';
 import { REHYDRATE } from 'redux-persist';
 
-export const TAGS = ['Profile', 'Routine', 'DayLog', 'Weight', 'Program'] as const;
+export const TAGS = [
+  'Profile',
+  'Routine',
+  'DayLog',
+  'Weight',
+  'Program',
+  'BlockLog',
+  'Water',
+  'Food',
+  'MealPlan',
+  'Session',
+  'Sleep',
+] as const;
 export type Tag = (typeof TAGS)[number];
 
 type RehydrateAction = Action<typeof REHYDRATE> & {

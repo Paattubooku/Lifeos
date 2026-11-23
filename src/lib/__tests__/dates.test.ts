@@ -1,4 +1,5 @@
 import {
+  istClock,
   logicalMoment,
   addDays,
   daysBetween,
@@ -87,5 +88,12 @@ describe('logicalMoment', () => {
       '2026-11-23T20:30:00.000Z',
     );
     expect(() => logicalMoment('2026-11-23', '5:30')).toThrow();
+  });
+});
+
+describe('istClock', () => {
+  it('formats an instant as IST HH:mm', () => {
+    expect(istClock('2026-11-22T23:42:00Z')).toBe('05:12');
+    expect(istClock(Date.parse('2026-11-23T18:35:00Z'))).toBe('00:05');
   });
 });

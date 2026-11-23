@@ -1,0 +1,167 @@
+import { baseApi } from '@/store/baseApi';
+import { supabaseQuery, unwrapList, unwrapOne } from '@/store/supabaseQuery';
+import type { Tables } from '@/types/supabase';
+
+export type BlockLogRow = Tables<'block_log'>;
+export type WaterLogRow = Tables<'water_log'>;
+export type FoodLogRow = Tables<'food_log'>;
+export type SessionLogRow = Tables<'session_log'>;
+export type OverrideRow = Tables<'session_override'>;
+export type SleepLogRow = Tables<'sleep_log'>;
+
+export type MealPlanData = {
+  meals: Pick<Tables<'meal'>, 'id' | 'slot' | 'time' | 'plan_id'>[];
+  items: Pick<Tables<'meal_item'>, 'meal_id' | 'dish_id' | 'swap_group' | 'is_default' | 'sort'>[];
+  dishes: Pick<Tables<'dish'>, 'id' | 'name' | 'serving_text' | 'kcal' | 'protein_g'>[];
+};
+
+export type ProgramData = {
+  days: Pick<Tables<'workout_day'>, 'id' | 'program_id' | 'weekday' | 'title' | 'kind'>[];
+  exercises: { workout_day_id: string; name: string; sort: number }[];
+};
+
+export const todayApi = baseApi.injectEndpoints({
+  endpoints: (b) => ({
+    /** Includes deleted rows: (user, date, block) stays unique, so their client_id is reused. */
+    getBlockLogs: b.query<BlockLogRow[], string>({
+      queryFn: (date, api) =>
+        supabaseQuery(api, ['block_log'], async (c) =>
+          unwrapList(await c.from('block_log').select('*').eq('date', date)),
+        ),
+      providesTags: ['BlockLog'],
+    }),
+
+    getWaterLogs: b.query<WaterLogRow[], string>({
+      queryFn: (date, api) =>
+        supabaseQuery(api, ['water_log'], async (c) =>
+          unwrapList(
+            await c
+              .from('water_log')
+              .select('*')
+              .eq('date', date)
+              .is('deleted_at', null)
+              .order('logged_at'),
+          ),
+        ),
+      providesTags: ['Water'],
+    }),
+
+    getFoodLogs: b.query<FoodLogRow[], string>({
+      queryFn: (date, api) =>
+        supabaseQuery(api, ['food_log'], async (c) =>
+          unwrapList(await c.from('food_log').select('*').eq('date', date).is('deleted_at', null)),
+        ),
+      providesTags: ['Food'],
+    }),
+
+    /** The active meal plan's meals, items and dishes (names + kcal for the timeline). */
+    getActiveMealPlan: b.query<MealPlanData, void>({
+      queryFn: (_arg, api) =>
+        supabaseQuery(api, ['meal_plan', 'meal', 'meal_item', 'dish'], async (c) => {
+          const plan = unwrapOne(
+            await c
+              .from('meal_plan')
+              .select('id')
+              .eq('is_active', true)
+              .is('deleted_at', null)
+              .limit(1)
+              .maybeSingle(),
+          );
+          if (!plan) return { meals: [], items: [], dishes: [] };
+          const meals = unwrapList(
+            await c
+              .from('meal')
+              .select('id, slot, time, plan_id')
+              .eq('plan_id', plan.id)
+              .is('deleted_at', null),
+          );
+          const items = unwrapList(
+            await c
+              .from('meal_item')
+              .select('meal_id, dish_id, swap_group, is_default, sort')
+              .is('deleted_at', null),
+          );
+          const dishes = unwrapList(
+            await c
+              .from('dish')
+              .select('id, name, serving_text, kcal, protein_g')
+              .is('deleted_at', null),
+          );
+          const mealIds = new Set(meals.map((m) => m.id));
+          return { meals, items: items.filter((i) => mealIds.has(i.meal_id)), dishes };
+        }),
+      providesTags: ['MealPlan'],
+    }),
+
+    getProgramDays: b.query<ProgramData, string>({
+      queryFn: (programId, api) =>
+        supabaseQuery(api, ['workout_day', 'workout_exercise', 'exercise'], async (c) => {
+          const days = unwrapList(
+            await c
+              .from('workout_day')
+              .select('id, program_id, weekday, title, kind')
+              .eq('program_id', programId)
+              .is('deleted_at', null),
+          );
+          const links = unwrapList(
+            await c
+              .from('workout_exercise')
+              .select('workout_day_id, exercise_id, sort')
+              .is('deleted_at', null),
+          );
+          const names = unwrapList(
+            await c.from('exercise').select('id, name').is('deleted_at', null),
+          );
+          const nameOf = new Map(names.map((e) => [e.id, e.name]));
+          const dayIds = new Set(days.map((d) => d.id));
+          return {
+            days,
+            exercises: links
+              .filter((l) => dayIds.has(l.workout_day_id))
+              .map((l) => ({
+                workout_day_id: l.workout_day_id,
+                name: nameOf.get(l.exercise_id) ?? '',
+                sort: l.sort,
+              })),
+          };
+        }),
+      providesTags: ['Program'],
+    }),
+
+    getSessionOn: b.query<SessionLogRow | null, string>({
+      queryFn: (date, api) =>
+        supabaseQuery(api, ['session_log'], async (c) =>
+          unwrapOne(await c.from('session_log').select('*').eq('date', date).maybeSingle()),
+        ),
+      providesTags: ['Session'],
+    }),
+
+    /** From a date on, deleted rows included (unique per user/date). */
+    getOverridesSince: b.query<OverrideRow[], string>({
+      queryFn: (from, api) =>
+        supabaseQuery(api, ['session_override'], async (c) =>
+          unwrapList(await c.from('session_override').select('*').gte('date', from)),
+        ),
+      providesTags: ['Session'],
+    }),
+
+    getSleepOn: b.query<SleepLogRow | null, string>({
+      queryFn: (date, api) =>
+        supabaseQuery(api, ['sleep_log'], async (c) =>
+          unwrapOne(await c.from('sleep_log').select('*').eq('date', date).maybeSingle()),
+        ),
+      providesTags: ['Sleep'],
+    }),
+  }),
+});
+
+export const {
+  useGetBlockLogsQuery,
+  useGetWaterLogsQuery,
+  useGetFoodLogsQuery,
+  useGetActiveMealPlanQuery,
+  useGetProgramDaysQuery,
+  useGetSessionOnQuery,
+  useGetOverridesSinceQuery,
+  useGetSleepOnQuery,
+} = todayApi;

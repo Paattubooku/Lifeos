@@ -2,6 +2,44 @@
 
 One entry per feature, newest first: feature ID, what was built, how PTR verifies it on the phone, known gaps.
 
+## F05 — Today screen · 2026-11-23 · done
+
+**Built**
+
+- **Today tab** (Today 5:20 am / 1:15 pm / 9:30 pm designs): header "MON 23 NOV · 5 OF 11 DONE" + the time + template chip (opens Switch template); score ring card (day score = routine blocks; water and protein as sub-stats and rings); a **NOW card** for the current block (until-time, "Log 500 ml" on drink blocks, otherwise **Mark done**, plus **Skip**) or a **Next** card with a countdown; the **timeline** of the day's blocks.
+- **Block states**: upcoming, current (highlighted, "NOW", "25 min left"), done (tick), skipped (grey, reason), due (just ended, "10 min late"), overdue (red, from 30 min after the end). Next block gets a "Next" pill. Three or more finished blocks at the top fold into "6 done · Wake → Lunch".
+- **Tap** = done / not done with haptic + Undo snackbar; tapping an auto-done block explains instead. **Long-press** = skip sheet (Sheet-SkipBlock design): Sick / Travel / Rest / Other, **Move to tomorrow** for workout blocks (today's session moves to tomorrow, the rest of the week shifts, Sunday's rest absorbs it — stored as `session_override` rows), and **Unskip**.
+- **Auto-complete**: drink blocks from logged water ("auto: 500 ml at 5:12 am"), the Water target block from the day's total, meal blocks when something is eaten in that slot, the workout block from a session ≥ 80% (or a rest day). They can still be ticked by hand.
+- **Inline info**: meal rows show the plan's default dishes + kcal (or what was eaten); the workout row shows "Workout · Upper A · 5 exercises · 60 min"; optional blocks say "Optional".
+- **End-of-day card** from phone-off time (replaces the NOW card): "78%. 3 things left." with the open blocks, "Weight not logged", "Sleep not logged", and **Log weight** / **Log sleep** / **Note** (quick sheets writing `weight_log`, `sleep_log` for last night, `day_log.note`).
+- After midnight the app still shows the previous logical day; at 03:00 it rolls over within 30 s (clock refreshes every 30 s and on returning to the app).
+- Logic (`src/features/today/lib`, `selectors.ts`): `currentBlock`, `blockState`, auto-complete rules, `computeScore` (PRD §4.2), move-to-tomorrow, row copy — all pure and tested.
+
+**Checks run here**
+
+- `typecheck` ✅ · `lint` ✅ · `test` ✅ 458 tests; coverage 97% overall, every `lib/` and selectors file ≥ 90%.
+- **AC1**: tapping Wake → ring goes 0% → 9% at once, the write sits in the offline queue; Undo removes it (screen test).
+- **AC2**: 500 ml logged at 05:15 → "Drink 500 ml water" done ("auto: 500 ml at 5:15 am"), score 1/11 (logic + screen tests).
+- **AC3**: current block checked at 13 times from 04:59 to 22:15 plus after midnight (time-fixed selector test).
+- `test:db` ✅ · Android bundle export ✅.
+
+**How PTR verifies on the phone**
+
+1. `git pull`, `npm start`, open in Expo Go → **Today** tab.
+2. The header shows today's date, "n OF 11 DONE" and the current time; the NOW card shows the block running now (or what's next).
+3. Tap **Wake up** in the timeline → tick, ring jumps, snackbar with Undo. Turn on airplane mode, tick another block, kill and reopen the app → still ticked; back online it syncs (`block_log` rows in Supabase).
+4. During "Drink 500 ml" (5:10–5:40) tap **Log 500 ml** — or at any time use More → Developer → Queue 200 ml water ×3 — the drink block ticks itself.
+5. Long-press **Workout** → Skip · Sick with **Move to tomorrow** on → the block greys out, the score's denominator drops to 10, `session_override` rows appear for tomorrow…Sunday. (Move to tomorrow only shows once the program has started — its start date is the Monday on/after onboarding — and never on Sundays.)
+6. Template chip → switch to Rest day → the workout block disappears from today.
+7. After your phone-off time (9:30 pm) the End-of-day card appears; try Log weight / Log sleep / Note.
+
+**Known gaps / left on purpose vs the designs**
+
+- Score is shown but not yet saved to `day_log.score`, and the streak line ("12-day streak · 1 grace left") is missing — both are F06 (next).
+- Not built yet (later features): water card + "+200" button (F07), calories / protein / coffee tiles and "Ate as packed" (F08/F09), Top 3 tasks (F17), the "3 blocks overdue" interrupt and phone-away banner (F24), the Next-workout card with exercise chips and "Start" (F11), "vs yesterday" / 7-day average on the end-of-day card (F06/F16).
+- Reminders are still F15.
+- Weight and sleep sheets are minimal quick logs; F13 / F14 build the full screens.
+
 ## F04 — Routine templates and editor · 2026-11-23 · done
 
 **Built**
@@ -198,4 +236,4 @@ One entry per feature, newest first: feature ID, what was built, how PTR verifie
 - Placeholder app icon/splash (Expo defaults) and bundle id `app.lifeos.ptr`.
 - Open questions from `REFERENCE_NOTES.md` (todo sort order, weight-trend insight, golden fixtures) still default as proposed until PTR answers.
 
-_Next: F05 (Today screen). Waiting for PTR's "next"._
+_Next: F06 (day scoring and streaks). Waiting for PTR's "next"._

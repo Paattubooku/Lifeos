@@ -20,6 +20,8 @@ export type ScreenProps = {
   back?: { label: string; onPress: () => void };
   /** Top-right action above the title (e.g. "+ New"). */
   action?: ReactNode;
+  /** Small uppercase line above the title ("MON 23 NOV · 5 OF 11 DONE"). */
+  kicker?: string;
 };
 
 /** Canvas + safe area + scroll + 36 px screen title. */
@@ -31,6 +33,7 @@ export function Screen({
   accessory,
   back,
   action,
+  kicker,
 }: ScreenProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
@@ -68,6 +71,11 @@ export function Screen({
       ) : null}
       <View style={styles.titleRow}>
         <View style={styles.titles}>
+          {kicker ? (
+            <Text variant="kicker" tone="secondary">
+              {kicker}
+            </Text>
+          ) : null}
           <Text variant="title" accessibilityRole="header">
             {title}
           </Text>
