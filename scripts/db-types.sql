@@ -58,8 +58,13 @@ select jsonb_build_object(
     ) s
   ),
   'functions', (
-    select coalesce(jsonb_agg(jsonb_build_object('name', p.proname, 'returns', format_type(p.prorettype, null))
-                              order by p.proname), '[]')
+    select coalesce(jsonb_agg(jsonb_build_object(
+        'name', p.proname,
+        'returns', format_type(p.prorettype, null),
+        'args', (select coalesce(jsonb_agg(jsonb_build_object('name', a.name, 'type', format_type(a.type, null))
+                                           order by a.name), '[]')
+                 from unnest(coalesce(p.proargnames, array[]::text[]), p.proargtypes::oid[]) as a(name, type))
+      ) order by p.proname), '[]')
     from pg_proc p join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'public' and p.prorettype <> 'trigger'::regtype
   )

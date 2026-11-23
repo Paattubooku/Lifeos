@@ -3,6 +3,10 @@
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 export type Database = {
+  // Same marker the official generator emits: lets createClient pick the PostgREST version.
+  __InternalSupabase: {
+    PostgrestVersion: '14.18';
+  };
   public: {
     Tables: {
       api_token: {
@@ -1436,6 +1440,10 @@ export type Database = {
       };
     };
     Functions: {
+      _lifeos_prepare_table: {
+        Args: { has_date: boolean; t: string };
+        Returns: undefined;
+      };
       seed_defaults: {
         Args: never;
         Returns: Json;
@@ -1450,7 +1458,7 @@ export type Database = {
   };
 };
 
-type PublicSchema = Database['public'];
+type PublicSchema = Omit<Database, '__InternalSupabase'>['public'];
 
 export type Tables<T extends keyof (PublicSchema['Tables'] & PublicSchema['Views'])> =
   (PublicSchema['Tables'] & PublicSchema['Views'])[T] extends { Row: infer R } ? R : never;

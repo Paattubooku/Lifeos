@@ -29,7 +29,7 @@ end;
 $$;
 
 -- Adds the shared columns, trigger, RLS policy and (user_id[, date]) index.
--- Used only inside this migration, then dropped.
+-- Used only inside this migration; execute is revoked at the end.
 create or replace function public._lifeos_prepare_table(t text, has_date boolean)
 returns void
 language plpgsql
@@ -442,4 +442,5 @@ create table public.nudge_log (
 );
 select public._lifeos_prepare_table('nudge_log', true);
 
-drop function public._lifeos_prepare_table(text, boolean);
+-- Kept (not dropped) so the migration has no destructive statements; nobody can call it.
+revoke all on function public._lifeos_prepare_table(text, boolean) from public, anon, authenticated;

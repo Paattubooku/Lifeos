@@ -2,14 +2,15 @@
 
 One entry per feature, newest first: feature ID, what was built, how PTR verifies it on the phone, known gaps.
 
-## F01 — Supabase, auth, schema and seed · 2026-11-22 · built, remote project pending
+## F01 — Supabase, auth, schema and seed · 2026-11-23 · done
 
 **Built**
 
 - `supabase/migrations/`: every table in PRD §5 (30 tables) with per-user RLS (`user_id = auth.uid()`), `updated_at` triggers, `client_id` (unique, for offline upserts) and `deleted_at` on all user tables, `(user_id, date)` indexes on every log table, PRD unique keys (one `day_log`/`weight_log`/`sleep_log`/… per day, `expense (user_id, txn_ref)`), and the three views `v_daily_summary`, `v_weight_trend` (7-day trailing average), `v_weekly_rollup`, all `security_invoker` so RLS applies.
 - `seed_defaults()` RPC with the full PRD §6 seed: profile (170 cm, 91 → 75 kg, 3,000 ml, 2,200 kcal, 150 g …), Workday/Weekend/Rest day templates (Workday = 11 counted blocks, Evening walk optional + silent), "Fixed Day v1" (27 dishes, swap groups; defaults = 2,219 kcal / 157 g protein), "Dumbbell Beginner 5-Day" (7 days, 25 exercises, nothing needing a barbell/cable/machine) and the 6 + Income expense categories. Idempotent; the app calls it after each sign-in.
 - App: Supabase client (anon key only) with the session in chunked `expo-secure-store`, auto-refresh only in the foreground; auth slice (restore at launch, sign in, dev-only sign-up, forgot password, sign out); Sign-in screen from `design/screens/SignIn(-Dark).png` (+ `TextField` in `src/ui`); routes guarded with `Stack.Protected` (signed out → sign-in, signed in → tabs); the splash stays up until the session is restored; More → Account (email + Sign out).
-- `src/types/supabase.ts` generated from the migrations (`npm run gen:types`).
+- Supabase project **`lifeos`** (ref `tjuemwpagjougmyfbszd`, Mumbai ap-south-1) created; all 4 migrations applied (local files renamed to the remote versions, so `supabase db push` stays in sync). `myTracker` was paused (data kept) to stay within the free plan.
+- `src/types/supabase.ts` generated from the migrations (`npm run gen:types`); cross-checked against the official `supabase gen types` output of the live project (same 30 tables, 3 views, 8 foreign keys, nullability and function signatures).
 - New scripts: `npm run test:db` (applies migrations to a throwaway local Postgres and runs `supabase/tests/*.sql`), `npm run gen:types`.
 
 **Checks run here**
@@ -18,10 +19,20 @@ One entry per feature, newest first: feature ID, what was built, how PTR verifie
 - `npm run test:db` ✅ on Postgres 16 + a Supabase auth shim: **AC2** `rls.sql` (user B sees 0 rows in every table and view, can't update/delete A's rows, can't insert rows owned by A; anon sees nothing and can't seed). I also broke RLS on purpose (RLS off on one table; a view without `security_invoker`) and the test caught both. **AC3** `seed.sql` (second run creates nothing; counts and seed values match PRD §6).
 - `expo export` for iOS + Android ✅. Sign-in screen rendered on web and compared with the design PNG.
 
-**How PTR verifies on the phone** (after the Supabase project exists, see below)
+**Checks on the live project** (`lifeos`)
 
-1. `.env`: `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY` from Supabase → Project Settings → API.
-2. Create your account once: Supabase dashboard → Authentication → Users → Add user (email + password, auto-confirm). Then turn **off** "Allow new users to sign up" (Authentication → Sign In / Providers).
+- `rls.sql` ✅ and `seed.sql` ✅ run against the real database (rolled back; afterwards 0 test users, 0 profiles left). All 30 tables have RLS on.
+- Security advisor: one warning (helper function without a fixed `search_path`) fixed by migration 4 → **no findings**. Performance advisor: only "unused index" notices (expected on an empty database).
+
+**How PTR verifies on the phone**
+
+1. `.env` in the repo root (it is git-ignored):
+   ```
+   EXPO_PUBLIC_SUPABASE_URL=https://tjuemwpagjougmyfbszd.supabase.co
+   EXPO_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_xr_XmzBZdp8YBT6mcVfoRw_JiT6cH8X
+   ```
+   (the publishable key is public by design; never put the service-role key here)
+2. Create your account once: Supabase dashboard → project `lifeos` → Authentication → Users → **Add user** → email + password, tick **Auto Confirm User**. Then Authentication → Sign In / Providers → turn **off** "Allow new users to sign up".
 3. `npm start`, open in Expo Go: the app shows **Sign in**. Wrong password → "Email or password is wrong."
 4. Sign in → lands on Today. In Supabase → Table Editor, `routine_template`, `dish`, `exercise` etc. now hold your seed rows.
 5. **AC1:** kill the app and reopen → still signed in, no sign-in screen. Airplane mode + reopen → still opens (More → Account says "Offline").
@@ -29,8 +40,10 @@ One entry per feature, newest first: feature ID, what was built, how PTR verifie
 
 **Known gaps**
 
-- Not yet applied to a real Supabase project (waiting for PTR, see the question in the session). Until then the RLS/seed tests have run on local Postgres only.
-- `src/types/supabase.ts` is from the local generator; switch to `npx supabase gen types typescript --linked` once linked (same shape).
+- Public sign-ups are still **on** in the new project until PTR turns them off (step 2); there's no MCP tool for auth settings.
+- `src/types/supabase.ts` comes from the local generator (this environment can't run the official CLI); `npx supabase link --project-ref tjuemwpagjougmyfbszd` then `npx supabase gen types typescript --linked` gives the same file on the laptop.
+- 7 `(user_id, date)` indexes duplicate a unique constraint's index (harmless; dropping them is a destructive migration, logged in LATER.md).
+- No live sign-in was run from here: this container's network can't reach the Supabase API. The SQL tests ran on the live database through the Supabase tools.
 - Forgot-password emails a Supabase reset link that opens in the browser (no in-app reset screen; not in the PRD).
 - Cross-user FK references (a row pointing at another user's plan uuid) aren't blocked by a trigger; RLS still hides the other user's rows. Fine for a single-user app.
 - Placeholder bundle id and icon (from F00).

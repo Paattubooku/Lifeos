@@ -13,6 +13,7 @@ const [, , inFile, outFile] = process.argv;
 const schema = JSON.parse(readFileSync(inFile, 'utf8'));
 
 const TS = {
+  void: 'undefined',
   uuid: 'string',
   text: 'string',
   date: 'string',
@@ -102,7 +103,11 @@ ${indent(
 const functions = schema.functions
   .map(
     (f) => `${f.name}: {
-  Args: never
+  Args: ${
+    f.args.length
+      ? `{ ${f.args.map((a) => `${a.name}: ${TS[a.type] ?? 'unknown'}`).join('; ')} }`
+      : 'never'
+  }
   Returns: ${TS[f.returns] ?? 'unknown'}
 }`,
   )
@@ -119,6 +124,10 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Same marker the official generator emits: lets createClient pick the PostgREST version.
+  __InternalSupabase: {
+    PostgrestVersion: '14.18'
+  }
   public: {
     Tables: {
 ${indent(tables, 6)}
@@ -138,7 +147,7 @@ ${indent(functions, 6)}
   }
 }
 
-type PublicSchema = Database['public']
+type PublicSchema = Omit<Database, '__InternalSupabase'>['public']
 
 export type Tables<T extends keyof (PublicSchema['Tables'] & PublicSchema['Views'])> =
   (PublicSchema['Tables'] & PublicSchema['Views'])[T] extends { Row: infer R } ? R : never

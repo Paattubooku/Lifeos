@@ -29,3 +29,7 @@ Decisions made during the build that the PRD left open. Format: date · feature 
 - 2026-11-22 · F01 · **Sign-up** only when `__DEV__` and `EXPO_PUBLIC_ENABLE_SIGNUP=1`. In production the account is created once (dashboard or dev flag) and sign-ups are then disabled in the Supabase project.
 - 2026-11-22 · F01 · **Sign out on More → Account** (local scope: forgets this phone's session even offline). PRD puts sign-out in F23 Settings; it's needed now to test sign-in and switch accounts.
 - 2026-11-22 · F01 · The app-wide store singleton moved to `src/store/root.ts` (imported only by `app/_layout.tsx`) so tests never start redux-persist timers. Changes F00 code; needed to fix a Jest open-handle leak.
+- 2026-11-23 · F01 · **Supabase project `lifeos`** in ap-south-1 (Mumbai, closest to PTR). `myTracker` paused (not deleted) at PTR's choice to stay within the free plan's 2 active projects.
+- 2026-11-23 · F01 · The migration helper `_lifeos_prepare_table` is **kept with execute revoked** instead of dropped: the Supabase MCP asks for confirmation on destructive statements and that prompt timed out. Migration 4 pins its `search_path` (security advisor 0011).
+- 2026-11-23 · F01 · Local migration files renamed to the versions Supabase assigned (`20261123115401_…` etc.) so `supabase db push` sees them as already applied.
+- 2026-11-23 · F01 · App uses the project's **publishable key** (`sb_publishable_…`), Supabase's recommended replacement for the legacy anon JWT; same `EXPO_PUBLIC_SUPABASE_ANON_KEY` variable.
