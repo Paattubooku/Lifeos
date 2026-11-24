@@ -21,6 +21,13 @@ import { MorningCheckCard } from '@/features/sleep/components/MorningCheckCard';
 import { useLogNight } from '@/features/sleep/hooks/useLogNight';
 import { useSleep } from '@/features/sleep/hooks/useSleep';
 import { planPhoneOff } from '@/features/sleep/lib/sleep';
+import {
+  TOP3_FROM_MIN,
+  TOP3_UNTIL_MIN,
+  TodayTop3Card,
+} from '@/features/tasks/components/TodayTop3Card';
+import { useTasks } from '@/features/tasks/hooks/useTasks';
+import { useTaskActions } from '@/features/tasks/hooks/useTaskActions';
 import { WaterAddSheet } from '@/features/water/components/WaterAddSheet';
 import { WaterCard } from '@/features/water/components/WaterCard';
 import { useLogWater } from '@/features/water/hooks/useLogWater';
@@ -75,6 +82,8 @@ export function TodayScreen({ now: fixedNow }: { now?: number } = {}) {
   const { log: logWaterEntry } = useLogWater();
   useDayScoreSync(t);
   const sleep = useSleep(now);
+  const tasks = useTasks(now);
+  const taskActions = useTaskActions(tasks.all, tasks.today);
   const logNight = useLogNight(t, sleep);
   const { streak } = useStreak(t.today, t.plan.blocks.length > 0 ? t.day.score.score : null);
   const dispatch = useAppDispatch();
@@ -277,6 +286,18 @@ export function TodayScreen({ now: fixedNow }: { now?: number } = {}) {
           onOpen={() => router.push('/water')}
           onDrink={logWater}
         />
+
+        {ctx.nowMin >= TOP3_FROM_MIN &&
+        ctx.nowMin < TOP3_UNTIL_MIN &&
+        (tasks.top3.length > 0 || tasks.pending.length > 0) ? (
+          <TodayTop3Card
+            top3={tasks.top3}
+            openCount={tasks.all.filter((x) => x.status === 'open').length}
+            today={tasks.today}
+            onToggle={taskActions.toggleDone}
+            onOpenTasks={() => router.push('/tasks')}
+          />
+        ) : null}
 
         {t.plan.blocks.length > 0 ? (
           <Timeline

@@ -1,5 +1,15 @@
 import { useRouter } from 'expo-router';
-import { Bell, Clock, Droplet, LogOut, MoonStar, Palette, Scale, Soup } from 'lucide-react-native';
+import {
+  Bell,
+  Clock,
+  Droplet,
+  ListTodo,
+  LogOut,
+  MoonStar,
+  Palette,
+  Scale,
+  Soup,
+} from 'lucide-react-native';
 
 import { selectUser } from '@/features/auth/selectors';
 import { signOut } from '@/features/auth/slice';
@@ -50,6 +60,14 @@ export default function MoreScreen() {
               : 'Templates for your day'
           }
           onPress={() => router.push('/routine')}
+          divider
+        />
+        <MenuRow
+          icon={ListTodo}
+          accent="danger"
+          title="Tasks"
+          sub="Today’s top 3 and everything pending"
+          onPress={() => router.push('/tasks')}
           divider
         />
         <MenuRow

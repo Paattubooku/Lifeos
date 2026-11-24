@@ -1099,6 +1099,7 @@ export type Database = {
           sort: number;
           status: string;
           title: string;
+          top3_date: string | null;
           updated_at: string;
           user_id: string;
         };
@@ -1114,6 +1115,7 @@ export type Database = {
           sort?: number;
           status?: string;
           title: string;
+          top3_date?: string | null;
           updated_at?: string;
           user_id?: string;
         };
@@ -1129,6 +1131,7 @@ export type Database = {
           sort?: number;
           status?: string;
           title?: string;
+          top3_date?: string | null;
           updated_at?: string;
           user_id?: string;
         };

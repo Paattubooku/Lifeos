@@ -1,5 +1,6 @@
 import { profileApi } from '@/features/profile/api';
 import { progressApi } from '@/features/progress/api';
+import { tasksApi } from '@/features/tasks/api';
 import { bodyApi } from '@/features/body/api';
 import { foodApi } from '@/features/food/api';
 import { todayApi } from '@/features/today/api';
@@ -49,6 +50,19 @@ export type TodayStoreOptions = {
   nutrition?: [number, number, number][];
   /** Logged sessions for Progress (8 weeks): [daysAgo, completion %]. */
   sessions?: [number, number][];
+  /** Tasks (F17); missing fields get defaults. */
+  tasks?: Partial<TaskFixture>[];
+};
+
+type TaskFixture = {
+  client_id: string;
+  title: string;
+  priority: string;
+  due_date: string | null;
+  is_top3: boolean;
+  top3_date: string | null;
+  status: string;
+  done_at: string | null;
 };
 
 export async function todayStore(opts: TodayStoreOptions = {}) {
@@ -235,6 +249,26 @@ export async function todayStore(opts: TodayStoreOptions = {}) {
         started_at: null,
         finished_at: null,
         workout_day_id: null,
+      })),
+    ),
+  );
+  await store.dispatch(
+    tasksApi.util.upsertQueryData(
+      'getTasks',
+      new Date(logicalMoment(addDays(today, -14), '03:00')).toISOString(),
+      (opts.tasks ?? []).map((t, i) => ({
+        ...base,
+        id: `tk${i}`,
+        client_id: `tk${i}`,
+        title: `Task ${i}`,
+        priority: 'medium',
+        due_date: null,
+        is_top3: false,
+        top3_date: null,
+        status: 'open',
+        done_at: null,
+        sort: 0,
+        ...t,
       })),
     ),
   );

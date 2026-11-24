@@ -2,6 +2,45 @@
 
 One entry per feature, newest first: feature ID, what was built, how PTR verifies it on the phone, known gaps.
 
+## F17 — Tasks · 2026-11-24 · done
+
+**Built**
+
+- **More → Tasks** `/tasks` (Tasks-List design):
+  - The header reads "N overdue · N due this week".
+  - **Today's top 3** card shows "1 of 3 done".
+  - **From yesterday's top 3**: unfinished picks are offered again with a "Top 3" button, never added automatically.
+  - **Pending** is sorted by priority, then due date.
+  - Overdue dates show in the danger colour, and only before the logical today.
+  - **Completed** collapses and covers the last 14 days.
+  - A priority legend sits at the bottom.
+- **Quick add** (Tasks-QuickAdd): title, priority (default Medium), due date (Today / Tomorrow / the coming Saturday / Pick date from the next 4 weeks), and "Add to today's top 3".
+- **Swap out of top 3** (Tasks-SwapTop3): adding a 4th asks which one goes back to pending. A done one is picked by default. "Keep top 3, add to pending" is the other way out.
+- **Task options**: tap a task for Add to / Remove from today's top 3, or Delete. Delete has Undo. Ticking done has Undo.
+- **Today card** (Today-0115pm): "Top 3 · N done" with checkboxes and "All N" → Tasks, shown from 09:00 to 18:00.
+- **Migration** `20261124111550_task_top3.sql`: adds `task.top3_date` (which day it was a top pick) and a trigger that refuses a 4th open top-3 task for the same day. It is additive, already applied to the live project, and the types are regenerated.
+
+**Checks run here**
+
+- `typecheck` ✅ · `lint` ✅ · `test` ✅ 681 tests; `features/tasks/lib` 100% lines.
+- **AC1**: the app asks to swap at 3 (screen test), and the database refuses a 4th (`supabase/tests/tasks.sql`, in `test:db` ✅).
+- **AC2**: the sort unit test follows the reference order: priority weight 3/2/1, then due date (none last), then newest.
+- **AC3**: ticking a top-3 task on Today updates the card at once (screen test).
+- iOS + Android bundle export ✅.
+
+**How PTR verifies on the phone**
+
+1. `git pull`, `npm install`, `npm start` → More → **Tasks**.
+2. **Add** a few tasks with different priorities and due dates. Check that pending is sorted high → low, then by date, and that a past date shows red.
+3. Tap a task → **Add to today's top 3**, three times. A 4th asks which one to swap out.
+4. Between 9 am and 6 pm, Today shows the Top 3 card. Tick one there and it shows done straight away.
+5. Tomorrow, unfinished picks appear under "From yesterday's top 3".
+
+**Known gaps**
+
+- There is no editing of a task's title, priority or date yet; delete and re-add instead.
+- The design's "Before 6 pm" note needs a due time, which the schema doesn't have; due notes are day-level.
+
 ## F16 — Progress tab · 2026-11-24 · done
 
 **Built**
@@ -587,4 +626,4 @@ _M1's 7-day trial was skipped at PTR's request ("I don't have time to test it fo
 - Placeholder app icon/splash (Expo defaults) and bundle id `app.lifeos.ptr`.
 - Open questions from `REFERENCE_NOTES.md` (todo sort order, weight-trend insight, golden fixtures) still default as proposed until PTR answers.
 
-_Next: F17 (Tasks). Waiting for PTR's "next"._
+_Next: F18 (Money: expenses, budgets and analytics). Waiting for PTR's "next"._
