@@ -1,7 +1,15 @@
 import { useRouter } from 'expo-router';
 import { ChevronLeft, Clock, Droplet, Smartphone } from 'lucide-react-native';
 import { type ReactNode, useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import {
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useMealPlan } from '@/features/food/hooks/useFood';
@@ -289,7 +297,10 @@ function Frame({
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   return (
-    <View style={[styles.flex, { backgroundColor: colors.canvas }]}>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      style={[styles.flex, { backgroundColor: colors.canvas }]}
+    >
       <ScrollView
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={[styles.content, { paddingTop: insets.top + 16 }]}
@@ -339,7 +350,7 @@ function Frame({
       <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) + 8 }]}>
         {footer}
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

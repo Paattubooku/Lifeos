@@ -79,7 +79,7 @@ function ExercisePicker({
         onChangeText={setQ}
         placeholder="Name or muscle"
       />
-      <ScrollView style={{ maxHeight: height * 0.5 }}>
+      <ScrollView keyboardShouldPersistTaps="handled" style={{ maxHeight: height * 0.5 }}>
         {list.map((e, i) => (
           <Pressable
             key={e.id}

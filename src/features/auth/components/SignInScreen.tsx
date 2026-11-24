@@ -132,7 +132,7 @@ export function SignInScreen() {
             autoCorrect={false}
             autoComplete="email"
             keyboardType="email-address"
-            textContentType="username"
+            textContentType={creating ? 'emailAddress' : 'username'}
             returnKeyType="next"
             onSubmitEditing={() => passwordRef.current?.focus()}
             editable={!pending}
@@ -148,8 +148,10 @@ export function SignInScreen() {
               setFormError(null);
             }}
             autoCapitalize="none"
-            autoComplete={creating ? 'new-password' : 'current-password'}
-            textContentType={creating ? 'newPassword' : 'password'}
+            // New passwords: 'oneTimeCode' keeps iOS from taking over with Strong Password,
+            // which closes the keyboard in apps without Associated Domains (Expo Go).
+            autoComplete={creating ? 'off' : 'current-password'}
+            textContentType={creating ? 'oneTimeCode' : 'password'}
             returnKeyType={creating ? 'next' : 'go'}
             onSubmitEditing={creating ? () => confirmRef.current?.focus() : onSignIn}
             editable={!pending}
@@ -166,8 +168,8 @@ export function SignInScreen() {
                 setFormError(null);
               }}
               autoCapitalize="none"
-              autoComplete="new-password"
-              textContentType="newPassword"
+              autoComplete="off"
+              textContentType="oneTimeCode"
               returnKeyType="go"
               onSubmitEditing={onSignUp}
               editable={!pending}

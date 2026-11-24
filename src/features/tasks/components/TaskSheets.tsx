@@ -55,7 +55,6 @@ export function QuickAddSheet({
           onChangeText={setTitle}
           placeholder="What needs doing?"
           maxLength={200}
-          autoFocus
           returnKeyType="done"
         />
         <Text variant="sub" weight={600}>

@@ -54,7 +54,11 @@ export function OffPlanSheet({
       )} / ${proteinTarget} g`}
       testID="offplan-sheet"
     >
-      <ScrollView style={{ maxHeight: height * 0.62 }} contentContainerStyle={styles.content}>
+      <ScrollView
+        keyboardShouldPersistTaps="handled"
+        style={{ maxHeight: height * 0.62 }}
+        contentContainerStyle={styles.content}
+      >
         <TextField
           label="What did you eat?"
           value={text}

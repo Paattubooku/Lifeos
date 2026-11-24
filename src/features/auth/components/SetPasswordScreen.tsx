@@ -57,8 +57,8 @@ export function SetPasswordScreen() {
               setFormError(null);
             }}
             autoCapitalize="none"
-            autoComplete="new-password"
-            textContentType="newPassword"
+            autoComplete="off"
+            textContentType="oneTimeCode"
             editable={!pending}
           />
           <TextField
@@ -71,8 +71,8 @@ export function SetPasswordScreen() {
               setFormError(null);
             }}
             autoCapitalize="none"
-            autoComplete="new-password"
-            textContentType="newPassword"
+            autoComplete="off"
+            textContentType="oneTimeCode"
             returnKeyType="go"
             onSubmitEditing={save}
             editable={!pending}

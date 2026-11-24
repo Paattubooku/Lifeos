@@ -1,6 +1,6 @@
 import { BlurView } from 'expo-blur';
 import { createContext, type ReactNode, use, useEffect, useState } from 'react';
-import { Modal, Pressable, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, {
   Easing,
@@ -159,44 +159,51 @@ export function Sheet({
               style={[StyleSheet.absoluteFill, { backgroundColor: colors.scrim }]}
             />
           </Animated.View>
-          <Animated.View
-            testID={testID}
-            accessibilityViewIsModal
-            onAccessibilityEscape={requestClose}
-            onLayout={(e) => height.set(e.nativeEvent.layout.height)}
-            style={[
-              styles.panel,
-              {
-                backgroundColor: colors.raised,
-                borderColor: colors.hairline,
-                paddingBottom: Math.max(insets.bottom, 16) + 18,
-                shadowColor: colors.shadow,
-              },
-              panelStyle,
-            ]}
+          {/* iOS: the keyboard would cover the sheet's inputs; lift the panel above it. */}
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            style={styles.avoid}
+            pointerEvents="box-none"
           >
-            <SheetCloseContext value={requestClose}>
-              <GestureDetector gesture={pan}>
-                <View style={styles.grab}>
-                  <View style={[styles.handle, { backgroundColor: colors.border }]} />
-                  <View style={styles.headerRow}>
-                    <View style={[styles.header, styles.headerText]}>
-                      <Text variant="heading" accessibilityRole="header">
-                        {title}
-                      </Text>
-                      {subtitle ? (
-                        <Text variant="sub" tone="secondary">
-                          {subtitle}
+            <Animated.View
+              testID={testID}
+              accessibilityViewIsModal
+              onAccessibilityEscape={requestClose}
+              onLayout={(e) => height.set(e.nativeEvent.layout.height)}
+              style={[
+                styles.panel,
+                {
+                  backgroundColor: colors.raised,
+                  borderColor: colors.hairline,
+                  paddingBottom: Math.max(insets.bottom, 16) + 18,
+                  shadowColor: colors.shadow,
+                },
+                panelStyle,
+              ]}
+            >
+              <SheetCloseContext value={requestClose}>
+                <GestureDetector gesture={pan}>
+                  <View style={styles.grab}>
+                    <View style={[styles.handle, { backgroundColor: colors.border }]} />
+                    <View style={styles.headerRow}>
+                      <View style={[styles.header, styles.headerText]}>
+                        <Text variant="heading" accessibilityRole="header">
+                          {title}
                         </Text>
-                      ) : null}
+                        {subtitle ? (
+                          <Text variant="sub" tone="secondary">
+                            {subtitle}
+                          </Text>
+                        ) : null}
+                      </View>
+                      {accessory}
                     </View>
-                    {accessory}
                   </View>
-                </View>
-              </GestureDetector>
-              <Animated.View style={[styles.content, contentStyle]}>{children}</Animated.View>
-            </SheetCloseContext>
-          </Animated.View>
+                </GestureDetector>
+                <Animated.View style={[styles.content, contentStyle]}>{children}</Animated.View>
+              </SheetCloseContext>
+            </Animated.View>
+          </KeyboardAvoidingView>
         </GestureHandlerRootView>
       ) : null}
     </Modal>
@@ -207,6 +214,7 @@ const styles = StyleSheet.create({
   headerRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   headerText: { flex: 1 },
   root: { flex: 1, justifyContent: 'flex-end' },
+  avoid: { flex: 1, justifyContent: 'flex-end' },
   panel: {
     borderTopLeftRadius: radius.sheet,
     borderTopRightRadius: radius.sheet,

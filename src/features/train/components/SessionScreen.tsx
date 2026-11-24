@@ -243,6 +243,8 @@ function Frame(props: {
   return (
     <ScrollView
       style={{ backgroundColor: colors.canvas }}
+      keyboardShouldPersistTaps="handled"
+      automaticallyAdjustKeyboardInsets
       contentContainerStyle={[styles.content, { paddingTop: props.insetTop + 12 }]}
     >
       <View style={styles.header}>

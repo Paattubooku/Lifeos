@@ -109,7 +109,11 @@ export function BlockEditSheet({
         ) : null
       }
     >
-      <ScrollView style={{ maxHeight: height * 0.62 }} contentContainerStyle={styles.content}>
+      <ScrollView
+        keyboardShouldPersistTaps="handled"
+        style={{ maxHeight: height * 0.62 }}
+        contentContainerStyle={styles.content}
+      >
         <TextField
           label="Title"
           value={draft.title}

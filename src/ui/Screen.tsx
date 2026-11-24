@@ -40,6 +40,8 @@ export function Screen({
   return (
     <ScrollView
       style={{ backgroundColor: colors.canvas }}
+      keyboardShouldPersistTaps="handled"
+      automaticallyAdjustKeyboardInsets
       contentContainerStyle={[
         styles.content,
         {
