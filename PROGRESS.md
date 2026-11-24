@@ -2,6 +2,57 @@
 
 One entry per feature, newest first: feature ID, what was built, how PTR verifies it on the phone, known gaps.
 
+## F19 — External ingest: bank SMS import + Shortcuts quick-log · 2026-11-24 · done
+
+**Built**
+
+- **Parser** `money/lib/smsParser.ts`, a port of My-Tracker `expenseParser.ts`:
+  - Stage A reject rules (6 from the reference, plus a new **OTP** rule that never rejects a message where money actually moved).
+  - Stage B: 7 ordered extraction rules, with `DD-MMM-YY` / `DD-MM-YYYY` dates, UPI/IMPS/Txn refs, and `sig_<stableHash>` (FNV-1a) refs for ref-less card SMS.
+  - Stage C: `unmatched` (no AI).
+  - Category comes from the Tracker merchant map folded into LifeOS categories, then the reference's hints.
+  - The file is byte-identical to `supabase/functions/_shared/smsParser.ts` (a test checks).
+- **Edge Function `ingest-sms`** (deployed): `POST {"text": "<sms>", "received_at"?}` with `Authorization: Bearer lifeos_pat_…`.
+  - Each message goes to `expense_inbox`, then the inbox is processed at once (oldest first, ≤ 200).
+  - A transaction becomes an `expense` with `source='sms'`; a duplicate ref gives `{duplicate: true}`.
+  - Anything else goes to `expense_skipped` with stage, rule and reason, and the inbox row is then deleted.
+  - Any error leaves the row in the inbox (attempts + 1, last_error) for the next call or for Process now.
+  - The app's own session can call `{"process": true}`.
+- **Edge Function `quick-log`** (deployed): `POST /quick-log/water {"ml": 500}` and `POST /quick-log/expense {"amount", "category"?, "payee"?, "note"?}`, with the same token auth. Rows get a server-made `client_id` on the IST logical day.
+- Server logic lives in `money/lib/ingest.ts` (token checks, inbox processor, quick-log validation), byte-identical to `_shared/ingest.ts` and unit-tested with an in-memory database. The Deno entry points only wire it to Supabase (`deno check` passes).
+- **More → Integrations** `/settings/integrations` (Integrations design):
+  - Parser Lab entry with the inbox count.
+  - **Create token**, named; `lifeos_pat_` + 32 characters from secure random bytes. It's shown once with Copy; only the SHA-256 and the last 4 are stored. Revoke.
+  - Setup guides with the **real** function URLs (copy buttons): iPhone SMS automation, Siri "Log 500 ml", quick-expense Shortcut.
+- **Parser Lab** `/settings/parser-lab` (Integrations-ParserLab design):
+  - Inbox count, "N look like payments" and **Process now**.
+  - Dry run: paste an SMS or tap one of the reference's 7 samples. It shows each stage (reject / extract / categorise / dedupe against your expenses), the verdict and the extracted fields, and writes nothing.
+  - Skipped messages list with **Mark as expense**: the add sheet opens prefilled with the amount, and the SMS is marked overridden.
+
+**Checks run here**
+
+- `typecheck` ✅ · `lint` ✅ · `test` ✅ 748 tests · `test:db` ✅ (new `supabase/tests/ingest.sql`) · iOS + Android bundle export ✅.
+- **AC1**: I ran the reference parser's own code on its 7 samples plus 9 more (one per rule). The port matches every result; the only intended difference is that an OTP SMS is now skipped as `otp`. Each reject rule has its own test.
+- **AC2**: in the processor test, posting the same UPI SMS and the ref-less card SMS twice gives one expense each, and the second post returns `{duplicate: true}`. The database refuses a repeated `txn_ref` (23505).
+- **AC3**: a forced parser error or a failing database write leaves the row in the inbox (attempts 1, last_error); the next run processes it.
+- **AC4**: wrong, revoked or malformed tokens → 401 (code path tested). The app stores only `sha256(token)` and the last 4; a test checks the token appears nowhere in app state.
+- **AC5**: quick-log writes a normal `water_log` row for the logical day, which the app pulls on its next sync. This needs the phone check below.
+- Not checked from here: this container's network blocks `*.supabase.co`, so I couldn't call the deployed functions. The deploys themselves succeeded.
+
+**How PTR verifies on the phone**
+
+1. `git pull`, `npm install`, `npm start`. A new package (`expo-clipboard`) is included.
+2. More → **Integrations** → **Create token** → name it "iPhone Shortcuts" → **Copy** it (it's shown once).
+3. Siri water: follow the "Siri · Log 500 ml" guide (copy the URL from the screen). Run the Shortcut, reopen LifeOS → Water shows +500 ml (AC5).
+4. SMS: follow the "SMS automation" guide. Or, in Shortcuts, make a test "Get Contents of URL" POST with `{"text": "<paste the UPI debit sample>"}`. Money → Transactions shows HOT N SPICY ₹40 with an SMS tag. Post it again: no second row.
+5. Parser Lab → tap the samples to see each stage; **Process now** empties the inbox.
+6. Revoke the token and run the Shortcut again: it now fails (401).
+
+**Known gaps**
+
+- Gemini fallback for unmatched SMS is not built (`LATER.md`). Android in-app SMS reading is skipped because your phone is an iPhone.
+- The deployed `_shared/ingest.ts` lacks one lint-comment line that the repo copy has; the code is the same. The next deploy brings them in line.
+
 ## F18 — Money: expenses, budgets and analytics · 2026-11-24 · done
 
 **Built**
@@ -677,4 +728,4 @@ _M1's 7-day trial was skipped at PTR's request ("I don't have time to test it fo
 - Placeholder app icon/splash (Expo defaults) and bundle id `app.lifeos.ptr`.
 - Open questions from `REFERENCE_NOTES.md` (todo sort order, weight-trend insight, golden fixtures) still default as proposed until PTR answers.
 
-_Next: F19 (External ingest: bank SMS import + Shortcuts quick-log). Waiting for PTR's "next"._
+_Next: F20 (Weekly review). Waiting for PTR's "next"._

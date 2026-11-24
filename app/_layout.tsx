@@ -122,6 +122,8 @@ function Navigator() {
               <Stack.Screen name="settings/profile" />
               <Stack.Screen name="settings/reminders" />
               <Stack.Screen name="settings/screen-time" />
+              <Stack.Screen name="settings/integrations" />
+              <Stack.Screen name="settings/parser-lab" />
               <Stack.Screen name="routine/index" />
               <Stack.Screen name="routine/[id]" />
               <Stack.Screen name="streaks" />

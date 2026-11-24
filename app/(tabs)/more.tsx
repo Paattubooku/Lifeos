@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import {
   Bell,
+  Cable,
   Clock,
   Droplet,
   ListTodo,
@@ -111,6 +112,13 @@ export default function MoreScreen() {
           title="Reminders"
           sub="Max 10 a day · quiet today"
           onPress={() => router.push('/settings/reminders')}
+          divider
+        />
+        <MenuRow
+          icon={Cable}
+          title="Integrations"
+          sub="Bank SMS import, Siri and Shortcuts tokens"
+          onPress={() => router.push('/settings/integrations')}
           divider
         />
         <MenuRow

@@ -31,6 +31,8 @@ export function AddExpenseSheet({
   categories,
   incomeId,
   initialCategoryId,
+  initial,
+  title,
   onSave,
   onClose,
 }: {
@@ -38,18 +40,21 @@ export function AddExpenseSheet({
   categories: readonly ExpenseCategoryRow[];
   incomeId: string | null;
   initialCategoryId: string | null;
+  /** Prefill (Parser Lab "Mark as expense"). */
+  initial?: { amount?: number | null; merchant?: string; note?: string; date?: DateString };
+  title?: string;
   onSave: (e: NewExpense, categoryName: string | null) => void;
   onClose: () => void;
 }) {
   const { colors } = useTheme();
   const { height } = useWindowDimensions();
-  const [text, setText] = useState('');
+  const [text, setText] = useState(initial?.amount ? String(initial.amount) : '');
   const [categoryId, setCategoryId] = useState<string | null>(initialCategoryId);
   const [method, setMethod] = useState<PaymentMethod>('upi');
-  const [merchant, setMerchant] = useState('');
-  const [note, setNote] = useState('');
+  const [merchant, setMerchant] = useState(initial?.merchant ?? '');
+  const [note, setNote] = useState(initial?.note ?? '');
   const [recurring, setRecurring] = useState(false);
-  const [date, setDate] = useState<DateString>(today);
+  const [date, setDate] = useState<DateString>(initial?.date ?? today);
   const amount = parseAmount(text);
   const income = categoryId !== null && categoryId === incomeId;
   const category = categories.find((c) => c.id === categoryId) ?? null;
@@ -75,7 +80,7 @@ export function AddExpenseSheet({
     <Sheet
       visible
       onClose={onClose}
-      title={income ? 'Add income' : 'Add expense'}
+      title={title ?? (income ? 'Add income' : 'Add expense')}
       accessory={
         <Text variant="caption" tone="secondary">
           3 taps: amount → category → save

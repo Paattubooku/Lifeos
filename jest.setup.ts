@@ -50,7 +50,19 @@ jest.mock('@react-native-community/netinfo', () =>
 
 jest.mock('expo-crypto', () => ({
   randomUUID: () => globalThis.crypto.randomUUID(),
+  getRandomBytes: (n: number) => globalThis.crypto.getRandomValues(new Uint8Array(n)),
+  CryptoDigestAlgorithm: { SHA256: 'SHA-256' },
+  digestStringAsync: async (_alg: string, text: string) =>
+    Array.from(
+      new Uint8Array(
+        await globalThis.crypto.subtle.digest('SHA-256', new TextEncoder().encode(text)),
+      ),
+    )
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join(''),
 }));
+
+jest.mock('expo-clipboard', () => ({ setStringAsync: jest.fn(() => Promise.resolve(true)) }));
 
 jest.mock('expo-notifications', () => ({
   getPermissionsAsync: jest.fn(() =>

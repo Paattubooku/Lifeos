@@ -1,4 +1,4 @@
-import { moneyApi } from '@/features/money/api';
+import { integrationsApi, moneyApi } from '@/features/money/api';
 import { addDays } from '@/lib/dates';
 import type { Tables } from '@/types/supabase';
 
@@ -33,7 +33,13 @@ export type ExpenseSpec = [
 ];
 
 /** The Today fixture plus categories and expenses (offline; writes stay queued). */
-export async function moneyStore(specs: ExpenseSpec[] = []) {
+export type IntegrationsData = {
+  tokens?: Partial<Tables<'api_token'>>[];
+  inbox?: string[];
+  skipped?: [string, string][];
+};
+
+export async function moneyStore(specs: ExpenseSpec[] = [], integ: IntegrationsData = {}) {
   const t = await todayStore();
   const rows: Tables<'expense'>[] = specs.map(([ago, amount, cat, merchant, extra], i) => ({
     ...base,
@@ -60,5 +66,52 @@ export async function moneyStore(specs: ExpenseSpec[] = []) {
     moneyApi.util.upsertQueryData('getExpenseCategories', undefined, CATEGORIES),
   );
   await t.store.dispatch(moneyApi.util.upsertQueryData('getExpenses', undefined, rows));
+  await t.store.dispatch(
+    integrationsApi.util.upsertQueryData(
+      'getApiTokens',
+      undefined,
+      (integ.tokens ?? []).map((k, i) => ({
+        id: `tok${i}`,
+        client_id: `tok${i}`,
+        name: `Token ${i}`,
+        last4: 'ab12',
+        created_at: base.created_at,
+        last_used_at: null,
+        revoked_at: null,
+        deleted_at: null,
+        ...k,
+      })),
+    ),
+  );
+  await t.store.dispatch(
+    integrationsApi.util.upsertQueryData(
+      'getInbox',
+      undefined,
+      (integ.inbox ?? []).map((raw, i) => ({
+        id: `in${i}`,
+        raw_sms: raw,
+        received_at: base.created_at,
+        attempts: 0,
+        last_error: null,
+      })),
+    ),
+  );
+  await t.store.dispatch(
+    integrationsApi.util.upsertQueryData(
+      'getSkipped',
+      undefined,
+      (integ.skipped ?? []).map(([raw, classification], i) => ({
+        ...base,
+        id: `sk${i}`,
+        client_id: `sk${i}`,
+        raw_sms: raw,
+        received_at: base.created_at,
+        stage: classification === 'unmatched' ? 'unmatched_default' : 'reject_rule',
+        rule: null,
+        classification,
+        overridden: false,
+      })),
+    ),
+  );
   return { ...t, rows };
 }

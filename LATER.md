@@ -15,3 +15,4 @@ Ideas parked out of scope. Nothing here gets built until v1 (F00–F24) is done 
 - Shopping list (PRD F10) — dropped by PTR on 2026-11-23. If ever revived: `dish.buy` and `dish.shopping_items` columns still exist; a dish-level list (no ingredient entry) would work with today's data.
 - F17: edit a task's title, priority and due date (today: delete and re-add); optional due time ("Before 6 pm").
 - F18: add / rename / delete expense categories; edit an existing expense; pick any past date in the add sheet.
+- F19: Gemini (or other AI) fallback for unmatched bank SMS, server-side only; Android in-app SMS reading if PTR ever moves to Android; more bank formats beyond ICICI.

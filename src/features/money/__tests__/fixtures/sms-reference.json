@@ -1,0 +1,226 @@
+[
+  {
+    "sms": "ICICI Bank Acct XX219 debited for Rs 40.00 on 01-Jun-26; HOT N SPICY credited. UPI:651870302957. Call 18002662 for dispute. SMS BLOCK 219 to 9215676766",
+    "ref": {
+      "classification": "actual_debit",
+      "amount": 40,
+      "payee": "HOT N SPICY",
+      "txn_date": "2026-06-01",
+      "upi_ref": "651870302957",
+      "category": "food",
+      "source": "regex",
+      "meta": {
+        "stage": "extract_rule",
+        "ruleName": "upi_debit"
+      }
+    }
+  },
+  {
+    "sms": "Dear Customer, Acct XX219 is credited with Rs 16.80 on 01-Jun-26 from supermoney. UPI:615210447014-ICICI Bank.",
+    "ref": {
+      "classification": "actual_credit",
+      "amount": 16.8,
+      "payee": "supermoney",
+      "txn_date": "2026-06-01",
+      "upi_ref": "615210447014",
+      "category": "income",
+      "source": "regex",
+      "meta": {
+        "stage": "extract_rule",
+        "ruleName": "upi_credit"
+      }
+    }
+  },
+  {
+    "sms": "ACTFIBER bill of Rs 1237.82 for 108863157766 due on 2026-06-15, will be auto-debited on 2026-06-12-ICICI Bank.",
+    "ref": {
+      "classification": "not_a_transaction",
+      "reason": "bill_reminder",
+      "source": "regex",
+      "meta": {
+        "stage": "reject_rule",
+        "ruleName": "bill_reminder_auto_debit"
+      }
+    }
+  },
+  {
+    "sms": "Your account is not debited with Rs 5000.00 towards AuraGold for Autopay due to cbs rejection 0116, RRN 705667557146-ICICI Bank.",
+    "ref": {
+      "classification": "not_a_transaction",
+      "reason": "failed_autopay",
+      "source": "regex",
+      "meta": {
+        "stage": "reject_rule",
+        "ruleName": "failed_autopay_cbs_rejection"
+      }
+    }
+  },
+  {
+    "sms": "Rs. 2,000.00 cardless withdrawal at ICICI Bank ATM on 10-Jun-26. Info: CCW*27801HHR*14970530*6723*C. To dispute call 18002662 or SMS BLOCK 219 to 9215676766",
+    "ref": {
+      "classification": "actual_debit",
+      "amount": 2000,
+      "payee": "ATM Cash Withdrawal",
+      "txn_date": "2026-06-10",
+      "upi_ref": "CCW*27801HHR*14970530*6723*C",
+      "category": "cash",
+      "source": "regex",
+      "meta": {
+        "stage": "extract_rule",
+        "ruleName": "cardless_atm_withdrawal"
+      }
+    }
+  },
+  {
+    "sms": "INR 1,237.82 spent using ICICI Bank Card XX8006 on 12-Jun-26 on ICICI BILL PAY. Avl Limit: INR 1,27,524.36. If not you, call 1800 2662/SMS BLOCK 8006 to 9215676766",
+    "ref": {
+      "classification": "actual_debit",
+      "amount": 1237.82,
+      "payee": "ICICI BILL PAY",
+      "txn_date": "2026-06-12",
+      "upi_ref": "sig_e4c45c1e330cee75",
+      "category": "bills",
+      "source": "regex",
+      "meta": {
+        "stage": "extract_rule",
+        "ruleName": "credit_card_spend"
+      }
+    }
+  },
+  {
+    "sms": "ICICI Bank Credit Card XX8006 Statement is sent to th***********98@gmail.com. Total of Rs 1,237.82 or minimum of Rs 100.00 is due by 20-JUN-26.",
+    "ref": {
+      "classification": "not_a_transaction",
+      "reason": "statement_notice",
+      "source": "regex",
+      "meta": {
+        "stage": "reject_rule",
+        "ruleName": "statement_notice"
+      }
+    }
+  },
+  {
+    "sms": "Dear Customer, Account XX219 is credited with Rs 5,000.00 on 03-Jun-26 by RAVI KUMAR. IMPS Ref. no. 615311223344.",
+    "ref": {
+      "classification": "actual_credit",
+      "amount": 5000,
+      "payee": "RAVI KUMAR",
+      "txn_date": "2026-06-03",
+      "upi_ref": "615311223344",
+      "category": "income",
+      "source": "regex",
+      "meta": {
+        "stage": "extract_rule",
+        "ruleName": "imps_credit"
+      }
+    }
+  },
+  {
+    "sms": "TNEB Electricity bill of Rs 999.00 for 0412345 paid on 14-06-2026 10:22 AM. Txn ID: AX12345678-ICICI Bank.",
+    "ref": {
+      "classification": "actual_debit",
+      "amount": 999,
+      "payee": "TNEB Electricity",
+      "txn_date": "2026-06-14",
+      "upi_ref": "AX12345678-ICICI",
+      "category": "bills",
+      "source": "regex",
+      "meta": {
+        "stage": "extract_rule",
+        "ruleName": "bill_autodebit_paid"
+      }
+    }
+  },
+  {
+    "sms": "Dear Customer, thank you for your payment of INR 1,237.82 towards ICICI Bank Credit Card XX8006 through Auto Debit from Account XX219 on 15-Jun-26.",
+    "ref": {
+      "classification": "actual_debit",
+      "amount": 1237.82,
+      "payee": "ICICI Bank Credit Card XX8006",
+      "txn_date": "2026-06-15",
+      "upi_ref": "sig_ef0d22aafef70a9b",
+      "category": "card",
+      "source": "regex",
+      "meta": {
+        "stage": "extract_rule",
+        "ruleName": "credit_card_autopay_confirmation"
+      }
+    }
+  },
+  {
+    "sms": "Your Jio bill of Rs 349.00 amount will be debited from your account on 20-Jun-26. Please ignore if paid.",
+    "ref": {
+      "classification": "not_a_transaction",
+      "reason": "bill_reminder",
+      "source": "regex",
+      "meta": {
+        "stage": "reject_rule",
+        "ruleName": "bill_reminder_please_ignore"
+      }
+    }
+  },
+  {
+    "sms": "Revised schedule of charges: SMS alert fee updated w.e.f. 01-Jul-26. For details, visit icici.bank.in",
+    "ref": {
+      "classification": "not_a_transaction",
+      "reason": "noise",
+      "source": "regex",
+      "meta": {
+        "stage": "reject_rule",
+        "ruleName": "fee_change_noise"
+      }
+    }
+  },
+  {
+    "sms": "Get 10% cashback on fuel with ICICI Bank cards. For details, visit icici.bank.in/offers",
+    "ref": {
+      "classification": "not_a_transaction",
+      "reason": "noise",
+      "source": "regex",
+      "meta": {
+        "stage": "reject_rule",
+        "ruleName": "generic_promo_noise"
+      }
+    }
+  },
+  {
+    "sms": "Hello from ICICI Bank. Your new debit card has been dispatched.",
+    "ref": {
+      "classification": "not_a_transaction",
+      "reason": "noise",
+      "source": "regex",
+      "meta": {
+        "stage": "unmatched_default",
+        "ruleName": null
+      }
+    }
+  },
+  {
+    "sms": "ICICI Bank Acct XX219 debited for Rs 1,250.50 on 05-Jun-26; Swiggy Instamart credited. UPI:651870309999. Call 18002662 for dispute.",
+    "ref": {
+      "classification": "actual_debit",
+      "amount": 1250.5,
+      "payee": "Swiggy Instamart",
+      "txn_date": "2026-06-05",
+      "upi_ref": "651870309999",
+      "category": "food",
+      "source": "regex",
+      "meta": {
+        "stage": "extract_rule",
+        "ruleName": "upi_debit"
+      }
+    }
+  },
+  {
+    "sms": "123456 is the OTP for your transaction of Rs 499.00 at AMAZON. Do not share it with anyone - ICICI Bank.",
+    "ref": {
+      "classification": "not_a_transaction",
+      "reason": "noise",
+      "source": "regex",
+      "meta": {
+        "stage": "unmatched_default",
+        "ruleName": null
+      }
+    }
+  }
+]
