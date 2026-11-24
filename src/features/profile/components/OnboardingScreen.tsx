@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { ChevronLeft, Clock, Droplet, Smartphone } from 'lucide-react-native';
-import { type ReactNode, useEffect, useState } from 'react';
+import { type ReactNode, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -72,7 +72,9 @@ export function OnboardingScreen({ step }: { step: number }) {
   // Start the answers on first entry: blanks for the personal numbers.
   useEffect(() => {
     // Not while finishing: the draft is cleared before this screen unmounts.
-    if (!draft && ctx.profile && !finishing)
+    // Never once setup is saved: the step screens still mounted under the last one
+    // must not start a blank draft when it is cleared (that bounced to step 1).
+    if (!draft && ctx.profile && !ctx.profile.onboarded_at && !finishing)
       dispatch(draftStarted(newDraft(ctx.profile, ctx.latestWeightKg)));
   }, [ctx.profile, ctx.latestWeightKg, dispatch, draft, finishing]);
 
@@ -111,7 +113,9 @@ export function OnboardingScreen({ step }: { step: number }) {
     });
     await dispatch(applyWrites(writes));
     dispatch(draftCleared());
-    router.replace('/tour');
+    // No navigation here: with onboarded_at saved the root's guard closes the setup
+    // screens and the start screen sends the person to the tour. Navigating here too
+    // raced that switch and looped on iPhone ("Maximum update depth exceeded").
   };
 
   const { title, subtitle } = TITLES[step] ?? TITLES[1]!;
@@ -191,7 +195,10 @@ export function OnboardingScreen({ step }: { step: number }) {
 
 function Redirect({ to }: { to: number }) {
   const router = useRouter();
+  const done = useRef(false);
   useEffect(() => {
+    if (done.current) return;
+    done.current = true;
     router.replace({ pathname: '/onboarding/[step]', params: { step: String(to) } });
   }, [router, to]);
   return <Loading />;

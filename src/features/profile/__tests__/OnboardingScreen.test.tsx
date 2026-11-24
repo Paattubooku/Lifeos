@@ -209,7 +209,44 @@ describe('OnboardingScreen (F25: any new account)', () => {
       'rd-wake-c': '07:00',
     });
     expect(store.getState().profile.draft).toBeNull();
-    expect(mockRouter.replace).toHaveBeenCalledWith('/tour');
+    // Saved setup: no new blank draft from the hidden step screens, and no racing
+    // navigation (the root's guard moves on to the tour once onboarded_at is saved).
+    await act(async () => {});
+    expect(store.getState().profile.draft).toBeNull();
+    expect(mockRouter.replace).not.toHaveBeenCalled();
+  });
+
+  it('finishing with earlier steps still mounted underneath (iPhone stack): no restart, no bounce to step 1', async () => {
+    const { store } = await seededStore(profileRow(NEW_USER));
+    store.dispatch({
+      type: 'profile/draftStarted',
+      payload: {
+        ...EXAMPLE,
+        sex: 'female',
+        birth_year: 1990,
+        height_cm: 160,
+        current_weight_kg: 68.5,
+        goal_weight_kg: 60,
+        targetsSuggested: true,
+      },
+    });
+    const starts = jest.spyOn(store, 'dispatch');
+    await renderWithStore(
+      store,
+      <>
+        <OnboardingScreen step={3} />
+        <OnboardingScreen step={5} />
+      </>,
+    );
+    await act(async () => {
+      await fireEvent.press(screen.getByRole('button', { name: 'Skip notifications and finish' }));
+    });
+    await act(async () => {});
+    expect(
+      starts.mock.calls.filter(([a]) => (a as { type?: string }).type === 'profile/draftStarted'),
+    ).toHaveLength(0);
+    expect(store.getState().profile.draft).toBeNull();
+    expect(mockRouter.replace).not.toHaveBeenCalled();
   });
 
   it('step 5 "Allow notifications" asks the OS first', async () => {
@@ -219,6 +256,6 @@ describe('OnboardingScreen (F25: any new account)', () => {
       await fireEvent.press(screen.getByRole('button', { name: 'Allow notifications and finish' }));
     });
     expect(Notifications.requestPermissionsAsync).toHaveBeenCalled();
-    expect(mockRouter.replace).toHaveBeenCalledWith('/tour');
+    expect(mockRouter.replace).not.toHaveBeenCalled();
   });
 });
