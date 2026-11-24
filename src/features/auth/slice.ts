@@ -1,8 +1,10 @@
 import { createAsyncThunk, createSlice, type PayloadAction } from '@reduxjs/toolkit';
 
+import { authRedirectUrl } from '@/lib/authRedirect';
 import type { AsyncKeyValue } from '@/lib/secureStorage';
 import type { LifeosClient } from '@/lib/supabase';
 
+import { type AuthLink } from './lib/authLink';
 import {
   type AuthUser,
   authErrorMessage,
@@ -23,6 +25,8 @@ export type AuthState = {
   error: string | null;
   /** F25: non-error message, e.g. "confirm your email" after sign-up. */
   notice: string | null;
+  /** Opened from a password-reset link: ask for a new password first. */
+  recovery: boolean;
   /** seed_defaults() result for this session (retried on next launch when it fails). */
   seed: SeedStatus;
   /** .env missing or still holding the placeholders. */
@@ -36,6 +40,7 @@ export const initialAuthState: AuthState = {
   pending: false,
   error: null,
   notice: null,
+  recovery: false,
   seed: 'idle',
   configMissing: false,
 };
@@ -105,9 +110,11 @@ export const signUp = createAsyncThunk<
   ThunkConfig
 >('auth/signUp', async ({ email, password }, { extra, dispatch, rejectWithValue }) => {
   try {
-    const { data, error } = await extra
-      .getSupabase()
-      .auth.signUp({ email: email.trim(), password });
+    const { data, error } = await extra.getSupabase().auth.signUp({
+      email: email.trim(),
+      password,
+      options: { emailRedirectTo: authRedirectUrl() },
+    });
     if (error) return rejectWithValue(authErrorMessage(error));
     const user = userFromSession(data.session);
     if (!user) return null;
@@ -122,9 +129,49 @@ export const sendPasswordReset = createAsyncThunk<string, { email: string }, Thu
   'auth/sendPasswordReset',
   async ({ email }, { extra, rejectWithValue }) => {
     try {
-      const { error } = await extra.getSupabase().auth.resetPasswordForEmail(email.trim());
+      const { error } = await extra
+        .getSupabase()
+        .auth.resetPasswordForEmail(email.trim(), { redirectTo: authRedirectUrl() });
       if (error) return rejectWithValue(authErrorMessage(error));
       return email.trim();
+    } catch (e) {
+      return rejectWithValue(authErrorMessage(e));
+    }
+  },
+);
+
+/**
+ * An email link opened the app: start the session it carries. The auth
+ * listener then signs in (and seeds) as for any other session.
+ */
+export const completeAuthLink = createAsyncThunk<{ recovery: boolean }, AuthLink, ThunkConfig>(
+  'auth/completeAuthLink',
+  async (link, { extra, rejectWithValue }) => {
+    if (link.kind === 'error') return rejectWithValue(link.message);
+    try {
+      const auth = extra.getSupabase().auth;
+      const { error } =
+        link.kind === 'session'
+          ? await auth.setSession({
+              access_token: link.accessToken,
+              refresh_token: link.refreshToken,
+            })
+          : await auth.exchangeCodeForSession(link.code);
+      if (error) return rejectWithValue('That link has expired. Sign in, or ask for a new one.');
+      return { recovery: link.recovery };
+    } catch (e) {
+      return rejectWithValue(authErrorMessage(e));
+    }
+  },
+);
+
+/** After a reset link: save the new password. */
+export const setNewPassword = createAsyncThunk<void, { password: string }, ThunkConfig>(
+  'auth/setNewPassword',
+  async ({ password }, { extra, rejectWithValue }) => {
+    try {
+      const { error } = await extra.getSupabase().auth.updateUser({ password });
+      if (error) return rejectWithValue(authErrorMessage(error));
     } catch (e) {
       return rejectWithValue(authErrorMessage(e));
     }
@@ -227,6 +274,30 @@ export const authSlice = createSlice({
       state.pending = false;
     });
     b.addCase(sendPasswordReset.rejected, (state, { payload, error }) => {
+      state.pending = false;
+      state.error = payload ?? error.message ?? 'Something went wrong. Try again.';
+    });
+
+    b.addCase(completeAuthLink.pending, (state) => {
+      state.error = null;
+      state.notice = null;
+    });
+    b.addCase(completeAuthLink.fulfilled, (state, { payload }) => {
+      state.recovery = payload.recovery;
+    });
+    b.addCase(completeAuthLink.rejected, (state, { payload, error }) => {
+      state.error = payload ?? error.message ?? 'Something went wrong. Try again.';
+    });
+    b.addCase(setNewPassword.pending, (state) => {
+      state.pending = true;
+      state.error = null;
+    });
+    b.addCase(setNewPassword.fulfilled, (state) => {
+      state.pending = false;
+      state.recovery = false;
+      state.notice = 'Password changed.';
+    });
+    b.addCase(setNewPassword.rejected, (state, { payload, error }) => {
       state.pending = false;
       state.error = payload ?? error.message ?? 'Something went wrong. Try again.';
     });

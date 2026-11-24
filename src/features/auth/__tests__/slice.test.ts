@@ -200,7 +200,9 @@ describe('auth slice', () => {
     it('sends the reset email', async () => {
       const { store, auth } = storeWithFake();
       const res = await store.dispatch(sendPasswordReset({ email: ' ptr@example.com' }));
-      expect(auth.resetPasswordForEmail).toHaveBeenCalledWith('ptr@example.com');
+      expect(auth.resetPasswordForEmail).toHaveBeenCalledWith('ptr@example.com', {
+        redirectTo: 'lifeos://auth-callback',
+      });
       expect(res.payload).toBe('ptr@example.com');
       expect(store.getState().auth.pending).toBe(false);
     });

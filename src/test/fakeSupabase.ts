@@ -14,6 +14,9 @@ export type FakeAuth = {
   signUp: jest.Mock<Result<{ session: unknown }>, [{ email: string; password: string }]>;
   resetPasswordForEmail: jest.Mock<Result<object>, [string]>;
   signOut: jest.Mock<Promise<{ error: unknown }>, [{ scope: string }?]>;
+  setSession: jest.Mock<Result<object>, [{ access_token: string; refresh_token: string }]>;
+  exchangeCodeForSession: jest.Mock<Result<object>, [string]>;
+  updateUser: jest.Mock<Result<object>, [{ password: string }]>;
 };
 
 export const SESSION = {
@@ -41,6 +44,17 @@ export function fakeSupabase() {
       error: null,
     })),
     signOut: jest.fn<Promise<{ error: unknown }>, [{ scope: string }?]>(async () => ({
+      error: null,
+    })),
+    setSession: jest.fn<Result<object>, [{ access_token: string; refresh_token: string }]>(
+      async () => ({ data: {}, error: null }),
+    ),
+    exchangeCodeForSession: jest.fn<Result<object>, [string]>(async () => ({
+      data: {},
+      error: null,
+    })),
+    updateUser: jest.fn<Result<object>, [{ password: string }]>(async () => ({
+      data: {},
       error: null,
     })),
   };

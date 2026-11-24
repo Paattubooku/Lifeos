@@ -1,11 +1,13 @@
+import * as Linking from 'expo-linking';
 import { useEffect } from 'react';
 import { AppState } from 'react-native';
 
 import { getSupabase, isSupabaseConfigured } from '@/lib/supabase';
 import { useAppDispatch, useAppSelector } from '@/store';
 
+import { parseAuthLink } from '../lib/authLink';
 import { userFromSession } from '../lib/session';
-import { ensureSeeded, restoreSession, sessionChanged } from '../slice';
+import { completeAuthLink, ensureSeeded, restoreSession, sessionChanged } from '../slice';
 
 /**
  * Restores the session at launch, mirrors Supabase auth events into Redux, and
@@ -38,6 +40,18 @@ export function useAuthListener() {
       void dispatch(ensureSeeded());
     }
   }, [dispatch, status, seed, offline]);
+
+  // Email links (confirm sign-up, reset password) opening the app: cold start and while open.
+  useEffect(() => {
+    if (!isSupabaseConfigured) return;
+    const handle = (url: string | null) => {
+      const link = parseAuthLink(url);
+      if (link) void dispatch(completeAuthLink(link));
+    };
+    void Linking.getInitialURL().then(handle);
+    const sub = Linking.addEventListener('url', ({ url }) => handle(url));
+    return () => sub.remove();
+  }, [dispatch]);
 
   // Back online after an offline launch: try to restore (refresh the token) again.
   useEffect(() => {

@@ -131,3 +131,10 @@ jest.mock('expo-sharing', () => ({
   isAvailableAsync: jest.fn(() => Promise.resolve(true)),
   shareAsync: jest.fn(() => Promise.resolve()),
 }));
+
+// Deep links (F25 email links): standalone-style URLs in tests.
+jest.mock('expo-linking', () => ({
+  createURL: (path: string) => `lifeos://${path}`,
+  getInitialURL: jest.fn(() => Promise.resolve(null)),
+  addEventListener: jest.fn(() => ({ remove: jest.fn() })),
+}));

@@ -19,6 +19,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Provider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
 
+import { SetPasswordScreen } from '@/features/auth/components/SetPasswordScreen';
 import { useAuthListener } from '@/features/auth/hooks/useAuthListener';
 import { useNotificationRouting } from '@/features/notifications/hooks/useNotificationRouting';
 import { useOnboardingGate } from '@/features/profile/hooks/useOnboardingGate';
@@ -70,6 +71,7 @@ function Navigator() {
   useSyncWorker();
   const status = useAppSelector((s) => s.auth.status);
   const signedIn = status === 'signedIn';
+  const recovery = useAppSelector((s) => s.auth.recovery);
   const gate = useOnboardingGate(signedIn);
   useNotificationRouting(signedIn && gate === 'done');
 
@@ -101,7 +103,9 @@ function Navigator() {
     <NavThemeProvider value={navTheme}>
       <SnackbarProvider>
         <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
-        {status === 'restoring' ? null : signedIn && gate === 'loading' ? (
+        {status === 'restoring' ? null : signedIn && recovery ? (
+          <SetPasswordScreen />
+        ) : signedIn && gate === 'loading' ? (
           <View
             style={{
               flex: 1,
@@ -118,6 +122,7 @@ function Navigator() {
             screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.canvas } }}
           >
             <Stack.Screen name="index" />
+            <Stack.Screen name="auth-callback" />
             <Stack.Protected guard={signedIn && gate === 'done'}>
               <Stack.Screen name="(tabs)" />
               <Stack.Screen name="settings/index" />

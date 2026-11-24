@@ -80,7 +80,9 @@ describe('SignInScreen', () => {
     expect(screen.getByText('Enter your email address.')).toBeOnTheScreen();
     await fireEvent.changeText(screen.getByLabelText('Email'), 'ptr@example.com');
     await fireEvent.press(screen.getByRole('button', { name: 'Forgot password' }));
-    expect(auth.resetPasswordForEmail).toHaveBeenCalledWith('ptr@example.com');
+    expect(auth.resetPasswordForEmail).toHaveBeenCalledWith('ptr@example.com', {
+      redirectTo: 'lifeos://auth-callback',
+    });
     expect(screen.getByText('Reset link sent to ptr@example.com')).toBeOnTheScreen();
     await act(async () => {
       jest.runOnlyPendingTimers();
@@ -108,7 +110,11 @@ describe('SignInScreen', () => {
     await act(async () => {
       await fireEvent.press(screen.getByRole('button', { name: 'Create account' }));
     });
-    expect(auth.signUp).toHaveBeenCalledWith({ email: 'new@example.com', password: 'long-enough' });
+    expect(auth.signUp).toHaveBeenCalledWith({
+      email: 'new@example.com',
+      password: 'long-enough',
+      options: { emailRedirectTo: 'lifeos://auth-callback' },
+    });
     expect(
       screen.getByText('Account created. Open the link we sent to new@example.com, then sign in.'),
     ).toBeOnTheScreen();
