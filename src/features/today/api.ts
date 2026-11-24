@@ -170,6 +170,15 @@ export const todayApi = baseApi.injectEndpoints({
         ),
       providesTags: ['Sleep'],
     }),
+
+    /** F14: nights from `from` on (includes tomorrow's phone-away row). */
+    getSleepSince: b.query<SleepLogRow[], string>({
+      queryFn: (from, api) =>
+        supabaseQuery(api, ['sleep_log'], async (c) =>
+          unwrapList(await c.from('sleep_log').select('*').gte('date', from).order('date')),
+        ),
+      providesTags: ['Sleep'],
+    }),
   }),
 });
 
@@ -181,6 +190,7 @@ export const {
   useGetSessionOnQuery,
   useGetOverridesSinceQuery,
   useGetSleepOnQuery,
+  useGetSleepSinceQuery,
   useGetDayHistoryQuery,
   useGetLogsSinceQuery,
   useGetDoneBlocksSinceQuery,

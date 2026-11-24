@@ -249,8 +249,10 @@ describe('TodayScreen', () => {
     await act(async () => {
       await fireEvent.press(screen.getByRole('button', { name: 'Save sleep' }));
     });
-    const sleep = queue(store).at(-1);
+    const sleep = queue(store).find((q) => q.table === 'sleep_log');
     expect(sleep).toMatchObject({ table: 'sleep_log', row: { date: today } });
+    // F14 AC2: woke at 05:00 → the Wake block is ticked too.
+    expect(queue(store).at(-1)).toMatchObject({ table: 'block_log', row: { status: 'done' } });
     expect(Date.parse(String(sleep?.row.wake_at)) - Date.parse(String(sleep?.row.bed_at))).toBe(
       7 * 3600e3,
     );
@@ -262,7 +264,7 @@ describe('TodayScreen', () => {
     });
     expect(dayLogWrite(store)).toMatchObject({
       client_id: 'dl-c',
-      row: { note: 'Long meeting day', score: 0 },
+      row: { note: 'Long meeting day', score: 9 },
     });
     expect(screen.getByRole('button', { name: 'Edit today’s note' })).toBeOnTheScreen();
   });

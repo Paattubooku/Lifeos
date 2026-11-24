@@ -11,12 +11,16 @@ import { SwitchTemplateSheet } from '@/features/routine/components/SwitchTemplat
 import { dayMinutes, hhmm } from '@/features/routine/lib/blocks';
 import type { Change } from '@/features/routine/lib/changes';
 import { applyChanges } from '@/features/routine/slice';
-import { istClock, isoWeekday, logicalMoment } from '@/lib/dates';
+import { istClock, isoWeekday } from '@/lib/dates';
 import { formatClock } from '@/lib/format';
 import { useFood } from '@/features/food/hooks/useFood';
 import { useFoodActions } from '@/features/food/hooks/useFoodActions';
 import { useReminderSchedule } from '@/features/notifications/hooks/useReminderSchedule';
 import { useReminderSync } from '@/features/notifications/hooks/useReminderSync';
+import { MorningCheckCard } from '@/features/sleep/components/MorningCheckCard';
+import { useLogNight } from '@/features/sleep/hooks/useLogNight';
+import { useSleep } from '@/features/sleep/hooks/useSleep';
+import { planPhoneOff } from '@/features/sleep/lib/sleep';
 import { WaterAddSheet } from '@/features/water/components/WaterAddSheet';
 import { WaterCard } from '@/features/water/components/WaterCard';
 import { useLogWater } from '@/features/water/hooks/useLogWater';
@@ -38,7 +42,7 @@ import { useDayScoreSync } from '../hooks/useDayScoreSync';
 import { useNow } from '../hooks/useNow';
 import { useStreak } from '../hooks/useStreak';
 import { useToday } from '../hooks/useToday';
-import { type BlockStatus, planBlockStatus, planNote, planSleep, statusOf } from '../lib/changes';
+import { type BlockStatus, planBlockStatus, planNote, statusOf } from '../lib/changes';
 import { mealSummary } from '../lib/meals';
 import { canMoveToTomorrow, moveSummary, planMoveToTomorrow } from '../lib/program';
 import { streakLine } from '../lib/streak';
@@ -70,6 +74,8 @@ export function TodayScreen({ now: fixedNow }: { now?: number } = {}) {
   useReminderSync(useReminderSchedule({ t, food, water }));
   const { log: logWaterEntry } = useLogWater();
   useDayScoreSync(t);
+  const sleep = useSleep(now);
+  const logNight = useLogNight(t, sleep);
   const { streak } = useStreak(t.today, t.plan.blocks.length > 0 ? t.day.score.score : null);
   const dispatch = useAppDispatch();
   const router = useRouter();
@@ -81,8 +87,10 @@ export function TodayScreen({ now: fixedNow }: { now?: number } = {}) {
 
   // Undo runs later, against the rows as they are then.
   const latest = useRef(t);
+  const latestSleep = useRef(sleep);
   useEffect(() => {
     latest.current = t;
+    latestSleep.current = sleep;
   });
 
   const logFor = (blockId: string, from = t) => {
@@ -95,15 +103,22 @@ export function TodayScreen({ now: fixedNow }: { now?: number } = {}) {
     const before = statusOf(row.log);
     const blockId = row.block.id;
     const date = t.today;
+    // F14: the Phone away tick is tonight's phone_off_kept.
+    const phone = (s: BlockStatus, tonight = sleep.tonight) =>
+      row.block.kind === 'phone_off' ? planPhoneOff(date, tonight, s?.status === 'done') : [];
     haptics.tap();
-    await apply(planBlockStatus(blockId, date, logFor(blockId), next, clock()));
+    await apply([
+      ...planBlockStatus(blockId, date, logFor(blockId), next, clock()),
+      ...phone(next),
+    ]);
     showSnackbar({
       message,
       actionLabel: 'Undo',
       onAction: () =>
-        void apply(
-          planBlockStatus(blockId, date, logFor(blockId, latest.current), before, clock()),
-        ),
+        void apply([
+          ...planBlockStatus(blockId, date, logFor(blockId, latest.current), before, clock()),
+          ...phone(before, latestSleep.current.tonight),
+        ]),
     });
   };
 
@@ -166,7 +181,7 @@ export function TodayScreen({ now: fixedNow }: { now?: number } = {}) {
   const waterTarget = waters[waters.length - 1];
   const phoneOff = t.profile?.phone_off_time ? dayMinutes(t.profile.phone_off_time) : 21 * 60 + 30;
   const showEndOfDay = ctx.nowMin >= phoneOff && t.plan.blocks.length > 0;
-  const sleepLogged = Boolean(t.sleep && !t.sleep.deleted_at);
+  const sleepLogged = Boolean(t.sleep && !t.sleep.deleted_at && t.sleep.wake_at);
   const weightLogged = Boolean(t.weightToday && !t.weightToday.deleted_at);
   const items: EndOfDayItem[] = [
     ...openRows(t.day.rows).map((r) => ({
@@ -199,6 +214,18 @@ export function TodayScreen({ now: fixedNow }: { now?: number } = {}) {
             onPress: () => router.push('/streaks'),
           }}
         />
+
+        {sleep.check && !sleep.isLoading ? (
+          <MorningCheckCard
+            now={now}
+            date={sleep.today}
+            bed={sleep.check.bed}
+            wake={sleep.check.wake}
+            targetBed={sleep.target.bed}
+            onCorrect={() => sleep.check && logNight(sleep.check.bed, sleep.check.wake)}
+            onAdjust={() => setOpen('sleep')}
+          />
+        ) : null}
 
         {t.plan.blocks.length === 0 ? (
           <Card>
@@ -323,19 +350,17 @@ export function TodayScreen({ now: fixedNow }: { now?: number } = {}) {
           <SleepSheet
             visible
             onClose={() => setOpen(null)}
-            initialBed={hhmm(t.profile?.sleep_time ?? '22:00')}
-            initialWake={hhmm(t.profile?.wake_time ?? '05:00')}
+            initialBed={
+              sleep.lastNight?.bed_at ? istClock(sleep.lastNight.bed_at) : sleep.target.bed
+            }
+            initialWake={
+              sleep.lastNight?.wake_at
+                ? istClock(sleep.lastNight.wake_at)
+                : (sleep.check?.wake ?? sleep.target.wake)
+            }
             onSave={(bed, wake) => {
               setOpen(null);
-              void apply(
-                planSleep(
-                  t.today,
-                  t.sleep,
-                  logicalMoment(t.yesterday, bed),
-                  logicalMoment(t.today, wake),
-                ),
-              );
-              showSnackbar({ message: 'Sleep logged' });
+              logNight(bed, wake);
             }}
           />
         ) : null}

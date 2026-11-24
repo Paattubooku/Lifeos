@@ -121,6 +121,7 @@ function Navigator() {
               <Stack.Screen name="(tabs)" />
               <Stack.Screen name="settings/profile" />
               <Stack.Screen name="settings/reminders" />
+              <Stack.Screen name="settings/screen-time" />
               <Stack.Screen name="routine/index" />
               <Stack.Screen name="routine/[id]" />
               <Stack.Screen name="streaks" />
@@ -133,6 +134,7 @@ function Navigator() {
               <Stack.Screen name="exercises" />
               <Stack.Screen name="exercise/[id]" />
               <Stack.Screen name="weight" />
+              <Stack.Screen name="sleep" />
               <Stack.Screen name="dev/gallery" />
             </Stack.Protected>
             <Stack.Protected guard={signedIn && gate === 'onboard'}>

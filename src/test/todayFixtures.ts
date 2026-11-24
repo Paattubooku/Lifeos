@@ -42,6 +42,8 @@ export type TodayStoreOptions = {
   intake?: [number, number][];
   /** Past sets: [daysAgo, exerciseId, setNo, weight, reps]. */
   pastSets?: [number, string, number, number | null, number | null][];
+  /** Nights by the morning they end: [daysAgo (-1 = tomorrow), bed, wake, phoneOffKept]. */
+  sleep?: [number, string | null, string | null, boolean | null][];
 };
 
 export async function todayStore(opts: TodayStoreOptions = {}) {
@@ -79,7 +81,20 @@ export async function todayStore(opts: TodayStoreOptions = {}) {
   );
   await put('getFoodLogs', today, []);
   await put('getSessionOn', today, null);
-  await put('getSleepOn', today, null);
+  const nights = (opts.sleep ?? []).map(([ago, bed, wake, kept]) => {
+    const date = addDays(today, -ago);
+    return {
+      ...base,
+      id: `sl${ago}`,
+      client_id: `sl${ago}-c`,
+      date,
+      bed_at: bed ? new Date(logicalMoment(addDays(date, -1), bed)).toISOString() : null,
+      wake_at: wake ? new Date(logicalMoment(date, wake)).toISOString() : null,
+      phone_off_kept: kept,
+    };
+  });
+  await put('getSleepOn', today, nights.find((n) => n.date === today) ?? null);
+  await put('getSleepSince', addDays(today, -13), nights);
   await put('getOverridesSince', weekStart(today), [
     {
       ...base,

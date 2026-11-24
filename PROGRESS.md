@@ -2,6 +2,36 @@
 
 One entry per feature, newest first: feature ID, what was built, how PTR verifies it on the phone, known gaps.
 
+## F14 — Sleep and phone-off · 2026-11-24 · done
+
+**Built**
+
+- **Morning check** (Prog-Sleep card) on Today and the Sleep screen: from wake time until noon, until last night is logged. "Went to bed 10:00 pm, woke 5:10 am" (bed = profile sleep time, wake = now rounded to 5 min), duration and how it compares with the target. **Correct** saves it: open the app, tap once. **Adjust** opens the bed/wake sheet.
+- **Night = the morning it ends** (AC1): bed 22:40 → wake 05:05 = 6.4 h on that morning's logical date; bedtimes after midnight stay on the same night.
+- **Wake auto-tick** (AC2): logging a night that ended ≤ 15 min after the Wake block's time (05:15 for 05:00) ticks that block, unless it already has a log. Works from the morning check, Adjust and Today's end-of-day "Log sleep".
+- **Phone away → `phone_off_kept`**: ticking the Phone away block on Today marks tonight's row (the next morning's `sleep_log`); un-ticking or Undo clears it.
+- **Sleep screen** `/sleep` (Progress tab): tiles for 7-day avg, nights ≥ 7 h of 14, and bedtime spread "±N min" with average bedtime. The 14-night bar chart has a 7–8 h target band, tap-to-inspect and a table view. A bedtime consistency strip runs 9:30–11:30 pm with the target line, followed by "Average bedtime …, N min late. The 9:30 pm phone-away block was done on X of 14 nights."
+- **Screen Time setup** `/settings/screen-time` (More, Sleep screen): step-by-step text for iOS Downtime and Android Bedtime mode, using the profile's phone-away and wake times. Text only; LifeOS makes no API calls here.
+
+**Checks run here**
+
+- `typecheck` ✅ · `lint` ✅ · `test` ✅ 659 tests; `features/sleep/lib` 100% coverage.
+- AC1 and AC2 are unit tests; screen tests cover Correct, Adjust (late wake → no tick), the phone-away tick + Undo, the Sleep screen and Screen Time.
+- iOS + Android bundle export ✅. No schema change.
+
+**How PTR verifies on the phone**
+
+1. `git pull`, `npm install`, `npm start`.
+2. Tomorrow after 5:00 am, open the app: the **Morning check** card is at the top of Today. Tap **Correct**. If you woke by 5:15 the Wake up block ticks itself.
+3. Tonight tick **Phone away** on Today. Next morning, Progress → **Sleep** shows "done on 1 of 14 nights".
+4. Progress → Sleep: tiles, bars and bedtime strip fill as nights are logged. Tap a bar to read it, or use **Show table**.
+5. More → **Screen Time setup**: follow the steps for your phone.
+
+**Known gaps**
+
+- No sleep data from the phone or a watch. Bed time is your sleep time unless you adjust it; the design's "from phone-down and alarm" isn't possible without OS APIs.
+- The charts haven't been looked at on a device yet.
+
 ## F13 — Body: weight and energy balance · 2026-11-23 · done
 
 **Built**
@@ -523,4 +553,4 @@ _M1's 7-day trial was skipped at PTR's request ("I don't have time to test it fo
 - Placeholder app icon/splash (Expo defaults) and bundle id `app.lifeos.ptr`.
 - Open questions from `REFERENCE_NOTES.md` (todo sort order, weight-trend insight, golden fixtures) still default as proposed until PTR answers.
 
-_Next: F14 (sleep and phone-off). Waiting for PTR's "next"._
+_Next: F16 (Progress tab). Waiting for PTR's "next"._

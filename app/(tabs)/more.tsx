@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { Bell, Clock, Droplet, LogOut, Palette, Scale, Soup } from 'lucide-react-native';
+import { Bell, Clock, Droplet, LogOut, MoonStar, Palette, Scale, Soup } from 'lucide-react-native';
 
 import { selectUser } from '@/features/auth/selectors';
 import { signOut } from '@/features/auth/slice';
@@ -84,6 +84,13 @@ export default function MoreScreen() {
           title="Reminders"
           sub="Max 10 a day · quiet today"
           onPress={() => router.push('/settings/reminders')}
+          divider
+        />
+        <MenuRow
+          icon={MoonStar}
+          title="Screen Time setup"
+          sub="Downtime / Bedtime mode, step by step"
+          onPress={() => router.push('/settings/screen-time')}
         />
       </Card>
       <Card kicker="Appearance" title="Theme">

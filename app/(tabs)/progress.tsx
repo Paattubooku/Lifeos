@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { ChartColumn, Flame, Scale } from 'lucide-react-native';
+import { ChartColumn, Flame, MoonStar, Scale } from 'lucide-react-native';
 
 import { Card, EmptyState, MenuRow, Screen } from '@/ui';
 
@@ -17,6 +17,13 @@ export default function ProgressScreen() {
           divider
         />
         <MenuRow
+          icon={MoonStar}
+          title="Sleep"
+          sub="Last night, 14 nights, bedtime consistency"
+          onPress={() => router.push('/sleep')}
+          divider
+        />
+        <MenuRow
           icon={Flame}
           accent="success"
           title="Streaks"
@@ -28,7 +35,7 @@ export default function ProgressScreen() {
         <EmptyState
           icon={ChartColumn}
           title="More trends here"
-          body="The full Progress tab (sleep, weekly review) arrives with F16."
+          body="The full Progress tab (weekly review) arrives with F16."
         />
       </Card>
     </Screen>
