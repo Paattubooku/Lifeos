@@ -143,3 +143,17 @@ describe('Parser Lab', () => {
     expect(screen.getByText('Could not reach LifeOS. Try again when online.')).toBeOnTheScreen();
   });
 });
+
+describe('Widget setup (F22)', () => {
+  it('copies the Scriptable script with the real widget-summary URL', async () => {
+    const { setStringAsync } = jest.requireMock('expo-clipboard') as { setStringAsync: jest.Mock };
+    const { store, at } = await moneyStore();
+    await renderWithStore(store, <IntegrationsScreen now={at('12:00')} />);
+    await press(/^Home-screen widget \(Scriptable\)/);
+    await press('Copy widget script');
+    const copied = setStringAsync.mock.calls.at(-1)?.[0] as string;
+    expect(copied).toMatch(/const SUMMARY_URL = 'https:\/\/[^']+\/functions\/v1\/widget-summary';/);
+    expect(copied).not.toContain('lifeos_pat_A');
+    expect(screen.getByText('Widget script copied')).toBeOnTheScreen();
+  });
+});

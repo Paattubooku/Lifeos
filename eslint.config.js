@@ -34,6 +34,8 @@ module.exports = defineConfig([
       'expo-env.d.ts',
       // Deno Edge Functions; their shared cores are copies of src/ files (tested there).
       'supabase/functions/**',
+      // Scriptable (iOS) widget scripts: their own runtime globals.
+      'widgets/**',
     ],
   },
   {

@@ -10,6 +10,7 @@ import {
   Mic,
   Plus,
   Wallet,
+  LayoutGrid,
 } from 'lucide-react-native';
 import { type ReactNode, useState } from 'react';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
@@ -29,6 +30,8 @@ import {
   useTheme,
 } from '@/ui';
 
+import { widgetScript } from '@/features/widgets/lib/script';
+
 import { useIntegrations } from '../hooks/useIntegrations';
 import { ago } from '../lib/tokens';
 
@@ -39,6 +42,7 @@ export const ENDPOINTS = {
   sms: `${PROJECT_URL}/functions/v1/ingest-sms`,
   water: `${PROJECT_URL}/functions/v1/quick-log/water`,
   expense: `${PROJECT_URL}/functions/v1/quick-log/expense`,
+  widget: `${PROJECT_URL}/functions/v1/widget-summary`,
 };
 
 function Guide({
@@ -272,6 +276,33 @@ export function IntegrationsScreen({ now: fixedNow }: { now?: number } = {}) {
             <CopyLine label="Expense URL" value={ENDPOINTS.expense} />
           </View>,
           'Headers: Authorization = Bearer + your token. JSON: "amount" = Provided Input, "category" = food (optional "payee", "note").',
+        ]}
+      />
+      <Guide
+        icon={LayoutGrid}
+        title="Home-screen widget (Scriptable)"
+        steps={[
+          'Install Scriptable (free) from the App Store.',
+          <View key="c" style={styles.gap}>
+            <Text variant="sub">
+              Copy the LifeOS widget script (your URL is already in it; no token inside):
+            </Text>
+            <Button
+              icon={Copy}
+              size="sm"
+              variant="secondary"
+              label="Copy widget script"
+              accessibilityLabel="Copy widget script"
+              onPress={() =>
+                void setStringAsync(widgetScript(PROJECT_URL)).then(() =>
+                  showSnackbar({ message: 'Widget script copied' }),
+                )
+              }
+            />
+          </View>,
+          'Scriptable → + → paste → name it LifeOS. Run it once → Set token → paste your token (it stays in the iPhone Keychain).',
+          'Long-press the home screen → + → Scriptable → pick a size → Edit widget → Script: LifeOS. Parameter (optional): score, water, spend or next.',
+          'It refreshes about every 15 minutes and shows the time it was updated. A revoked token shows “Reconnect in LifeOS”.',
         ]}
       />
       <Text variant="caption" tone="secondary">

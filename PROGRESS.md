@@ -2,6 +2,51 @@
 
 One entry per feature, newest first: feature ID, what was built, how PTR verifies it on the phone, known gaps.
 
+## F22 — Home-screen widgets (Scriptable, Option A) · 2026-11-24 · done
+
+**Built**
+
+- **Edge Function `widget-summary`** (deployed): GET with `Authorization: Bearer lifeos_pat_…`. It is read-only and never writes data. It returns:
+  - score, streak, blocks done of total, the day's template;
+  - water, water target and how far behind pace;
+  - the block running now or next, plus the one after;
+  - month spend and budget, today's top 3, steps and the steps minimum, and when it was built.
+- A wrong or revoked token gets 401 `{"error":"Reconnect in LifeOS"}`.
+- The logic is in `src/features/widgets/lib/summary.ts`: dependency-free, byte-identical to `_shared/summary.ts`. Its streak, template and water-pace rules are tested equal to the app's own functions.
+- **Scriptable widget** `widgets/scriptable/LifeOS.js`, one script for every size (Widgets design). The widget parameter picks a layout:
+  - `score`: ring, streak, done count;
+  - `water`: amount, pace tick, "N ml behind";
+  - `spend`: month, amount, even-pace tick;
+  - `next`: "NOW · UNTIL 1:30 PM" or "NEXT", then the block after;
+  - default: small = score, medium = next block, large = everything plus top 3.
+- How the widget behaves:
+  - Refreshes every 15 minutes and shows its update time.
+  - Offline, it shows the last data with "Offline · from <time>".
+  - No token → "Connect LifeOS"; 401 → "Reconnect in LifeOS".
+  - The token is kept in the iPhone Keychain, never in the script.
+- **More → Integrations**: new guide "Home-screen widget (Scriptable)" with **Copy widget script**. The copied script already has your real `widget-summary` URL.
+
+**Checks run here**
+
+- `typecheck` ✅ · `lint` ✅ · `test` ✅ 791 tests (`widgets/lib/summary.ts` ≈ 98 %) · `deno check` ✅ · iOS + Android bundle export ✅.
+- **AC "wrong token shows Reconnect in LifeOS"**: the function returns 401 for a wrong or revoked token (shared auth, tested in F19), and the script shows "Reconnect in LifeOS".
+- **AC "data no older than its refresh interval"**: the widget asks iOS to refresh every 15 minutes and prints the time of the data it shows. iOS may delay refreshes when the battery is low.
+- Not checked from here: this container can't reach `*.supabase.co`, so I couldn't call the deployed function; the deploy itself succeeded. The script is checked for syntax but hasn't run in Scriptable.
+
+**How PTR verifies on the phone**
+
+1. `git pull`, `npm install`, `npm start`.
+2. Install **Scriptable** (free) from the App Store.
+3. LifeOS → More → Integrations → **Home-screen widget** → **Copy widget script**. In Scriptable: + → paste → name it LifeOS. Run it → **Set token** → paste your token (make one in Integrations if needed) → **Preview medium**.
+4. Long-press the home screen → + → Scriptable → add a small and a medium widget → Edit widget → Script: LifeOS (Parameter: water or spend for the other layouts).
+5. Revoke the token in Integrations. Within about 15 minutes the widget says "Reconnect in LifeOS".
+
+**Known gaps**
+
+- The score is the one LifeOS last saved; it updates after you open the app. Water, blocks, spend, tasks and steps are live.
+- Auto-completing blocks (water drinks, meals, workout) count as ticked only once the app has logged them, so "next block" can show a drink you've already had.
+- The design's **Tap to tick** needs native iOS 17 interactive widgets (Option B, WidgetKit + a development build) → `LATER.md`.
+
 ## F21 update — automatic steps from the iPhone (free) · 2026-11-24 · done
 
 **Built**
@@ -829,4 +874,4 @@ _M1's 7-day trial was skipped at PTR's request ("I don't have time to test it fo
 - Placeholder app icon/splash (Expo defaults) and bundle id `app.lifeos.ptr`.
 - Open questions from `REFERENCE_NOTES.md` (todo sort order, weight-trend insight, golden fixtures) still default as proposed until PTR answers.
 
-_Next: F22 (Home-screen widgets, optional). Waiting for PTR's "next"._
+_Next: F23 (Settings, data export and polish). Waiting for PTR's "next"._
