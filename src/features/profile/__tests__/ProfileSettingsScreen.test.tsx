@@ -24,6 +24,21 @@ describe('ProfileSettingsScreen', () => {
     expect(await screen.findByLabelText('Reminders on')).toBeOnTheScreen();
   });
 
+  it('F25: About you edits sex, birth year and activity; a blank year keeps the saved one', async () => {
+    const { store } = await seededStore();
+    await renderWithStore(store, <ProfileSettingsScreen />);
+    expect(screen.getByLabelText('Birth year')).toHaveDisplayValue('1997');
+    expect(screen.queryByLabelText('Height (cm)')).toBeNull();
+    await fireEvent.press(screen.getByRole('radio', { name: 'Female' }));
+    await fireEvent.changeText(screen.getByLabelText('Birth year'), '');
+    await fireEvent.press(screen.getByRole('radio', { name: /^Mostly sitting\./ }));
+    await act(async () => {
+      await fireEvent.press(screen.getByRole('button', { name: 'Save profile' }));
+    });
+    const row = store.getState().sync.queue.find((m) => m.table === 'profile')?.row;
+    expect(row).toEqual({ sex: 'female', activity_factor: 1.2 });
+  });
+
   it('Save is disabled until something changes', async () => {
     const { store } = await seededStore();
     await renderWithStore(store, <ProfileSettingsScreen />);

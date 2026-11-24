@@ -1453,6 +1453,10 @@ export type Database = {
         Args: { has_date: boolean; t: string };
         Returns: undefined;
       };
+      _seed_example_plan: {
+        Args: never;
+        Returns: Json;
+      };
       seed_defaults: {
         Args: never;
         Returns: Json;

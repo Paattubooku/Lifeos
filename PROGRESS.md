@@ -2,6 +2,55 @@
 
 One entry per feature, newest first: feature ID, what was built, how PTR verifies it on the phone, known gaps.
 
+## F25 — Multiple accounts · 2026-11-24 · done
+
+**Built** (PTR's decisions: open sign-up, email + password, setup that asks everything with PTR's plan as the example)
+
+- **Create account** on the sign-in screen: "New here? Create an account" → email, password (≥ 8), confirm password.
+  - With email confirmation on, it says "Account created. Open the link we sent to …, then sign in."
+  - The dev-only sign-up flag (`EXPO_PUBLIC_ENABLE_SIGNUP`) is gone.
+- **First-run setup, now 5 steps:**
+  1. About you: sex, birth year, height, activity level.
+  2. Weight: current, goal, weigh in daily or weekly, plus the plain-maths ETA.
+  3. Your day: wake, phone-off, sleep.
+  4. Targets: water, calories, protein, coffee, steps a day, monthly budget. They're suggested once from the answers: calories for ~0.5 kg/week (or maintenance), protein 2 g per kg of goal, water 33 ml per kg.
+  5. Notifications, summary and "Your starting plan".
+  - Personal numbers start **blank** with your values as hints ("e.g. 170", "e.g. 91"). Continue says what's missing.
+  - New accounts get your example plan (routine, meals, workouts, budgets). Finishing setup **fits every routine block and meal time to their own wake → sleep day**: same order, same place in the day, rounded to 5 min.
+- **Several accounts on one phone:** signing out, or another account signing in, clears cached screens, drafts, per-feature state and scheduled reminders. Unsent changes stay tagged with their account and only sync for it, as before.
+- **Settings → Delete account** (type DELETE): Edge Function `delete-account` (deployed; session only, a Shortcuts token can't use it) deletes the login, and every row cascades. That account's unsent changes on the phone are dropped.
+- **Settings → Profile → About you**: sex, birth year, activity level are now editable.
+- Migration `20261124182133_seed_profile_blank.sql` (applied live): a **new** account's profile starts without 170 cm / 91 → 75 kg. Existing profiles (yours) are untouched.
+- Copy written only for you was made neutral: sign-in tagline, water hint, bank-SMS setup text, and the Parser Lab sample (your masked email replaced).
+
+**Checks run here**
+
+- `typecheck` ✅ · `lint` ✅ · `test` ✅ 843 tests (`profile/lib/onboarding.ts` 100 % lines, `rootReducer.ts` 100 %) · `test:db` ✅ · iOS + Android bundle export ✅.
+- Live checks: every reference to `auth.users` cascades on delete. The security advisor's only warning is leaked-password protection (dashboard setting, below).
+
+**What PTR must do once in the Supabase dashboard** (I can't change Auth settings from here)
+
+1. Authentication → Sign In / Providers → Email: turn **Allow new users to sign up** on. You switched it off for the single-user build (DECISIONS F01).
+2. Keep **Confirm email** on.
+3. Authentication → URL Configuration → Site URL: set a page people land on after confirming, e.g. your GitHub page.
+4. Authentication → SMTP Settings: add a custom email sender (for example a free Resend account). Supabase's built-in sender only allows a few emails an hour and is meant for testing.
+5. Optional: Authentication → Attack Protection → turn on leaked-password protection.
+
+**How PTR verifies on the phone**
+
+1. `git pull`, `npm install`, `npm start`.
+2. You stay signed in and see your data unchanged.
+3. More → Settings → Sign out → **New here? Create an account** with a second email → confirm the email → sign in.
+   - Setup starts blank. Use wake 7:00, sleep 11:30 pm: Today starts at 7:00 and none of your data shows.
+4. Sign out, sign back in as you: your data is back.
+5. Optional: delete the test account in Settings → Delete account.
+
+**Known gaps**
+
+- The SMS parser only understands ICICI Bank messages. Other banks' SMS land in Parser Lab as unmatched.
+- Everyone starts from the same South Indian meal plan and dumbbell program (as decided). There are no diet or equipment questions yet.
+- Personal access tokens, widgets and Shortcuts work per account, but their setup text is iPhone-only.
+
 ## F24 — Accountability nudges · 2026-11-24 · done
 
 **Built** (`src/features/accountability/`: pure rules in `lib/rules.ts`, Today cards, one hook)
@@ -50,8 +99,6 @@ One entry per feature, newest first: feature ID, what was built, how PTR verifie
 
 - Missed-day "missed" titles come from yesterday's hand-ticked blocks (auto blocks like water and meals aren't re-judged here).
 - The design's "Two misses in a row is how the last 3 streaks ended" history line isn't generated.
-
-_All features (F00–F24) are built. Open items are in `LATER.md`._
 
 ## F23 — Settings, data export and polish · 2026-11-24 · done
 

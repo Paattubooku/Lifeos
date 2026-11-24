@@ -5,15 +5,28 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import type { Sex } from '@/features/body/lib/energy';
 import type { DateString } from '@/lib/dates';
 import { formatClock, formatIndianNumber } from '@/lib/format';
-import { Banner, Card, InlineStepper, StatTile, Text, TimePicker, useTheme } from '@/ui';
+import {
+  Banner,
+  Card,
+  InlineStepper,
+  SegmentedToggle,
+  StatTile,
+  Text,
+  TextField,
+  TimePicker,
+  useTheme,
+} from '@/ui';
 
 import {
   bodySummary,
   checkDay,
   energyPlan,
   formatDuration,
+  ACTIVITY_LEVELS,
   LIMITS,
+  personOf,
   type ProfileFields,
+  type WeighInMode,
 } from '../lib/targets';
 
 type FieldsProps = {
@@ -178,12 +191,10 @@ export function TargetsFields({
   value,
   onChange,
   today,
-  person,
 }: FieldsProps & {
   today: DateString;
-  person: { sex: Sex; birthYear: number; activityFactor: number };
 }) {
-  const plan = energyPlan(value, person, today);
+  const plan = energyPlan(value, personOf(value), today);
   const deficitTitle =
     plan.deficit > 0
       ? `~${formatIndianNumber(plan.deficit)} kcal deficit ≈ ${plan.kgPerWeek.toFixed(1)} kg/week`
@@ -206,7 +217,7 @@ export function TargetsFields({
           <InlineStepper
             key="water"
             label="Water"
-            hint="250 ml steps · pace 5:00 am–9:00 pm"
+            hint={`250 ml steps · paced from ${formatClock(value.wake_time)}`}
             value={value.water_target_ml}
             onChange={(v) => onChange({ water_target_ml: v })}
             {...LIMITS.water_target_ml}
@@ -263,8 +274,247 @@ export function TargetsFields({
   );
 }
 
+/**
+ * F25: a number typed from blank, with the example plan as the placeholder
+ * ("e.g. 170"). Out-of-range text shows the range; empty means not answered.
+ */
+export function NumberField({
+  label,
+  value,
+  onChange,
+  example,
+  limits,
+  decimals = 0,
+}: {
+  label: string;
+  value: number | null;
+  onChange: (value: number | null) => void;
+  example: number;
+  limits: { min: number; max: number };
+  decimals?: number;
+}) {
+  const [text, setText] = useState(value === null ? '' : String(value));
+  const n = Number(text.replace(',', '.'));
+  const bad = text.trim() !== '' && (!Number.isFinite(n) || n < limits.min || n > limits.max);
+  return (
+    <TextField
+      label={label}
+      value={text}
+      placeholder={`e.g. ${example}`}
+      keyboardType={decimals > 0 ? 'decimal-pad' : 'number-pad'}
+      maxLength={6}
+      error={bad ? `${limits.min}–${limits.max}` : null}
+      onChangeText={(t) => {
+        setText(t);
+        const v = Number(t.replace(',', '.'));
+        const ok = t.trim() !== '' && Number.isFinite(v) && v >= limits.min && v <= limits.max;
+        onChange(ok ? Math.round(v * 10 ** decimals) / 10 ** decimals : null);
+      }}
+    />
+  );
+}
+
+const SEX_OPTIONS = [
+  { value: 'male', label: 'Male' },
+  { value: 'female', label: 'Female' },
+] as const;
+const WEIGH_OPTIONS = [
+  { value: 'daily', label: 'Every day' },
+  { value: 'weekly', label: 'Once a week' },
+] as const;
+
+type AboutValue = {
+  sex: Sex;
+  birth_year: number | null;
+  height_cm: number | null;
+  activity_factor: number;
+};
+
+/** F25 · About you: sex, birth year, (height), activity level. */
+export function AboutFields({
+  value,
+  onChange,
+  example,
+  showHeight = true,
+}: {
+  value: AboutValue;
+  onChange: (patch: Partial<AboutValue>) => void;
+  example: ProfileFields;
+  showHeight?: boolean;
+}) {
+  const { colors } = useTheme();
+  return (
+    <View style={styles.section}>
+      <View style={styles.gap}>
+        <Text variant="sub" weight={600}>
+          Sex (for the calorie formula)
+        </Text>
+        <SegmentedToggle
+          options={SEX_OPTIONS}
+          value={value.sex}
+          onChange={(sex) => onChange({ sex })}
+          accessibilityLabel="Sex"
+        />
+      </View>
+      <NumberField
+        label="Birth year"
+        value={value.birth_year}
+        onChange={(birth_year) => onChange({ birth_year })}
+        example={example.birth_year}
+        limits={LIMITS.birth_year}
+      />
+      {showHeight ? (
+        <NumberField
+          label="Height (cm)"
+          value={value.height_cm}
+          onChange={(height_cm) => onChange({ height_cm })}
+          example={example.height_cm}
+          limits={LIMITS.height_cm}
+        />
+      ) : null}
+      <Card title="How active is your day?" padding={8} gap={4}>
+        {ACTIVITY_LEVELS.map((a) => {
+          const active = a.factor === value.activity_factor;
+          return (
+            <Pressable
+              key={a.factor}
+              accessibilityRole="radio"
+              accessibilityLabel={`${a.title}. ${a.sub}`}
+              accessibilityState={{ checked: active }}
+              onPress={() => onChange({ activity_factor: a.factor })}
+              style={[
+                styles.timeRow,
+                active && {
+                  backgroundColor: colors.recessed,
+                  borderColor: colors.accents.primary.base,
+                },
+              ]}
+            >
+              <View style={styles.flex}>
+                <Text variant="body" weight={600}>
+                  {a.factor === example.activity_factor ? `${a.title} · example` : a.title}
+                </Text>
+                <Text variant="caption" tone="secondary">
+                  {a.sub}
+                </Text>
+              </View>
+            </Pressable>
+          );
+        })}
+      </Card>
+    </View>
+  );
+}
+
+/** F25 · Weight: current and goal typed from blank, weigh-in habit, then the plain maths. */
+export function WeightFields({
+  value,
+  onChange,
+  example,
+  today,
+}: {
+  value: {
+    height_cm: number | null;
+    current_weight_kg: number | null;
+    goal_weight_kg: number | null;
+    weigh_in_mode: WeighInMode;
+  };
+  onChange: (patch: {
+    current_weight_kg?: number | null;
+    goal_weight_kg?: number | null;
+    weigh_in_mode?: WeighInMode;
+  }) => void;
+  example: ProfileFields;
+  today: DateString;
+}) {
+  const { height_cm, current_weight_kg, goal_weight_kg } = value;
+  const s =
+    height_cm !== null && current_weight_kg !== null && goal_weight_kg !== null
+      ? bodySummary({ height_cm, current_weight_kg, goal_weight_kg }, today)
+      : null;
+  return (
+    <View style={styles.section}>
+      <NumberField
+        label="Current weight (kg)"
+        value={current_weight_kg}
+        onChange={(v) => onChange({ current_weight_kg: v })}
+        example={example.current_weight_kg}
+        limits={LIMITS.weight_kg}
+        decimals={1}
+      />
+      <NumberField
+        label="Goal weight (kg)"
+        value={goal_weight_kg}
+        onChange={(v) => onChange({ goal_weight_kg: v })}
+        example={example.goal_weight_kg}
+        limits={LIMITS.weight_kg}
+        decimals={1}
+      />
+      <View style={styles.gap}>
+        <Text variant="sub" weight={600}>
+          Weigh in
+        </Text>
+        <SegmentedToggle
+          options={WEIGH_OPTIONS}
+          value={value.weigh_in_mode}
+          onChange={(weigh_in_mode) => onChange({ weigh_in_mode })}
+          accessibilityLabel="Weigh in"
+        />
+      </View>
+      {s ? (
+        <>
+          <View style={styles.tiles}>
+            <StatTile label="To lose" value={s.toLoseKg > 0 ? kg(s.toLoseKg) : '0.0'} sub="kg" />
+            <StatTile
+              label="BMI now"
+              value={s.bmiNow.toFixed(1)}
+              sub={`goal ${s.bmiGoal.toFixed(1)}`}
+            />
+          </View>
+          <Text variant="sub" tone="secondary">
+            {s.weeks !== null && s.eta
+              ? `Plain maths: at 0.5 kg a week this takes ${s.weeks} weeks (${s.eta}).`
+              : 'Goal is at or above your current weight: no deficit needed.'}
+          </Text>
+        </>
+      ) : null}
+    </View>
+  );
+}
+
+/** F25 · Steps minimum and monthly budget (onboarding step 4). */
+export function HabitFields({ value, onChange }: FieldsProps) {
+  return (
+    <FieldCard>
+      {[
+        <InlineStepper
+          key="steps"
+          label="Steps a day"
+          hint="Minimum that counts as a good day"
+          value={value.steps_min}
+          onChange={(v) => onChange({ steps_min: v })}
+          {...LIMITS.steps_min}
+          unit="steps"
+          format={(n) => formatIndianNumber(n)}
+        />,
+        <InlineStepper
+          key="budget"
+          label="Monthly budget"
+          hint="Spending limit for Money"
+          value={value.monthly_budget_inr}
+          onChange={(v) => onChange({ monthly_budget_inr: v })}
+          {...LIMITS.monthly_budget_inr}
+          unit="₹"
+          format={(n) => formatIndianNumber(n)}
+        />,
+      ]}
+    </FieldCard>
+  );
+}
+
 const styles = StyleSheet.create({
   section: { gap: 16 },
+  gap: { gap: 8 },
   fieldCard: { paddingHorizontal: 16 },
   tiles: { flexDirection: 'row', gap: 8 },
   timeRow: {

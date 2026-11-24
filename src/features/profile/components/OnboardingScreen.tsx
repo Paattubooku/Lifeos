@@ -4,7 +4,7 @@ import { type ReactNode, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import type { Sex } from '@/features/body/lib/energy';
+import { useMealPlan } from '@/features/food/hooks/useFood';
 import { templateForDate, templateLabel } from '@/features/routine/lib/templates';
 import { formatClock, formatIndianNumber } from '@/lib/format';
 import { enableReminders } from '@/lib/notifications';
@@ -12,19 +12,39 @@ import { useAppDispatch, useAppSelector } from '@/store';
 import { Button, Card, Text, useTheme } from '@/ui';
 
 import { useProfileContext } from '../hooks/useProfileData';
-import { fieldsFromProfile, planOnboarding } from '../lib/plan';
-import { checkDay, type ProfileFields } from '../lib/targets';
+import {
+  completeFields,
+  EXAMPLE,
+  newDraft,
+  ONBOARDING_STEPS,
+  type OnboardingDraft,
+  planFirstRun,
+  stepError,
+  suggestTargets,
+} from '../lib/onboarding';
+import type { ProfileFields } from '../lib/targets';
 import { applyWrites, draftCleared, draftStarted, draftUpdated } from '../slice';
-import { BodyFields, DayFields, TargetsFields } from './ProfileFields';
+import { AboutFields, DayFields, HabitFields, TargetsFields, WeightFields } from './ProfileFields';
 
-export const ONBOARDING_STEPS = 4;
+export { ONBOARDING_STEPS };
 
+const ex = EXAMPLE;
 const TITLES: Record<number, { title: string; subtitle: string }> = {
-  1: { title: 'Body', subtitle: 'Used for calorie and protein targets. Only you see this.' },
-  2: { title: 'Day', subtitle: 'Every block on Today hangs off these three times.' },
-  3: { title: 'Targets', subtitle: 'Prefilled. Change anything now or later in More.' },
+  1: {
+    title: 'About you',
+    subtitle: 'Used for your calorie and protein targets. Only you see this.',
+  },
+  2: { title: 'Weight', subtitle: 'Where you are now and where you want to be.' },
+  3: {
+    title: 'Your day',
+    subtitle: `Your routine and meals are fitted between these times. Example: wake ${formatClock(ex.wake_time)}, phone off ${formatClock(ex.phone_off_time)}, sleep ${formatClock(ex.sleep_time)}.`,
+  },
+  4: {
+    title: 'Targets',
+    subtitle: 'Suggested from your answers. Change anything now or later in More.',
+  },
   // PRD F15 caps reminders at 10/day (the design's "8" is mock copy).
-  4: { title: 'Notifications', subtitle: 'Max 10 a day. You can mute any of them.' },
+  5: { title: 'Notifications', subtitle: 'Max 10 a day. You can mute any of them.' },
 };
 
 export function clampStep(raw: string | string[] | undefined): number {
@@ -32,42 +52,50 @@ export function clampStep(raw: string | string[] | undefined): number {
   return Number.isInteger(n) && n >= 1 && n <= ONBOARDING_STEPS ? n : 1;
 }
 
-/** Onboarding 1…4 (design/screens/Onboarding-*.png). */
+/** First-run setup 1…5 (F03 designs, extended for every new account in F25). */
 export function OnboardingScreen({ step }: { step: number }) {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const ctx = useProfileContext();
+  const { plan: mealPlan } = useMealPlan();
   const draft = useAppSelector((s) => s.profile.draft);
   const [finishing, setFinishing] = useState(false);
 
-  // Seed the form from the profile (defaults from seed_defaults) on first entry.
+  // Start the answers on first entry: blanks for the personal numbers.
   useEffect(() => {
     // Not while finishing: the draft is cleared before this screen unmounts.
     if (!draft && ctx.profile && !finishing)
-      dispatch(draftStarted(fieldsFromProfile(ctx.profile, ctx.latestWeightKg)));
+      dispatch(draftStarted(newDraft(ctx.profile, ctx.latestWeightKg)));
   }, [ctx.profile, ctx.latestWeightKg, dispatch, draft, finishing]);
 
+  const fields = draft ? completeFields(draft) : null;
+  // Targets are suggested once, the first time step 4 opens.
+  useEffect(() => {
+    if (step === 4 && draft && fields && !draft.targetsSuggested)
+      dispatch(draftUpdated({ ...suggestTargets(fields, ctx.today), targetsSuggested: true }));
+  }, [step, draft, fields, ctx.today, dispatch]);
+
   if (!draft || !ctx.profile) return <Loading />;
+  // Steps 3+ need the body answers (an app restart mid-way can land here).
+  if (step >= 3 && !fields) return <Redirect to={1} />;
 
   const profile = ctx.profile;
-  const update = (patch: Partial<ProfileFields>) => dispatch(draftUpdated(patch));
-  const person = {
-    sex: (profile.sex === 'female' ? 'female' : 'male') as Sex,
-    birthYear: profile.birth_year,
-    activityFactor: Number(profile.activity_factor),
-  };
-  const dayError = checkDay(draft).error;
+  const update = (patch: Partial<OnboardingDraft>) => dispatch(draftUpdated(patch));
+  const updateFields = (patch: Partial<ProfileFields>) => dispatch(draftUpdated(patch));
+  const error = stepError(step, draft);
 
   const next = () =>
     router.push({ pathname: '/onboarding/[step]', params: { step: String(step + 1) } });
 
   const finish = async (allowNotifications: boolean) => {
+    if (!fields) return;
     setFinishing(true);
     if (allowNotifications) await enableReminders();
-    const writes = planOnboarding(profile, draft, {
+    const writes = planFirstRun(profile, fields, {
       now: new Date(),
       today: ctx.today,
       blocks: ctx.blocks,
+      meals: mealPlan.meals,
       templates: ctx.templates,
       todayDayLog: ctx.todayDayLog,
       todayWeight: ctx.todayWeight,
@@ -88,14 +116,22 @@ export function OnboardingScreen({ step }: { step: number }) {
       onBack={step > 1 ? () => router.back() : undefined}
       footer={
         step < ONBOARDING_STEPS ? (
-          <Button
-            size="lg"
-            fullWidth
-            label="Continue"
-            accessibilityLabel="Continue"
-            disabled={step === 2 && dayError !== null}
-            onPress={next}
-          />
+          <>
+            {error ? (
+              <Text variant="caption" tone="secondary" align="center">
+                {error}
+              </Text>
+            ) : null}
+            <Button
+              size="lg"
+              fullWidth
+              label="Continue"
+              accessibilityLabel="Continue"
+              accessibilityHint={error ?? undefined}
+              disabled={error !== null}
+              onPress={next}
+            />
+          </>
         ) : (
           <>
             <Button
@@ -118,14 +154,23 @@ export function OnboardingScreen({ step }: { step: number }) {
         )
       }
     >
-      {step === 1 ? <BodyFields value={draft} onChange={update} today={ctx.today} /> : null}
-      {step === 2 ? <DayFields value={draft} onChange={update} /> : null}
-      {step === 3 ? (
-        <TargetsFields value={draft} onChange={update} today={ctx.today} person={person} />
+      {step === 1 ? <AboutFields value={draft} onChange={update} example={EXAMPLE} /> : null}
+      {step === 2 ? (
+        <WeightFields value={draft} onChange={update} example={EXAMPLE} today={ctx.today} />
       ) : null}
-      {step === 4 ? (
+      {step === 3 && fields ? <DayFields value={fields} onChange={updateFields} /> : null}
+      {step === 4 && fields ? (
+        <View style={styles.section}>
+          <TargetsFields value={fields} onChange={updateFields} today={ctx.today} />
+          <HabitFields value={fields} onChange={updateFields} />
+          <Text variant="caption" tone="secondary">
+            {`Example plan: ${formatIndianNumber(ex.water_target_ml)} ml water · ${formatIndianNumber(ex.kcal_target)} kcal · ${ex.protein_target_g} g protein · ${ex.coffee_limit} coffees · ${formatIndianNumber(ex.steps_min)} steps · ₹${formatIndianNumber(ex.monthly_budget_inr)} a month.`}
+          </Text>
+        </View>
+      ) : null}
+      {step === 5 && fields ? (
         <NotificationsStep
-          fields={draft}
+          fields={fields}
           template={(() => {
             const t = templateForDate(ctx.templates, ctx.today);
             return t ? templateLabel(t) : '—';
@@ -134,6 +179,14 @@ export function OnboardingScreen({ step }: { step: number }) {
       ) : null}
     </Frame>
   );
+}
+
+function Redirect({ to }: { to: number }) {
+  const router = useRouter();
+  useEffect(() => {
+    router.replace({ pathname: '/onboarding/[step]', params: { step: String(to) } });
+  }, [router, to]);
+  return <Loading />;
 }
 
 function NotificationsStep({ fields, template }: { fields: ProfileFields; template: string }) {
@@ -160,6 +213,11 @@ function NotificationsStep({ fields, template }: { fields: ProfileFields; templa
     ],
     ['Template', template],
   ];
+  const plan: [string, string][] = [
+    ['Routine', 'Workday, Weekend and Rest day, fitted to your times'],
+    ['Meals', 'South Indian example plan with swaps'],
+    ['Workouts', 'Dumbbell beginner, 5 days a week'],
+  ];
   return (
     <View style={styles.section}>
       <Card title="What you will get" gap={0}>
@@ -179,6 +237,21 @@ function NotificationsStep({ fields, template }: { fields: ProfileFields; templa
                 {sub}
               </Text>
             </View>
+          </View>
+        ))}
+      </Card>
+      <Card title="Your starting plan" gap={6}>
+        <Text variant="caption" tone="secondary">
+          An example to start from. Change anything in Routine, Food and Train.
+        </Text>
+        {plan.map(([k, v]) => (
+          <View key={k} style={styles.summaryRow} accessible accessibilityLabel={`${k}: ${v}`}>
+            <Text variant="sub" tone="secondary">
+              {k}
+            </Text>
+            <Text variant="sub" weight={600} style={styles.summaryValue}>
+              {v}
+            </Text>
           </View>
         ))}
       </Card>

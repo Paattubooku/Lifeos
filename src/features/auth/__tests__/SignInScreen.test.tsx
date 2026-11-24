@@ -24,17 +24,18 @@ function setup(ui: ReactElement, fake = fakeSupabase(), configured = true) {
 }
 
 describe('SignInScreen', () => {
-  it('matches the design copy and has no sign-up in production', async () => {
-    const { view } = setup(<SignInScreen allowSignUp={false} />);
+  it('shows sign-in with a way to create an account (F25)', async () => {
+    const { view } = setup(<SignInScreen />);
     await view;
     expect(screen.getByRole('header', { name: 'LifeOS' })).toBeOnTheScreen();
-    expect(screen.getByText('5:00 am to 10:00 pm. One screen.')).toBeOnTheScreen();
-    expect(screen.getByText('Single account. No sign-up, no sharing.')).toBeOnTheScreen();
-    expect(screen.queryByRole('button', { name: /Create account/ })).toBeNull();
+    expect(screen.getByText('Your whole day. One screen.')).toBeOnTheScreen();
+    expect(screen.getByText('Your data syncs to your account only.')).toBeOnTheScreen();
+    expect(screen.getByRole('button', { name: 'New here? Create an account' })).toBeOnTheScreen();
+    expect(screen.queryByLabelText('Confirm password')).toBeNull();
   });
 
   it('signs in with email and password', async () => {
-    const { view, store, auth } = setup(<SignInScreen allowSignUp={false} />);
+    const { view, store, auth } = setup(<SignInScreen />);
     await view;
     await fireEvent.changeText(screen.getByLabelText('Email'), 'ptr@example.com');
     await fireEvent.changeText(screen.getByLabelText('Password'), 'secret-pass');
@@ -47,7 +48,7 @@ describe('SignInScreen', () => {
   });
 
   it('validates before calling Supabase', async () => {
-    const { view, auth } = setup(<SignInScreen allowSignUp={false} />);
+    const { view, auth } = setup(<SignInScreen />);
     await view;
     await fireEvent.press(screen.getByRole('button', { name: 'Sign in' }));
     expect(screen.getByText('Enter your email address.')).toBeOnTheScreen();
@@ -63,7 +64,7 @@ describe('SignInScreen', () => {
       data: { session: null },
       error: { code: 'invalid_credentials', status: 400 },
     });
-    const { view } = setup(<SignInScreen allowSignUp={false} />, fake);
+    const { view } = setup(<SignInScreen />, fake);
     await view;
     await fireEvent.changeText(screen.getByLabelText('Email'), 'ptr@example.com');
     await fireEvent.changeText(screen.getByLabelText('Password'), 'wrong');
@@ -73,7 +74,7 @@ describe('SignInScreen', () => {
 
   it('sends a password reset and confirms with a snackbar', async () => {
     jest.useFakeTimers();
-    const { view, auth } = setup(<SignInScreen allowSignUp={false} />);
+    const { view, auth } = setup(<SignInScreen />);
     await view;
     await fireEvent.press(screen.getByRole('button', { name: 'Forgot password' }));
     expect(screen.getByText('Enter your email address.')).toBeOnTheScreen();
@@ -87,21 +88,37 @@ describe('SignInScreen', () => {
     jest.useRealTimers();
   });
 
-  it('offers dev sign-up behind the flag, with a length rule', async () => {
-    const { view, auth } = setup(<SignInScreen allowSignUp />);
+  it('creates an account: length rule, matching passwords, then confirm-email notice', async () => {
+    const fake = fakeSupabase();
+    fake.auth.signUp.mockResolvedValueOnce({ data: { session: null }, error: null });
+    const { view, auth } = setup(<SignInScreen />, fake);
     await view;
-    await fireEvent.changeText(screen.getByLabelText('Email'), 'ptr@example.com');
+    await fireEvent.press(screen.getByRole('button', { name: 'New here? Create an account' }));
+    expect(screen.getByText('Create your account. Setup takes 2 minutes.')).toBeOnTheScreen();
+    await fireEvent.changeText(screen.getByLabelText('Email'), 'new@example.com');
     await fireEvent.changeText(screen.getByLabelText('Password'), 'short');
-    await fireEvent.press(screen.getByRole('button', { name: 'Create account, development only' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Create account' }));
     expect(screen.getByText('Use at least 8 characters.')).toBeOnTheScreen();
     await fireEvent.changeText(screen.getByLabelText('Password'), 'long-enough');
-    await fireEvent.press(screen.getByRole('button', { name: 'Create account, development only' }));
-    expect(auth.signUp).toHaveBeenCalled();
-    await fireEvent.press(screen.getByRole('button', { name: 'Create account, development only' }));
+    await fireEvent.changeText(screen.getByLabelText('Confirm password'), 'long-enoug');
+    await fireEvent.press(screen.getByRole('button', { name: 'Create account' }));
+    expect(screen.getByText('The two passwords don’t match.')).toBeOnTheScreen();
+    expect(auth.signUp).not.toHaveBeenCalled();
+    await fireEvent.changeText(screen.getByLabelText('Confirm password'), 'long-enough');
+    await act(async () => {
+      await fireEvent.press(screen.getByRole('button', { name: 'Create account' }));
+    });
+    expect(auth.signUp).toHaveBeenCalledWith({ email: 'new@example.com', password: 'long-enough' });
+    expect(
+      screen.getByText('Account created. Open the link we sent to new@example.com, then sign in.'),
+    ).toBeOnTheScreen();
+    await fireEvent.press(screen.getByRole('button', { name: 'Have an account? Sign in' }));
+    expect(screen.getByRole('button', { name: 'Sign in' })).toBeOnTheScreen();
+    expect(screen.queryByTestId('auth-notice')).toBeNull();
   });
 
   it('explains missing configuration and disables sign-in', async () => {
-    const { view, store } = setup(<SignInScreen allowSignUp={false} />, fakeSupabase(), false);
+    const { view, store } = setup(<SignInScreen />, fakeSupabase(), false);
     await view;
     await act(async () => {
       await store.dispatch(restoreSession());
@@ -111,7 +128,7 @@ describe('SignInScreen', () => {
   });
 
   it('moves focus from email to password on "next"', async () => {
-    const { view } = setup(<SignInScreen allowSignUp={false} />);
+    const { view } = setup(<SignInScreen />);
     await view;
     await fireEvent(screen.getByLabelText('Email'), 'submitEditing');
     expect(screen.getByLabelText('Password')).toBeOnTheScreen();

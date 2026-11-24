@@ -19,6 +19,12 @@ const F: ProfileFields = {
   kcal_target: 2200,
   protein_target_g: 150,
   coffee_limit: 2,
+  sex: 'male' as const,
+  birth_year: 1997,
+  activity_factor: 1.4,
+  weigh_in_mode: 'daily' as const,
+  steps_min: 6000,
+  monthly_budget_inr: 18000,
 };
 const PTR = { sex: 'male' as const, birthYear: 1997, activityFactor: 1.4 };
 const TODAY = '2026-11-23';

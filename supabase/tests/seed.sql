@@ -71,7 +71,7 @@ begin
 
   -- 6.1 profile defaults
   select * into p from public.profile;
-  if p.height_cm <> 170 or p.start_weight_kg <> 91.0 or p.goal_weight_kg <> 75.0
+  if p.height_cm is not null or p.start_weight_kg is not null or p.goal_weight_kg is not null -- F25: asked at setup
      or p.water_target_ml <> 3000 or p.kcal_target <> 2200 or p.protein_target_g <> 150
      or p.wake_time <> '05:00' or p.sleep_time <> '22:00' or p.phone_off_time <> '21:30'
      or p.coffee_limit <> 2 or p.sex <> 'male' or p.birth_year <> 1997 or p.theme <> 'dark'

@@ -21,6 +21,8 @@ export type AuthState = {
   offline: boolean;
   pending: boolean;
   error: string | null;
+  /** F25: non-error message, e.g. "confirm your email" after sign-up. */
+  notice: string | null;
   /** seed_defaults() result for this session (retried on next launch when it fails). */
   seed: SeedStatus;
   /** .env missing or still holding the placeholders. */
@@ -33,6 +35,7 @@ export const initialAuthState: AuthState = {
   offline: false,
   pending: false,
   error: null,
+  notice: null,
   seed: 'idle',
   configMissing: false,
 };
@@ -92,24 +95,28 @@ export const signIn = createAsyncThunk<AuthUser, { email: string; password: stri
   },
 );
 
-/** Dev-only (EXPO_PUBLIC_ENABLE_SIGNUP=1): creates the single account. */
-export const signUp = createAsyncThunk<AuthUser, { email: string; password: string }, ThunkConfig>(
-  'auth/signUp',
-  async ({ email, password }, { extra, dispatch, rejectWithValue }) => {
-    try {
-      const { data, error } = await extra
-        .getSupabase()
-        .auth.signUp({ email: email.trim(), password });
-      if (error) return rejectWithValue(authErrorMessage(error));
-      const user = userFromSession(data.session);
-      if (!user) return rejectWithValue('Account created. Confirm the email, then sign in.');
-      void dispatch(ensureSeeded());
-      return user;
-    } catch (e) {
-      return rejectWithValue(authErrorMessage(e));
-    }
-  },
-);
+/**
+ * F25: anyone can create an account. With email confirmation on (the Supabase
+ * default) no session comes back: resolves null and the screen says to confirm.
+ */
+export const signUp = createAsyncThunk<
+  AuthUser | null,
+  { email: string; password: string },
+  ThunkConfig
+>('auth/signUp', async ({ email, password }, { extra, dispatch, rejectWithValue }) => {
+  try {
+    const { data, error } = await extra
+      .getSupabase()
+      .auth.signUp({ email: email.trim(), password });
+    if (error) return rejectWithValue(authErrorMessage(error));
+    const user = userFromSession(data.session);
+    if (!user) return null;
+    void dispatch(ensureSeeded());
+    return user;
+  } catch (e) {
+    return rejectWithValue(authErrorMessage(e));
+  }
+});
 
 export const sendPasswordReset = createAsyncThunk<string, { email: string }, ThunkConfig>(
   'auth/sendPasswordReset',
@@ -123,6 +130,29 @@ export const sendPasswordReset = createAsyncThunk<string, { email: string }, Thu
     }
   },
 );
+
+/**
+ * F25: permanently deletes this account and all its data on the server
+ * (Edge Function `delete-account`), then signs out of this phone.
+ */
+export const deleteAccount = createAsyncThunk<
+  string,
+  void,
+  ThunkConfig & { state: { auth: AuthState } }
+>('auth/deleteAccount', async (_, { extra, dispatch, getState, rejectWithValue }) => {
+  const id = getState().auth.user?.id;
+  if (!id) return rejectWithValue('Sign in first.');
+  try {
+    const { error } = await extra
+      .getSupabase()
+      .functions.invoke('delete-account', { body: { confirm: 'DELETE' } });
+    if (error) return rejectWithValue('Could not delete the account. Check your connection.');
+  } catch {
+    return rejectWithValue('Could not delete the account. Check your connection.');
+  }
+  await dispatch(signOut());
+  return id;
+});
 
 export const signOut = createAsyncThunk<void, void, ThunkConfig>(
   'auth/signOut',
@@ -152,6 +182,7 @@ export const authSlice = createSlice({
     },
     clearAuthError(state) {
       state.error = null;
+      state.notice = null;
     },
   },
   extraReducers: (b) => {
@@ -170,9 +201,14 @@ export const authSlice = createSlice({
       b.addCase(thunk.pending, (state) => {
         state.pending = true;
         state.error = null;
+        state.notice = null;
       });
-      b.addCase(thunk.fulfilled, (state, { payload }) => {
+      b.addCase(thunk.fulfilled, (state, { payload, meta }) => {
         state.pending = false;
+        if (!payload) {
+          state.notice = `Account created. Open the link we sent to ${meta.arg.email.trim()}, then sign in.`;
+          return;
+        }
         state.status = 'signedIn';
         state.user = payload;
         state.offline = false;
@@ -191,6 +227,15 @@ export const authSlice = createSlice({
       state.pending = false;
     });
     b.addCase(sendPasswordReset.rejected, (state, { payload, error }) => {
+      state.pending = false;
+      state.error = payload ?? error.message ?? 'Something went wrong. Try again.';
+    });
+
+    b.addCase(deleteAccount.pending, (state) => {
+      state.pending = true;
+      state.error = null;
+    });
+    b.addCase(deleteAccount.rejected, (state, { payload, error }) => {
       state.pending = false;
       state.error = payload ?? error.message ?? 'Something went wrong. Try again.';
     });

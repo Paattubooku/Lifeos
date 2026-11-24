@@ -24,6 +24,12 @@ const PROFILE: ProfileRowLike = {
   protein_target_g: 150,
   coffee_limit: 2,
   onboarded_at: null,
+  sex: 'male',
+  birth_year: 1997,
+  activity_factor: 1.4,
+  weigh_in_mode: 'daily',
+  steps_min: 6000,
+  monthly_budget_inr: 18000,
 };
 
 const FIELDS: ProfileFields = fieldsFromProfile(PROFILE, null);

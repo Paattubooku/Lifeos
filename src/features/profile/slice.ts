@@ -4,11 +4,11 @@ import type { AuthDeps } from '@/features/auth/slice';
 import { queueUpsert, type SyncRoot } from '@/features/sync/slice';
 
 import type { Write } from './lib/plan';
-import type { ProfileFields } from './lib/targets';
+import type { OnboardingDraft } from './lib/onboarding';
 
 export type ProfileState = {
   /** Onboarding answers so far (persisted: survives an app kill mid-onboarding). */
-  draft: ProfileFields | null;
+  draft: OnboardingDraft | null;
 };
 
 export const initialProfileState: ProfileState = { draft: null };
@@ -31,10 +31,10 @@ export const profileSlice = createSlice({
   name: 'profile',
   initialState: initialProfileState,
   reducers: {
-    draftStarted(state, { payload }: PayloadAction<ProfileFields>) {
+    draftStarted(state, { payload }: PayloadAction<OnboardingDraft>) {
       if (!state.draft) state.draft = payload;
     },
-    draftUpdated(state, { payload }: PayloadAction<Partial<ProfileFields>>) {
+    draftUpdated(state, { payload }: PayloadAction<Partial<OnboardingDraft>>) {
       if (state.draft) state.draft = { ...state.draft, ...payload };
     },
     draftCleared(state) {

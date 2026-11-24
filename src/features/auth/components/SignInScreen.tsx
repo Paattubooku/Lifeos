@@ -16,23 +16,24 @@ import { Banner, Button, Text, TextField, useSnackbar, useTheme } from '@/ui';
 import { isValidEmail } from '../lib/session';
 import { clearAuthError, sendPasswordReset, signIn, signUp } from '../slice';
 
-export type SignInScreenProps = {
-  /** Dev-only account creation (EXPO_PUBLIC_ENABLE_SIGNUP=1 in a dev build). */
-  allowSignUp: boolean;
-};
+type Mode = 'signIn' | 'signUp';
 
-/** design/screens/SignIn(-Dark).png */
-export function SignInScreen({ allowSignUp }: SignInScreenProps) {
+/** design/screens/SignIn(-Dark).png, plus "Create account" for new people (F25). */
+export function SignInScreen() {
   const dispatch = useAppDispatch();
-  const { pending, error, configMissing } = useAppSelector((s) => s.auth);
+  const { pending, error, notice, configMissing } = useAppSelector((s) => s.auth);
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const showSnackbar = useSnackbar();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
+  const [mode, setMode] = useState<Mode>('signIn');
   const [formError, setFormError] = useState<string | null>(null);
   const passwordRef = useRef<ComponentRef<typeof TextInput>>(null);
+  const confirmRef = useRef<ComponentRef<typeof TextInput>>(null);
+  const creating = mode === 'signUp';
 
   const message = formError ?? error;
 
@@ -60,7 +61,18 @@ export function SignInScreen({ allowSignUp }: SignInScreenProps) {
       setFormError('Use at least 8 characters.');
       return;
     }
+    if (confirm !== password) {
+      setFormError('The two passwords don’t match.');
+      return;
+    }
     void dispatch(signUp({ email, password }));
+  };
+
+  const switchMode = (next: Mode) => {
+    dispatch(clearAuthError());
+    setFormError(null);
+    setConfirm('');
+    setMode(next);
   };
 
   const onForgot = async () => {
@@ -93,7 +105,9 @@ export function SignInScreen({ allowSignUp }: SignInScreenProps) {
             LifeOS
           </Text>
           <Text variant="body" tone="secondary">
-            5:00 am to 10:00 pm. One screen.
+            {creating
+              ? 'Create your account. Setup takes 2 minutes.'
+              : 'Your whole day. One screen.'}
           </Text>
         </View>
 
@@ -134,50 +148,92 @@ export function SignInScreen({ allowSignUp }: SignInScreenProps) {
               setFormError(null);
             }}
             autoCapitalize="none"
-            autoComplete="current-password"
-            textContentType="password"
-            returnKeyType="go"
-            onSubmitEditing={onSignIn}
+            autoComplete={creating ? 'new-password' : 'current-password'}
+            textContentType={creating ? 'newPassword' : 'password'}
+            returnKeyType={creating ? 'next' : 'go'}
+            onSubmitEditing={creating ? () => confirmRef.current?.focus() : onSignIn}
             editable={!pending}
           />
+          {creating ? (
+            <TextField
+              ref={confirmRef}
+              label="Confirm password"
+              icon={Lock}
+              secure
+              value={confirm}
+              onChangeText={(t) => {
+                setConfirm(t);
+                setFormError(null);
+              }}
+              autoCapitalize="none"
+              autoComplete="new-password"
+              textContentType="newPassword"
+              returnKeyType="go"
+              onSubmitEditing={onSignUp}
+              editable={!pending}
+            />
+          ) : null}
 
           {message ? <Banner tone="danger" title={message} testID="auth-error" /> : null}
 
-          <Button
-            size="lg"
-            fullWidth
-            label={pending ? 'Signing in…' : 'Sign in'}
-            accessibilityLabel="Sign in"
-            disabled={pending || configMissing}
-            onPress={onSignIn}
-          />
-          <Button
-            variant="ghost"
-            fullWidth
-            label="Forgot password"
-            accessibilityLabel="Forgot password"
-            accessibilityHint="Sends a reset link to the email above"
-            disabled={pending || configMissing}
-            onPress={() => void onForgot()}
-          />
-          {allowSignUp ? (
-            <Button
-              variant="outline"
-              fullWidth
-              label="Create account (dev)"
-              accessibilityLabel="Create account, development only"
-              disabled={pending || configMissing}
-              onPress={onSignUp}
-            />
-          ) : null}
+          {notice ? <Banner tone="success" title={notice} testID="auth-notice" /> : null}
+
+          {creating ? (
+            <>
+              <Button
+                size="lg"
+                fullWidth
+                label={pending ? 'Creating…' : 'Create account'}
+                accessibilityLabel="Create account"
+                disabled={pending || configMissing}
+                onPress={onSignUp}
+              />
+              <Button
+                variant="ghost"
+                fullWidth
+                label="Have an account? Sign in"
+                accessibilityLabel="Have an account? Sign in"
+                disabled={pending}
+                onPress={() => switchMode('signIn')}
+              />
+            </>
+          ) : (
+            <>
+              <Button
+                size="lg"
+                fullWidth
+                label={pending ? 'Signing in…' : 'Sign in'}
+                accessibilityLabel="Sign in"
+                disabled={pending || configMissing}
+                onPress={onSignIn}
+              />
+              <Button
+                variant="ghost"
+                fullWidth
+                label="Forgot password"
+                accessibilityLabel="Forgot password"
+                accessibilityHint="Sends a reset link to the email above"
+                disabled={pending || configMissing}
+                onPress={() => void onForgot()}
+              />
+              <Button
+                variant="outline"
+                fullWidth
+                label="New here? Create an account"
+                accessibilityLabel="New here? Create an account"
+                disabled={pending || configMissing}
+                onPress={() => switchMode('signUp')}
+              />
+            </>
+          )}
         </View>
 
         <View style={styles.footer}>
           <Text variant="caption" tone="secondary" align="center">
-            Single account. No sign-up, no sharing.
+            Private by default. No sharing, no feed.
           </Text>
           <Text variant="caption" tone="secondary" align="center">
-            Data syncs to your account only.
+            Your data syncs to your account only.
           </Text>
         </View>
       </ScrollView>

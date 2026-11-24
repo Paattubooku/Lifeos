@@ -150,7 +150,7 @@ describe('auth slice', () => {
     });
   });
 
-  describe('signUp (dev flag only)', () => {
+  describe('signUp (F25: open to everyone)', () => {
     it('creates the account and seeds', async () => {
       const { store, auth, rpc } = storeWithFake();
       await store.dispatch(signUp({ email: 'ptr@example.com', password: 'longpassword' }));
@@ -164,7 +164,11 @@ describe('auth slice', () => {
       fake.auth.signUp.mockResolvedValueOnce({ data: { session: null }, error: null });
       const { store } = storeWithFake(fake);
       await store.dispatch(signUp({ email: 'ptr@example.com', password: 'longpassword' }));
-      expect(store.getState().auth.error).toBe('Account created. Confirm the email, then sign in.');
+      expect(store.getState().auth.error).toBeNull();
+      expect(store.getState().auth.status).not.toBe('signedIn');
+      expect(store.getState().auth.notice).toBe(
+        'Account created. Open the link we sent to ptr@example.com, then sign in.',
+      );
     });
 
     it('reports a disabled sign-up and thrown errors', async () => {

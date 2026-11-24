@@ -25,7 +25,7 @@ export const SAMPLES = [
   'Your account is not debited with Rs 5000.00 towards AuraGold for Autopay due to cbs rejection 0116, RRN 705667557146-ICICI Bank.',
   'Rs. 2,000.00 cardless withdrawal at ICICI Bank ATM on 10-Jun-26. Info: CCW*27801HHR*14970530*6723*C. To dispute call 18002662 or SMS BLOCK 219 to 9215676766',
   'INR 1,237.82 spent using ICICI Bank Card XX8006 on 12-Jun-26 on ICICI BILL PAY. Avl Limit: INR 1,27,524.36. If not you, call 1800 2662/SMS BLOCK 8006 to 9215676766',
-  'ICICI Bank Credit Card XX8006 Statement is sent to th***********98@gmail.com. Total of Rs 1,237.82 or minimum of Rs 100.00 is due by 20-JUN-26.',
+  'ICICI Bank Credit Card XX8006 Statement is sent to yo********@example.com. Total of Rs 1,237.82 or minimum of Rs 100.00 is due by 20-JUN-26.',
 ] as const;
 const SAMPLE_LABELS = [
   'UPI debit',

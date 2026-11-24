@@ -191,6 +191,12 @@ export const syncSlice = createSlice({
   name: 'sync',
   initialState: initialSyncState,
   reducers: {
+    /** F25: the account was deleted — its unsent writes can never be pushed. */
+    ownerDropped(state, { payload }: PayloadAction<string>) {
+      state.queue = state.queue.filter((m) => m.owner !== payload);
+      state.recent = (state.recent ?? []).filter((m) => m.owner !== payload);
+      state.dead = state.dead.filter((m) => m.owner !== payload);
+    },
     enqueued(state, { payload }: PayloadAction<{ write: NewWrite; now: number }>) {
       state.queue = enqueue(state.queue, payload.write, payload.now);
     },
@@ -256,4 +262,4 @@ export const syncSlice = createSlice({
   },
 });
 
-export const { connectivityChanged, retryDead, serverRead } = syncSlice.actions;
+export const { connectivityChanged, retryDead, serverRead, ownerDropped } = syncSlice.actions;

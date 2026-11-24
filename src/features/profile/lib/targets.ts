@@ -15,7 +15,14 @@ import {
 import { addDays, type DateString, parseDate } from '@/lib/dates';
 import { parseClock } from '@/lib/format';
 
+export type WeighInMode = 'daily' | 'weekly';
+
 export type ProfileFields = {
+  // About you (F25: asked in onboarding, edited in Settings → Profile).
+  sex: Sex;
+  birth_year: number;
+  activity_factor: number;
+  weigh_in_mode: WeighInMode;
   height_cm: number;
   current_weight_kg: number;
   goal_weight_kg: number;
@@ -26,9 +33,29 @@ export type ProfileFields = {
   kcal_target: number;
   protein_target_g: number;
   coffee_limit: number;
+  steps_min: number;
+  monthly_budget_inr: number;
 };
 
+/** Sex, age and activity for the energy maths. */
+export const personOf = (f: Pick<ProfileFields, 'sex' | 'birth_year' | 'activity_factor'>) => ({
+  sex: f.sex,
+  birthYear: f.birth_year,
+  activityFactor: f.activity_factor,
+});
+
+/** Activity multipliers for TDEE (F25 onboarding). 1.4 is the PRD default. */
+export const ACTIVITY_LEVELS = [
+  { factor: 1.2, title: 'Mostly sitting', sub: 'Desk job, little walking, no workouts' },
+  { factor: 1.4, title: 'Lightly active', sub: 'Desk job plus short daily workouts or walks' },
+  { factor: 1.55, title: 'Active', sub: 'On your feet a lot, or hard training most days' },
+  { factor: 1.725, title: 'Very active', sub: 'Physical job plus training' },
+] as const;
+
 export const LIMITS = {
+  birth_year: { min: 1920, max: 2015, step: 1 },
+  steps_min: { min: 0, max: 30_000, step: 500 },
+  monthly_budget_inr: { min: 0, max: 10_00_000, step: 1000 },
   height_cm: { min: 100, max: 250, step: 1 },
   weight_kg: { min: 20, max: 300, step: 0.1 },
   water_target_ml: { min: 500, max: 10_000, step: 250 },

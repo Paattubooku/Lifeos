@@ -245,7 +245,7 @@ export function IntegrationsScreen({ now: fixedNow }: { now?: number } = {}) {
         icon={MessageSquare}
         title="iPhone Shortcuts · SMS automation"
         steps={[
-          'Shortcuts → Automation → New Automation → Message. Sender: your bank (ICICI). Choose Run Immediately.',
+          'Shortcuts → Automation → New Automation → Message. Sender: your bank. The parser reads ICICI Bank messages today. Choose Run Immediately.',
           <View key="u" style={styles.gap}>
             <Text variant="sub">Add the action Get Contents of URL, method POST, URL:</Text>
             <CopyLine label="SMS URL" value={ENDPOINTS.sms} />

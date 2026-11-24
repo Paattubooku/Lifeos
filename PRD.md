@@ -7,7 +7,7 @@ Version 1.2 · 2026-11-23 (reference repos mapped; designs reconciled, see `desi
 ## 0. How to use this document (read first, Claude Code)
 
 1. This PRD is the single source of truth. If something here conflicts with code in `reference/`, this PRD wins.
-2. Build **one feature at a time**, in the exact order of [Section 12 — Build order](#12-build-order). Each feature has an ID (`F00`…`F24`), a spec, acceptance criteria and required tests.
+2. Build **one feature at a time**, in the exact order of [Section 12 — Build order](#12-build-order). Each feature has an ID (`F00`…`F25`), a spec, acceptance criteria and required tests.
 3. A feature is **done** only when every acceptance criterion passes, `npm run typecheck && npm run lint && npm test` is green, and `PROGRESS.md` is updated.
 4. After each feature, **stop**, summarise what was built and how to verify it on the phone, and wait for PTR to say "next".
 5. PTR's old apps (GitHub `Paattubooku/*`, cloned into `reference/`, see §2) are **feature references only**. Section 2.2 lists exactly which files to port into which LifeOS feature; §2.3 lists what must not be copied. Never import from `reference/`, never modify it, never copy their architecture wholesale.
@@ -45,7 +45,7 @@ One user: PTR. Frontend developer, desk job, office days with a packed lunch box
 
 ### 1.4 Non-goals
 
-Multi-user, social, public launch, AI coach/chat, food database search, barcode scanning, web version, Apple Watch app, payments.
+Social, public launch, AI coach/chat, food database search, barcode scanning, web version, Apple Watch app, payments.
 
 ---
 
@@ -711,6 +711,24 @@ Format for each feature: **Reference · Goal · Scope · Edge cases · Acceptanc
   - Every nudge type can be switched off in Settings → Reminders.
 - **AC:** unit tests for every trigger condition and its once-per-period limit; nudges never exceed the 10-notifications/day cap (they take priority over water checks).
 
+### F25 — Multiple accounts (added 2026-11-24 at PTR's request)
+
+- **Decisions (PTR):** open sign-up; email + password; first-run setup asks every needed question and uses PTR's plan as the example for the answers.
+- **Goal:** anyone can create their own LifeOS account; nobody ever sees another person's data.
+- **Scope:**
+  - **Data isolation** stays as built: every row has `user_id` + RLS "own rows"; `seed_defaults()` seeds per user.
+  - **Sign-up screen** in every build: email, password (≥ 8), confirm password; with email confirmation on, "Open the link we sent to …, then sign in".
+  - **First-run setup, 5 steps:** (1) About you: sex, birth year, height, activity level; (2) Weight: current, goal, weigh-in daily/weekly; (3) Day: wake, phone-off, sleep; (4) Targets: water, kcal, protein, coffee, steps minimum, monthly budget — suggested from the answers; (5) Notifications + summary + "your starting plan". Personal numbers start blank with PTR's values as "e.g." hints. A new account's profile has no body numbers until then.
+  - **Starting plan:** every account gets the §6 example plan (routine, meals, workouts, categories). Finishing setup fits every routine block and meal time to the person's wake → sleep day (same position in the day, rounded to 5 min); wake, phone-off and sleep blocks take the answers.
+  - **One phone, several accounts:** signing out, or a different account signing in, clears cached data, per-feature state and scheduled reminders. Unsent writes stay tagged with their account and are only pushed or shown for it.
+  - **Delete account** in Settings (type DELETE): Edge Function `delete-account` (session JWT only, never a personal access token) deletes the login; all rows cascade.
+  - Settings → Profile also edits sex, birth year and activity level.
+- **AC:**
+  1. A second account on the same phone sees none of the first account's data or reminders.
+  2. A new account cannot reach Today before answering steps 1–2.
+  3. A 07:00–23:30 person's routine starts at 07:00 with blocks in the same order.
+  4. Deleting an account removes its login and every row; its unsent writes are dropped.
+
 ---
 
 ## 9. Non-functional requirements
@@ -775,6 +793,7 @@ Build strictly in this order. Stop after each feature for PTR's "next".
 | 23 | F21 Steps | M5 | F16 |
 | 24 | F23 Settings, export, polish | M5 | all |
 | 25 | F22 Home-screen widgets (optional) | M5 | F19, F23 |
+| 26 | F25 Multiple accounts (added later) | M6 | F01, F03, F23 |
 
 **Milestone gates (PTR, not Claude Code):** after M1 and after M3, PTR uses the app for 7 consecutive days before asking for the next milestone. Claude Code should remind PTR of this when a milestone completes.
 
@@ -782,7 +801,7 @@ Build strictly in this order. Stop after each feature for PTR's "next".
 
 ## 13. Out of scope (log ideas in `LATER.md`)
 
-AI coach or chat, LLM meal generation (AutoFit `generate-plan.js`), AI photo meal scanning and nutrition estimation (Food-Tracker `analyze-image.js`, `estimate-nutrition.js`), Gemini SMS fallback, generic custom trackers and tags (Pulse), food database / barcode, social sharing, Apple Watch, web dashboard, multiple users, trading journal (The Desk) and AI paper trader, AutoFit features, in-app purchases.
+AI coach or chat, LLM meal generation (AutoFit `generate-plan.js`), AI photo meal scanning and nutrition estimation (Food-Tracker `analyze-image.js`, `estimate-nutrition.js`), Gemini SMS fallback, generic custom trackers and tags (Pulse), food database / barcode, social sharing, Apple Watch, web dashboard, trading journal (The Desk) and AI paper trader, AutoFit features, in-app purchases.
 
 ---
 

@@ -1,4 +1,4 @@
-import { combineReducers } from '@reduxjs/toolkit';
+import { combineReducers, type UnknownAction } from '@reduxjs/toolkit';
 import { persistReducer } from 'redux-persist';
 
 import { authSlice } from '@/features/auth/slice';
@@ -10,12 +10,11 @@ import { trainSlice } from '@/features/train/slice';
 import { profileSlice } from '@/features/profile/slice';
 import { syncSlice } from '@/features/sync/slice';
 
-import { appSlice } from './appSlice';
+import { accountCleared, appSlice } from './appSlice';
 import { baseApi } from './baseApi';
 import { syncPersistConfig } from './syncPersist';
 
-/** Own module so `persist.ts` can type its config without importing the store (no type cycle). */
-export const rootReducer = combineReducers({
+const combined = combineReducers({
   [appSlice.name]: appSlice.reducer,
   [authSlice.name]: authSlice.reducer,
   [syncSlice.name]: persistReducer(syncPersistConfig, syncSlice.reducer),
@@ -28,4 +27,28 @@ export const rootReducer = combineReducers({
   [baseApi.reducerPath]: baseApi.reducer,
 });
 
-export type RootReducerState = ReturnType<typeof rootReducer>;
+export type RootReducerState = ReturnType<typeof combined>;
+
+/** Per-account state, reset to its initial value when another account takes over (F25). */
+export const ACCOUNT_SCOPED = [
+  profileSlice.name,
+  foodSlice.name,
+  notificationsSlice.name,
+  trainSlice.name,
+  stepsSlice.name,
+  accountabilitySlice.name,
+  baseApi.reducerPath,
+] as const;
+
+/** Own module so `persist.ts` can type its config without importing the store (no type cycle). */
+export function rootReducer(
+  state: RootReducerState | undefined,
+  action: UnknownAction,
+): RootReducerState {
+  if (state && accountCleared.match(action)) {
+    const kept: Partial<RootReducerState> = { ...state };
+    for (const key of ACCOUNT_SCOPED) delete kept[key];
+    return combined(kept as RootReducerState, action);
+  }
+  return combined(state, action);
+}

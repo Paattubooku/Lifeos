@@ -45,8 +45,14 @@ export function fakeSupabase() {
     })),
   };
   const rpc = jest.fn<Result<object>, [string]>(async () => ({ data: {}, error: null }));
-  const client = { auth, rpc } as unknown as LifeosClient;
-  return { client, auth, rpc };
+  const functions = {
+    invoke: jest.fn<Result<unknown>, [string, { body?: unknown }?]>(async () => ({
+      data: { ok: true },
+      error: null,
+    })),
+  };
+  const client = { auth, rpc, functions } as unknown as LifeosClient;
+  return { client, auth, rpc, functions };
 }
 
 export function memoryStorage(initial: Record<string, string> = {}): AsyncKeyValue {

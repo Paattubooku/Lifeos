@@ -93,3 +93,7 @@ export async function scheduleRestEnd(endsAt: number, body: string): Promise<voi
 
 export const cancelRestEnd = () =>
   Notifications.cancelScheduledNotificationAsync(REST_ID).catch(() => undefined);
+
+/** Another account takes over this phone: drop every scheduled reminder (F25). */
+export const cancelAllReminders = () =>
+  Notifications.cancelAllScheduledNotificationsAsync().catch(() => undefined);

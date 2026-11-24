@@ -23,10 +23,3 @@ export const supabaseConfig = parseSupabaseConfig(
   process.env.EXPO_PUBLIC_SUPABASE_URL,
   process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
 );
-
-/** Sign-up exists only in dev builds with EXPO_PUBLIC_ENABLE_SIGNUP=1 (PRD F01). */
-export function isSignUpEnabled(dev: boolean, flag: string | undefined): boolean {
-  return dev && flag === '1';
-}
-
-export const signUpEnabled = isSignUpEnabled(__DEV__, process.env.EXPO_PUBLIC_ENABLE_SIGNUP);

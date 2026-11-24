@@ -1,15 +1,26 @@
 import { useRouter } from 'expo-router';
-import { ChevronRight, Download, LogOut, Smartphone } from 'lucide-react-native';
+import { ChevronRight, Download, LogOut, Smartphone, Trash2 } from 'lucide-react-native';
+import { useState } from 'react';
 import { Linking, Pressable, StyleSheet, View } from 'react-native';
 
 import { selectUser } from '@/features/auth/selectors';
-import { signOut } from '@/features/auth/slice';
+import { deleteAccount, signOut } from '@/features/auth/slice';
 import { useProfile } from '@/features/profile/hooks/useProfileData';
 import { hhmm } from '@/features/routine/lib/blocks';
 import { formatClock, formatIndianNumber } from '@/lib/format';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { setThemePreference } from '@/store/appSlice';
-import { Button, Card, SegmentedToggle, Screen, Text, type ThemePreference, useTheme } from '@/ui';
+import {
+  Banner,
+  Button,
+  Card,
+  SegmentedToggle,
+  Screen,
+  Text,
+  TextField,
+  type ThemePreference,
+  useTheme,
+} from '@/ui';
 
 import { useExport } from '../hooks/useExport';
 
@@ -169,7 +180,63 @@ export function SettingsScreen() {
       <Text variant="caption" tone="secondary" align="center">
         Signing out keeps unsynced changes on this phone until you sign back in.
       </Text>
+
+      <DeleteAccount />
     </Screen>
+  );
+}
+
+/** F25: permanent account deletion, behind a typed "DELETE". */
+function DeleteAccount() {
+  const dispatch = useAppDispatch();
+  const { pending, error } = useAppSelector((s) => s.auth);
+  const [open, setOpen] = useState(false);
+  const [typed, setTyped] = useState('');
+  if (!open)
+    return (
+      <Button
+        icon={Trash2}
+        variant="ghost"
+        label="Delete account"
+        accessibilityLabel="Delete account"
+        fullWidth
+        onPress={() => setOpen(true)}
+      />
+    );
+  return (
+    <Card title="Delete account" gap={12} testID="delete-account">
+      <Text variant="sub" tone="secondary">
+        This deletes your account and everything in it: routine, logs, food, workouts, money and
+        tokens. It can’t be undone. Export first if you want a copy.
+      </Text>
+      <TextField
+        label="Type DELETE to confirm"
+        value={typed}
+        onChangeText={setTyped}
+        autoCapitalize="characters"
+        autoCorrect={false}
+      />
+      {error ? <Banner tone="danger" title={error} /> : null}
+      <Button
+        icon={Trash2}
+        variant="destructive"
+        label={pending ? 'Deleting…' : 'Delete my account'}
+        accessibilityLabel="Delete my account permanently"
+        fullWidth
+        disabled={pending || typed.trim() !== 'DELETE'}
+        onPress={() => void dispatch(deleteAccount())}
+      />
+      <Button
+        variant="ghost"
+        label="Keep my account"
+        accessibilityLabel="Keep my account"
+        fullWidth
+        onPress={() => {
+          setOpen(false);
+          setTyped('');
+        }}
+      />
+    </Card>
   );
 }
 

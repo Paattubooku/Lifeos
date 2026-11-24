@@ -6,7 +6,7 @@ import { templateForDate, type TemplateLike } from '@/features/routine/lib/templ
 import { addDays, type DateString, isoWeekday } from '@/lib/dates';
 import type { Row, SyncTable } from '@/lib/sync';
 
-import type { ProfileFields } from './targets';
+import type { ProfileFields, WeighInMode } from './targets';
 
 export type Write = { table: SyncTable; row: Row; clientId?: string };
 
@@ -23,6 +23,13 @@ export type ProfileRowLike = {
   protein_target_g: number;
   coffee_limit: number;
   onboarded_at: string | null;
+  sex: string;
+  birth_year: number;
+  /** numeric(3,2): may arrive as a string. */
+  activity_factor: number | string;
+  weigh_in_mode: string;
+  steps_min: number;
+  monthly_budget_inr: number;
 };
 
 export type BlockLike = {
@@ -53,6 +60,12 @@ const PROFILE_KEYS = [
   'kcal_target',
   'protein_target_g',
   'coffee_limit',
+  'sex',
+  'birth_year',
+  'activity_factor',
+  'weigh_in_mode',
+  'steps_min',
+  'monthly_budget_inr',
 ] as const;
 
 function changedProfileFields(profile: ProfileRowLike, f: ProfileFields): Row {
@@ -61,9 +74,11 @@ function changedProfileFields(profile: ProfileRowLike, f: ProfileFields): Row {
     const current = profile[key];
     const next = f[key];
     const same =
-      typeof next === 'string' && typeof current === 'string'
-        ? hhmm(current) === next
-        : current === next;
+      typeof next === 'number'
+        ? current !== null && Number(current) === next
+        : typeof current === 'string' && key.endsWith('_time')
+          ? hhmm(current) === next
+          : current === next;
     if (!same) row[key] = next;
   }
   return row;
@@ -200,5 +215,11 @@ export function fieldsFromProfile(
     kcal_target: profile.kcal_target,
     protein_target_g: profile.protein_target_g,
     coffee_limit: profile.coffee_limit,
+    sex: profile.sex === 'female' ? 'female' : 'male',
+    birth_year: profile.birth_year,
+    activity_factor: Number(profile.activity_factor),
+    weigh_in_mode: (profile.weigh_in_mode === 'weekly' ? 'weekly' : 'daily') as WeighInMode,
+    steps_min: profile.steps_min,
+    monthly_budget_inr: profile.monthly_budget_inr,
   };
 }

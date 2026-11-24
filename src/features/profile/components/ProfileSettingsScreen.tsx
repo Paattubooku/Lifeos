@@ -3,7 +3,6 @@ import { BellOff, BellRing, X } from 'lucide-react-native';
 import { type ReactNode, useMemo, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
-import type { Sex } from '@/features/body/lib/energy';
 import { useAppDispatch } from '@/store';
 import { Banner, Button, Card, Screen, Text, useSnackbar, useTheme } from '@/ui';
 
@@ -12,7 +11,8 @@ import { useReminderPermission } from '../hooks/useReminderPermission';
 import { fieldsFromProfile, planProfileSave } from '../lib/plan';
 import { checkDay, type ProfileFields } from '../lib/targets';
 import { applyWrites } from '../slice';
-import { BodyFields, DayFields, TargetsFields } from './ProfileFields';
+import { EXAMPLE } from '../lib/onboarding';
+import { AboutFields, BodyFields, DayFields, TargetsFields } from './ProfileFields';
 
 /** Settings → Profile & targets (PRD F03: edits the onboarding fields later). */
 export function ProfileSettingsScreen() {
@@ -63,14 +63,8 @@ export function ProfileSettingsScreen() {
     );
   }
 
-  const profile = ctx.profile;
   const update = (patch: Partial<ProfileFields>) => setEdits((e) => ({ ...e, ...patch }));
   const dayError = checkDay(form).error;
-  const person = {
-    sex: (profile.sex === 'female' ? 'female' : 'male') as Sex,
-    birthYear: profile.birth_year,
-    activityFactor: Number(profile.activity_factor),
-  };
 
   const save = async () => {
     setSaving(true);
@@ -113,6 +107,17 @@ export function ProfileSettingsScreen() {
         )}
       </Card>
 
+      <Section title="About you">
+        <AboutFields
+          value={form}
+          onChange={({ birth_year, height_cm: _h, ...rest }) =>
+            // A blank or out-of-range year keeps the saved one.
+            update(birth_year === null || birth_year === undefined ? rest : { ...rest, birth_year })
+          }
+          example={EXAMPLE}
+          showHeight={false}
+        />
+      </Section>
       <Section title="Body">
         <BodyFields value={form} onChange={update} today={ctx.today} />
       </Section>
@@ -123,7 +128,7 @@ export function ProfileSettingsScreen() {
         <DayFields value={form} onChange={update} />
       </Section>
       <Section title="Targets">
-        <TargetsFields value={form} onChange={update} today={ctx.today} person={person} />
+        <TargetsFields value={form} onChange={update} today={ctx.today} />
       </Section>
 
       <Button
