@@ -263,9 +263,9 @@ export function ProgressScreen({ now: fixedNow }: { now?: number } = {}) {
         value={st.week.avg7 === null ? '—' : formatIndianNumber(st.week.avg7)}
         sub={
           st.week.avg7 === null
-            ? st.link === 'connected'
-              ? 'No steps from Health yet'
-              : 'Connect Health or add steps'
+            ? st.auto
+              ? 'No steps counted yet'
+              : 'Turn on step counting'
             : `7-day avg · minimum ${formatIndianNumber(st.targets.min)}`
         }
         delta={st.week.avg7 === null ? null : { text: `${st.week.hit7} of 7 hit`, tone: 'neutral' }}

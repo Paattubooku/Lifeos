@@ -92,3 +92,14 @@ jest.mock('@kingstinct/react-native-healthkit', () => ({
   requestAuthorization: jest.fn(() => Promise.resolve(true)),
   queryStatisticsCollectionForQuantity: jest.fn(() => Promise.resolve([])),
 }));
+
+// iPhone motion-chip steps (F21): available and granted unless a test says otherwise.
+jest.mock('expo-sensors', () => ({
+  Pedometer: {
+    isAvailableAsync: jest.fn(() => Promise.resolve(true)),
+    getPermissionsAsync: jest.fn(() => Promise.resolve({ granted: true })),
+    requestPermissionsAsync: jest.fn(() => Promise.resolve({ granted: true })),
+    getStepCountAsync: jest.fn(() => Promise.resolve({ steps: 0 })),
+    watchStepCount: jest.fn(() => ({ remove: jest.fn() })),
+  },
+}));

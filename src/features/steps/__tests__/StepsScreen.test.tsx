@@ -62,7 +62,7 @@ describe('Steps without Health (Expo Go / denied): manual entry (F21 AC)', () =>
     expect(screen.getByLabelText('Days ≥ 6,000, 1 / 7, last week')).toBeOnTheScreen();
 
     await press('Connect Health');
-    expect(screen.getByText(/needs the LifeOS development build/)).toBeOnTheScreen();
+    expect(screen.getByText(/Apple Health needs the TestFlight build/)).toBeOnTheScreen();
     expect(screen.getByRole('button', { name: 'Connect Health' })).toBeOnTheScreen();
   });
 
@@ -73,10 +73,11 @@ describe('Steps without Health (Expo Go / denied): manual entry (F21 AC)', () =>
     await renderWithStore(store, <StepsScreen now={at('10:00')} />);
     await press('Connect Health');
     expect(store.getState().steps.health).toBe('denied');
-    expect(screen.getByText(/Health access was not given. Allow it in Settings/)).toBeOnTheScreen();
+    expect(screen.getByRole('button', { name: 'Connect Health' })).toBeOnTheScreen();
+    expect(screen.getByText('Connect Health (access was not given)')).toBeOnTheScreen();
     expect(screen.getByRole('button', { name: 'Add 500 steps' })).toBeOnTheScreen();
     expect(
-      screen.getByText('No steps yet. Connect Health or add today’s steps.'),
+      screen.getByText('No steps yet. Count automatically or add today’s steps.'),
     ).toBeOnTheScreen();
   });
 });
@@ -134,7 +135,7 @@ describe('Steps from Apple Health', () => {
     expect(screen.queryByTestId('steps-chip')).toBeNull();
     await renderWithStore(store, <ProgressScreen now={at('12:00')} />);
     expect(
-      within(screen.getByTestId('progress-steps')).getByText(/^Connect Health or add steps/),
+      within(screen.getByTestId('progress-steps')).getByText(/^Turn on step counting/),
     ).toBeOnTheScreen();
   });
 });

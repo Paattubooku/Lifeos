@@ -47,6 +47,12 @@
           "NSHealthUpdateUsageDescription": false,
           "background": false
         }
+      ],
+      [
+        "expo-sensors",
+        {
+          "motionPermission": "LifeOS counts your daily steps with your iPhone's motion sensor."
+        }
       ]
     ],
     "experiments": {

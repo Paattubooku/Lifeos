@@ -90,14 +90,14 @@ export function TodayScreen({ now: fixedNow }: { now?: number } = {}) {
   const sleep = useSleep(now);
   const tasks = useTasks(now);
   const steps = useSteps(now);
-  // F21: refresh steps from Apple Health once per visit when connected.
-  const healthSynced = useRef(false);
-  const { link: stepsLink, syncHealth } = steps;
+  // F21: refresh steps (Apple Health or the iPhone motion chip) once per visit.
+  const stepsSynced = useRef(false);
+  const { auto: stepsAuto, syncAuto } = steps;
   useEffect(() => {
-    if (stepsLink !== 'connected' || healthSynced.current) return;
-    healthSynced.current = true;
-    void syncHealth(clock()).catch(() => undefined);
-  }, [stepsLink, syncHealth]);
+    if (!stepsAuto || stepsSynced.current) return;
+    stepsSynced.current = true;
+    void syncAuto(clock()).catch(() => undefined);
+  }, [stepsAuto, syncAuto]);
   const pinned = pinnedChange(reviews, t.today);
   const taskActions = useTaskActions(tasks.all, tasks.today);
   const logNight = useLogNight(t, sleep);
@@ -195,7 +195,7 @@ export function TodayScreen({ now: fixedNow }: { now?: number } = {}) {
   );
   // Steps chip (F21): hidden until there are steps or Health is connected.
   const templateChip =
-    steps.count !== null || steps.link === 'connected' ? (
+    steps.count !== null || steps.auto !== null ? (
       <View style={styles.chips}>
         <Chip
           label={formatIndianNumber(steps.count ?? 0)}

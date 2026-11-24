@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { Footprints, HeartPulse, Plus, RefreshCw } from 'lucide-react-native';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { Bars } from '@/features/money/components/SpendBars';
@@ -25,7 +25,7 @@ import {
   useTheme,
 } from '@/ui';
 
-import { useSteps } from '../hooks/useSteps';
+import { useLiveSteps, useSteps } from '../hooks/useSteps';
 import { MAX_STEPS, QUICK_ADD, stepsHint, stepsTone } from '../lib/steps';
 
 /** Event-time clock (kept out of render for the React Compiler). */
@@ -44,7 +44,17 @@ export function StepsScreen({ now: fixedNow }: { now?: number } = {}) {
   const s = useSteps(now);
   const [exact, setExact] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
-  const steps = s.count ?? 0;
+  const live = useLiveSteps(s.auto === 'phone', now);
+  const shown = live !== null ? Math.max(live, s.count ?? 0) : s.count;
+  const steps = shown ?? 0;
+  // Refresh the stored days once per visit when counting automatically.
+  const synced = useRef(false);
+  const { auto, syncAuto } = s;
+  useEffect(() => {
+    if (!auto || synced.current) return;
+    synced.current = true;
+    void syncAuto(clock()).catch(() => false);
+  }, [auto, syncAuto]);
   const t = s.targets;
   const sleepMin = dayMinutes(hhmm(profile?.sleep_time ?? '22:00'));
   const hint = stepsHint(steps, t, nowDayMinutes(now), sleepMin);
@@ -61,13 +71,26 @@ export function StepsScreen({ now: fixedNow }: { now?: number } = {}) {
           ? 'Apple Health connected'
           : r === 'denied'
             ? 'Health access was not given. Enter steps by hand, or allow it in Settings → Health.'
-            : 'Apple Health needs the LifeOS development build. Enter steps by hand for now.',
+            : 'Apple Health needs the TestFlight build. Use “Count steps automatically” instead.',
     });
   };
   const refresh = async () => {
     setBusy(true);
-    await s.syncHealth(clock()).catch(() => false);
+    await s.syncAuto(clock()).catch(() => false);
     setBusy(false);
+  };
+  const startCounting = async () => {
+    setBusy(true);
+    const r = await s.startCounting(clock());
+    setBusy(false);
+    showSnackbar({
+      message:
+        r === 'on'
+          ? 'Counting steps automatically'
+          : r === 'denied'
+            ? 'Motion & Fitness is off. Turn it on in Settings → Privacy & Security → Motion & Fitness.'
+            : 'This phone can’t count steps. Enter them by hand.',
+    });
   };
   const setMin = (min: number) =>
     profile &&
@@ -95,7 +118,7 @@ export function StepsScreen({ now: fixedNow }: { now?: number } = {}) {
             accessibilityLabel={`${n(steps)} steps today. Tick at the ${n(t.min)} minimum`}
           >
             <Text variant="heading" num>
-              {s.count === null ? '—' : n(steps)}
+              {shown === null ? '—' : n(steps)}
             </Text>
             <Text variant="caption" tone="secondary">
               steps
@@ -113,7 +136,11 @@ export function StepsScreen({ now: fixedNow }: { now?: number } = {}) {
             <Text variant="caption" tone="secondary">
               {connected
                 ? `From Apple Health${s.lastReadAt ? ` · ${formatClock(istClock(s.lastReadAt))}` : ''}`
-                : 'Entered by hand'}
+                : s.auto === 'phone'
+                  ? live !== null
+                    ? 'Counting live on this iPhone'
+                    : 'Counted by this iPhone'
+                  : 'Entered by hand'}
             </Text>
           </View>
         </View>
@@ -164,6 +191,34 @@ export function StepsScreen({ now: fixedNow }: { now?: number } = {}) {
             onPress={s.disconnect}
           />
         </Card>
+      ) : s.auto === 'phone' ? (
+        <Card padding={14} testID="motion-on">
+          <View style={styles.row}>
+            <Footprints size={20} color={colors.accents.success.base} />
+            <Text variant="body" weight={600} style={styles.flex}>
+              Counting automatically
+            </Text>
+            <Button
+              size="sm"
+              variant="secondary"
+              icon={RefreshCw}
+              label={busy ? '…' : 'Refresh'}
+              accessibilityLabel="Refresh steps from this iPhone"
+              disabled={busy}
+              onPress={() => void refresh()}
+            />
+          </View>
+          <Text variant="caption" tone="secondary">
+            {`Your iPhone counts steps all day, even with LifeOS closed. It keeps 7 days, so open LifeOS at least once a week.${s.lastReadAt ? ` Updated ${formatClock(istClock(s.lastReadAt))}.` : ''}`}
+          </Text>
+          <Button
+            size="sm"
+            variant="ghost"
+            label="Turn off"
+            accessibilityLabel="Turn off automatic step counting"
+            onPress={s.stopCounting}
+          />
+        </Card>
       ) : (
         <Card testID="manual">
           <Text variant="kicker" tone="secondary">
@@ -212,16 +267,27 @@ export function StepsScreen({ now: fixedNow }: { now?: number } = {}) {
               />
             </View>
           )}
-          <View style={[styles.connect, { borderColor: colors.hairline }]}>
-            <Text variant="sub" tone="secondary" style={styles.flex}>
-              {s.link === 'denied'
-                ? 'Health access was not given. Allow it in Settings → Health, then try again.'
-                : 'Read steps from your iPhone automatically.'}
+          <View style={[styles.connectCol, { borderColor: colors.hairline }]}>
+            <Text variant="sub" tone="secondary">
+              {s.motion === 'denied'
+                ? 'Motion & Fitness is off for this app. Turn it on in Settings → Privacy & Security → Motion & Fitness, then try again.'
+                : 'Let your iPhone count steps for you: free, no setup.'}
             </Text>
+            <Button
+              icon={Footprints}
+              label={busy ? 'Starting…' : 'Count steps automatically'}
+              accessibilityLabel="Count steps automatically"
+              disabled={busy}
+              fullWidth
+              onPress={() => void startCounting()}
+            />
             <Button
               icon={HeartPulse}
               size="sm"
-              label={busy ? 'Connecting…' : 'Connect Health'}
+              variant="ghost"
+              label={
+                s.link === 'denied' ? 'Connect Health (access was not given)' : 'Connect Health'
+              }
               accessibilityLabel="Connect Health"
               disabled={busy}
               onPress={() => void connect()}
@@ -247,7 +313,7 @@ export function StepsScreen({ now: fixedNow }: { now?: number } = {}) {
           />
         ) : (
           <Text variant="sub" tone="secondary">
-            No steps yet. Connect Health or add today’s steps.
+            No steps yet. Count automatically or add today’s steps.
           </Text>
         )}
       </Card>
@@ -282,12 +348,6 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   gap: { gap: 10 },
   tiles: { flexDirection: 'row', gap: 10 },
-  connect: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    borderTopWidth: 1,
-    paddingTop: 12,
-  },
+  connectCol: { gap: 8, borderTopWidth: 1, paddingTop: 12 },
   footer: { flexDirection: 'row', alignItems: 'center', gap: 6 },
 });

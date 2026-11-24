@@ -67,11 +67,14 @@ export type StepsRow = {
 };
 
 /** One row per day (unique): reuse and revive the day's row. */
+/** Where a day's count came from: typed, iPhone motion chip, or Apple Health. */
+export type StepsSource = 'manual' | 'phone' | 'health';
+
 export function planSteps(
   date: DateString,
   existing: Pick<StepsRow, 'client_id'> | null,
   steps: number,
-  source: 'manual' | 'health',
+  source: StepsSource,
 ): Change[] {
   return [
     {
@@ -89,19 +92,24 @@ export function planSteps(
 }
 
 /**
- * Health counts to write: only days whose count changed (or that have no row),
- * skipping zero days with no row (HealthKit returns zeros when read access is off).
+ * Automatic counts to write: only days whose count changed (or that have no
+ * row), skipping zero days with no row (both sources return zeros when access
+ * is off). A higher manual entry is kept: the phone can't count steps taken
+ * without it.
  */
 export function healthWrites(
   counts: ReadonlyMap<DateString, number>,
   rows: readonly StepsRow[],
+  source: 'phone' | 'health' = 'health',
 ): Change[] {
   const out: Change[] = [];
   for (const [date, steps] of counts) {
     const row = rows.find((r) => r.date === date) ?? null;
     if (!row && steps === 0) continue;
-    if (row && !row.deleted_at && row.steps === steps && row.source === 'health') continue;
-    out.push(...planSteps(date, row, steps, 'health'));
+    const live = row && !row.deleted_at ? row : null;
+    if (live && live.steps === steps && live.source === source) continue;
+    if (live && live.source === 'manual' && live.steps > steps) continue;
+    out.push(...planSteps(date, row, steps, source));
   }
   return out;
 }

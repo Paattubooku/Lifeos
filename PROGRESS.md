@@ -2,6 +2,37 @@
 
 One entry per feature, newest first: feature ID, what was built, how PTR verifies it on the phone, known gaps.
 
+## F21 update — automatic steps from the iPhone (free) · 2026-11-24 · done
+
+**Built**
+
+- **Count steps automatically** (Steps screen, main button): uses the iPhone's motion chip through `expo-sensors` Pedometer. It works in **Expo Go**, with no Apple Developer account or development build.
+  - iOS asks once for Motion & Fitness. LifeOS then reads the step totals the iPhone counted for the **last 7 days** (each IST day), and stores changed days in `steps_log` with `source='phone'`.
+  - This happens each time Today or Steps opens, plus Refresh.
+  - While the Steps screen is open the count goes up **live** as you walk.
+  - A higher number you typed by hand is kept (the phone can't count steps taken without it).
+- Turn off → back to manual entry. Refused permission → manual entry stays, with where to turn it on (Settings → Privacy & Security → Motion & Fitness).
+- **Apple Health stays** as the second option for a future TestFlight build. When both are on, Health is used.
+- Fixed a bug found by the new tests: connecting and the screen's first refresh ran two syncs at once. Both saw "no row yet" and created two rows for the same day, which the server would reject. Syncs now run one at a time and read the latest rows.
+- `app.json`: `expo-sensors` plugin with the Motion usage text, for the TestFlight build.
+
+**Checks run here**
+
+- `typecheck` ✅ · `lint` ✅ · `test` ✅ 781 tests (new `motion.test.tsx`: day windows, permission granted/refused/unavailable, 7-day store, live count, Today sync, turn off) · iOS + Android bundle export ✅.
+- I haven't seen it count on a real iPhone; the tests use a mocked Pedometer.
+
+**How PTR verifies on the phone**
+
+1. `git pull`, `npm install`, `npm start` (one new package: `expo-sensors`).
+2. Progress → **Steps** → **Count steps automatically** → allow Motion & Fitness.
+3. Today's steps and the last few days fill in (they should match the Health app's iPhone count). Walk with the Steps screen open and the number goes up.
+4. Close LifeOS, walk, reopen: Today's steps chip shows the new total.
+
+**Known gaps**
+
+- Only steps taken with the iPhone on you (no Apple Watch-only steps). Health would include them.
+- iOS keeps 7 days of motion data: open LifeOS at least weekly, or older days stay as last read.
+
 ## F21 — Steps · 2026-11-24 · done
 
 **Built**
