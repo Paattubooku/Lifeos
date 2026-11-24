@@ -28,8 +28,14 @@ export function Bars({
   everyOtherLabel,
   accessibilityLabel,
   testID,
+  format = (v: number) => formatInr(v),
+  target,
 }: {
   bars: readonly Bar[];
+  /** Value text (default rupees). */
+  format?: (v: number) => string;
+  /** Optional labelled dashed target line. */
+  target?: { value: number; label: string } | null;
   color: string;
   height?: number;
   average?: { value: number; label: string } | null;
@@ -45,7 +51,7 @@ export function Bars({
   const top = valueLabels ? 18 : 8;
   const bottom = 20;
   const innerH = height - top - bottom;
-  const max = Math.max(1, ...bars.map((b) => b.value), average?.value ?? 0);
+  const max = Math.max(1, ...bars.map((b) => b.value), average?.value ?? 0, target?.value ?? 0);
   const slot = width / Math.max(bars.length, 1);
   const bw = Math.max(Math.min(slot - 2, 28), 2);
   const x = (i: number) => i * slot + (slot - bw) / 2;
@@ -82,6 +88,29 @@ export function Bars({
                 />
               ) : null,
             )}
+            {target && target.value > 0 ? (
+              <>
+                <Line
+                  x1={0}
+                  x2={width}
+                  y1={y(target.value)}
+                  y2={y(target.value)}
+                  stroke={colors.accents.success.base}
+                  strokeWidth={1}
+                  strokeDasharray="4 3"
+                />
+                <SvgText
+                  x={width - 2}
+                  y={y(target.value) - 4}
+                  fontSize={11}
+                  fill={colors.textSecondary}
+                  textAnchor="end"
+                  fontFamily={fonts.body[400]}
+                >
+                  {target.label}
+                </SvgText>
+              </>
+            ) : null}
             {average && average.value > 0 ? (
               <>
                 <Line
@@ -116,7 +145,7 @@ export function Bars({
                     textAnchor="middle"
                     fontFamily={fonts.body[600]}
                   >
-                    {formatInr(b.value)}
+                    {format(b.value)}
                   </SvgText>
                 ))
               : null}
@@ -140,14 +169,14 @@ export function Bars({
             <Pressable
               key={`hit${i}`}
               accessibilityRole="button"
-              accessibilityLabel={`${b.detail}: ${formatInr(b.value)}`}
+              accessibilityLabel={`${b.detail}: ${format(b.value)}`}
               onPress={() => setPicked(i === picked ? null : i)}
               style={[styles.hit, { left: i * slot, width: slot, height }]}
             />
           ))}
           {p ? (
             <Text variant="caption" tone="secondary" testID="bar-tooltip">
-              {`${p.detail}: ${formatInr(p.value)}`}
+              {`${p.detail}: ${format(p.value)}`}
             </Text>
           ) : null}
         </View>

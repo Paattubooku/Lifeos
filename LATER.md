@@ -17,3 +17,4 @@ Ideas parked out of scope. Nothing here gets built until v1 (F00–F24) is done 
 - F18: add / rename / delete expense categories; edit an existing expense; pick any past date in the add sheet.
 - F19: Gemini (or other AI) fallback for unmatched bank SMS, server-side only; Android in-app SMS reading if PTR ever moves to Android; more bank formats beyond ICICI.
 - F20: apply the review's change to the routine (e.g. move the Evening walk block to 8:30 pm on Workday) from the saved screen.
+- F21: Android Health Connect (react-native-health-connect) if PTR moves to Android; HealthKit background delivery so steps update without opening the app.

@@ -27,6 +27,7 @@ describe('store', () => {
       'food',
       'notifications',
       'train',
+      'steps',
     ]);
     expect(persistConfig.key).toBe('lifeos-root');
   });

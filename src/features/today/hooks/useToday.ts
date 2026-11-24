@@ -1,5 +1,8 @@
 import { useMemo } from 'react';
 
+import { useGetStepsSinceQuery } from '@/features/steps/api';
+import { targets } from '@/features/steps/lib/steps';
+
 import { useMealPlan } from '@/features/food/hooks/useFood';
 import { useGetActiveProgramQuery } from '@/features/profile/api';
 import { useLocalWrites, useProfileContext } from '@/features/profile/hooks/useProfileData';
@@ -44,6 +47,9 @@ export function useToday(now: number) {
   const sessionWrites = useLocalWrites('session_log');
   const overrideWrites = useLocalWrites('session_override');
   const sleepWrites = useLocalWrites('sleep_log');
+  // F21: same cache key as the Steps screen (last 30 days).
+  const stepsQ = useGetStepsSinceQuery(addDays(today, -29));
+  const stepsWrites = useLocalWrites('steps_log');
 
   const forToday = <T extends { row: Record<string, unknown> }>(ws: readonly T[]) =>
     ws.filter((w) => w.row.date === undefined || w.row.date === today);
@@ -92,6 +98,11 @@ export function useToday(now: number) {
   );
 
   const profile = profileCtx.profile;
+  const stepsToday = useMemo(() => {
+    const r = mergeKeepingDeleted(stepsQ.data ?? [], stepsWrites).find((x) => x.date === today);
+    return r && !r.deleted_at ? r.steps : null;
+  }, [stepsQ.data, stepsWrites, today]);
+  const stepsMin = targets(profile?.steps_min).min;
   const waterTargetMl = profile?.water_target_ml ?? 3000;
   const day = useMemo(
     () =>
@@ -109,6 +120,7 @@ export function useToday(now: number) {
                 title: session.title,
               }
             : null,
+          steps: { count: stepsToday, min: stepsMin },
         },
         nowDayMinutes(now),
       ),
@@ -121,6 +133,8 @@ export function useToday(now: number) {
       mealPlan,
       session,
       sessionLog,
+      stepsToday,
+      stepsMin,
       now,
     ],
   );
@@ -149,6 +163,8 @@ export function useToday(now: number) {
     weightToday: profileCtx.todayWeight,
     latestWeightKg: profileCtx.latestWeightKg,
     sleep,
+    stepsToday,
+    stepsMin,
     isLoading: routine.isLoading || profileCtx.isLoading,
   };
 }

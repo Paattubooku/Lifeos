@@ -1,5 +1,14 @@
 import { useRouter } from 'expo-router';
-import { Droplet, Dumbbell, Flame, MoonStar, NotebookPen, Scale, Soup } from 'lucide-react-native';
+import {
+  Droplet,
+  Dumbbell,
+  Flame,
+  Footprints,
+  MoonStar,
+  NotebookPen,
+  Scale,
+  Soup,
+} from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
 
 import { NIGHTS, TARGET_HOURS } from '@/features/sleep/lib/sleep';
@@ -8,6 +17,7 @@ import { shortDay } from '@/features/today/lib/present';
 import { addDays } from '@/lib/dates';
 import { formatIndianNumber } from '@/lib/format';
 import { useReviews } from '@/features/review/hooks/useReview';
+import { useSteps } from '@/features/steps/hooks/useSteps';
 import type { Summary } from '@/features/review/lib/review';
 import { Button, Screen, Text, useTheme } from '@/ui';
 
@@ -56,6 +66,7 @@ export function ProgressScreen({ now: fixedNow }: { now?: number } = {}) {
 
   const wa = p.water;
   const reviews = useReviews();
+  const st = useSteps(now);
   const lastReview = reviews[0];
   const lastSummary = (lastReview?.summary ?? null) as Partial<Summary> | null;
 
@@ -243,6 +254,35 @@ export function ProgressScreen({ now: fixedNow }: { now?: number } = {}) {
         }
         onPress={() => router.push('/water')}
         testID="progress-water"
+      />
+
+      <SectionCard
+        icon={Footprints}
+        accent="success"
+        kicker="Steps"
+        value={st.week.avg7 === null ? '—' : formatIndianNumber(st.week.avg7)}
+        sub={
+          st.week.avg7 === null
+            ? st.link === 'connected'
+              ? 'No steps from Health yet'
+              : 'Connect Health or add steps'
+            : `7-day avg · minimum ${formatIndianNumber(st.targets.min)}`
+        }
+        delta={st.week.avg7 === null ? null : { text: `${st.week.hit7} of 7 hit`, tone: 'neutral' }}
+        summary={`Steps per day, last 14 days, minimum ${formatIndianNumber(st.targets.min)}`}
+        chart={
+          st.days.some((d) => d.steps !== null) ? (
+            <MiniBars
+              values={st.days.map((d) => d.steps)}
+              target={st.targets.min}
+              dimBelow={st.targets.min}
+              color={a.success.base}
+              testID="steps-mini-bars"
+            />
+          ) : null
+        }
+        onPress={() => router.push('/steps')}
+        testID="progress-steps"
       />
 
       <SectionCard

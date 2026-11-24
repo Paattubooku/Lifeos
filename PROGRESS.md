@@ -2,6 +2,41 @@
 
 One entry per feature, newest first: feature ID, what was built, how PTR verifies it on the phone, known gaps.
 
+## F21 — Steps · 2026-11-24 · done
+
+**Built**
+
+- **`/steps`** (no design; Water pattern per DESIGN_NOTES):
+  - Ring of today's steps against the stretch target, with a tick at the minimum.
+  - The time-aware hint: remaining ÷ hours left until sleep time, e.g. "2,400 steps left: a 24-min walk after dinner".
+  - Tiles: 7-day avg and days at the minimum. 14-day bars with the minimum line.
+  - An editable daily minimum (`profile.steps_min`, default 6,000; stretch = minimum + 4,000, as in AutoFit).
+- **Apple Health** via `@kingstinct/react-native-healthkit`:
+  - **Connect Health** asks for step-count read access, then reads the last 30 days (one bucket per IST day) and stores changed days in `steps_log` with `source='health'`. Today refreshes from Health once per visit.
+  - The module is loaded lazily. In **Expo Go**, or when access is refused, the feature falls back to **manual entry** (+500 / +1,000 / +2,000, set today's total) and keeps the **Connect Health** button with an explanation (AC).
+- **Today**: a steps chip next to the template chip (e.g. "4,210" → `/steps`). It's hidden until there are steps or Health is connected.
+- **Progress**: a Steps card with 14-day bars against the minimum (→ `/steps`).
+- **Routine**: a new optional block kind **Steps** that ticks itself when today's steps reach the minimum. Migration `20261124140016_block_kind_steps.sql` only widens the kind check; it's applied to the live project.
+- `app.json`: the HealthKit config plugin (read-only usage text, no background delivery) for the development build.
+
+**Checks run here**
+
+- `typecheck` ✅ · `lint` ✅ · `test` ✅ 775 tests (`steps/lib/steps.ts` 100 %) · `test:db` ✅ (new `steps.sql`) · iOS + Android bundle export ✅. `expo config --type introspect` shows the HealthKit entitlement and usage text.
+- **AC**: when Health is unavailable or refused, the screen stays usable with manual entry and a **Connect Health** button (screen tests for both). The connected path is tested with a mocked HealthKit.
+
+**How PTR verifies on the phone**
+
+1. `git pull`, `npm install`, `npm start`. Two new packages are included; nothing changes for Expo Go.
+2. **In Expo Go**: Today has no steps chip yet. Progress → **Steps** → tap +1,000 a few times, or Set today's total. The chip appears on Today and the bars fill. **Connect Health** says it needs the development build.
+3. Optional: Routine → add a block → kind **Steps**. It ticks itself once today's steps reach 6,000.
+4. **Apple Health** needs the LifeOS development build (EAS, with your Apple ID). Once it's installed: Steps → **Connect Health** → allow Steps, and today's count shows up.
+
+**Known gaps**
+
+- The Apple Health path hasn't run on a real iPhone (no development build yet), so it's covered only by tests against the library's API.
+- Android Health Connect is not built (your phone is an iPhone).
+- Steps are counted per calendar day (midnight), as Health reports them, not the 03:00 logical day.
+
 ## F20 — Weekly review · 2026-11-24 · done
 
 **Built**
@@ -763,4 +798,4 @@ _M1's 7-day trial was skipped at PTR's request ("I don't have time to test it fo
 - Placeholder app icon/splash (Expo defaults) and bundle id `app.lifeos.ptr`.
 - Open questions from `REFERENCE_NOTES.md` (todo sort order, weight-trend insight, golden fixtures) still default as proposed until PTR answers.
 
-_Next: F21 (Steps). Waiting for PTR's "next"._
+_Next: F22 (Home-screen widgets, optional). Waiting for PTR's "next"._

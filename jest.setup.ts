@@ -85,3 +85,10 @@ jest.mock('expo-notifications', () => ({
   SchedulableTriggerInputTypes: { DATE: 'date' },
   AndroidImportance: { HIGH: 4 },
 }));
+
+// Apple Health (F21): unavailable by default, like Expo Go; tests switch it on.
+jest.mock('@kingstinct/react-native-healthkit', () => ({
+  isHealthDataAvailable: jest.fn(() => false),
+  requestAuthorization: jest.fn(() => Promise.resolve(true)),
+  queryStatisticsCollectionForQuantity: jest.fn(() => Promise.resolve([])),
+}));

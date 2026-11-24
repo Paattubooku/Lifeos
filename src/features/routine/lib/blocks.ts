@@ -5,7 +5,7 @@ export type BlockKind = Database['public']['Tables']['routine_block']['Row']['ki
 export type MealSlot = 'breakfast' | 'lunch' | 'snack' | 'dinner';
 
 /** The design's six kinds (DESIGN_NOTES A18). The DB keeps the PRD enum. */
-export type KindGroup = 'habit' | 'water' | 'workout' | 'meal' | 'sleep' | 'task';
+export type KindGroup = 'habit' | 'water' | 'workout' | 'meal' | 'sleep' | 'task' | 'steps';
 
 export const KIND_GROUPS: readonly { value: KindGroup; label: string }[] = [
   { value: 'habit', label: 'Habit' },
@@ -14,6 +14,8 @@ export const KIND_GROUPS: readonly { value: KindGroup; label: string }[] = [
   { value: 'meal', label: 'Meal' },
   { value: 'sleep', label: 'Sleep' },
   { value: 'task', label: 'Task' },
+  // F21: optional; ticks itself at the daily steps minimum.
+  { value: 'steps', label: 'Steps' },
 ];
 
 export const MEAL_SLOTS: readonly { value: MealSlot; label: string; name: string }[] = [
@@ -32,6 +34,7 @@ const GROUP_OF: Record<string, KindGroup> = {
   task: 'task',
   sleep: 'sleep',
   phone_off: 'sleep',
+  steps: 'steps',
 };
 
 /** wake/custom → Habit, phone_off → Sleep (A18). */
@@ -57,13 +60,14 @@ export function kindForGroup(group: KindGroup, current?: BlockKind | null): Bloc
     meal: 'meal',
     sleep: 'sleep',
     task: 'task',
+    steps: 'steps',
   };
   return map[group];
 }
 
-/** Water, workout and meal blocks complete from their logs (PRD §4.2). */
+/** Water, workout, meal and steps blocks complete from their logs (PRD §4.2, F21). */
 export function autoCompletes(kind: BlockKind): boolean {
-  return kind === 'water' || kind === 'workout' || kind === 'meal';
+  return kind === 'water' || kind === 'workout' || kind === 'meal' || kind === 'steps';
 }
 
 /** Default slot for a new meal block from its time. */

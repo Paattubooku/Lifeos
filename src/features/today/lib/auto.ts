@@ -13,6 +13,8 @@ export type AutoInputs = {
   eatenSlots: ReadonlySet<string>;
   /** Today's workout session from the program, with its log if any. */
   session: SessionInfo;
+  /** F21: today's steps and the daily minimum (steps blocks). */
+  steps?: { count: number | null; min: number };
 };
 
 export type AutoStatus = {
@@ -92,6 +94,16 @@ export function autoStatus(
       if (s.kind === 'rest') return { done: true, at: null, hint: 'Rest day — nothing to do' };
       const done = (s.completion ?? 0) >= WORKOUT_DONE_PCT;
       return { done, at: null, hint: done ? null : `auto: session ${WORKOUT_DONE_PCT}%+` };
+    }
+    case 'steps': {
+      const st = inputs.steps;
+      if (!st) return NONE;
+      const done = (st.count ?? 0) >= st.min;
+      return {
+        done,
+        at: null,
+        hint: done ? null : `auto: ${formatIndianNumber(st.min)} steps`,
+      };
     }
     default:
       return NONE;

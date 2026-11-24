@@ -1,6 +1,7 @@
 import { profileApi } from '@/features/profile/api';
 import { progressApi } from '@/features/progress/api';
 import { reviewApi } from '@/features/review/api';
+import { stepsApi } from '@/features/steps/api';
 import { tasksApi } from '@/features/tasks/api';
 import { bodyApi } from '@/features/body/api';
 import { foodApi } from '@/features/food/api';
@@ -60,6 +61,8 @@ export type TodayStoreOptions = {
     grade?: string | null;
     summary?: Json;
   }[];
+  /** Steps per day (F21): [daysAgo, steps, source?]. */
+  steps?: [number, number, string?][];
   /** Tasks (F17); missing fields get defaults. */
   tasks?: Partial<TaskFixture>[];
 };
@@ -295,6 +298,20 @@ export async function todayStore(opts: TodayStoreOptions = {}) {
         grade: null,
         summary: {},
         ...r,
+      })),
+    ),
+  );
+  await store.dispatch(
+    stepsApi.util.upsertQueryData(
+      'getStepsSince',
+      addDays(today, -29),
+      (opts.steps ?? []).map(([ago, steps, source]) => ({
+        ...base,
+        id: `st${ago}`,
+        client_id: `st${ago}-c`,
+        date: addDays(today, -ago),
+        steps,
+        source: source ?? 'manual',
       })),
     ),
   );

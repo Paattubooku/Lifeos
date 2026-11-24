@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { CalendarDays, ChevronDown } from 'lucide-react-native';
+import { CalendarDays, ChevronDown, Footprints } from 'lucide-react-native';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -12,7 +12,7 @@ import { dayMinutes, hhmm } from '@/features/routine/lib/blocks';
 import type { Change } from '@/features/routine/lib/changes';
 import { applyChanges } from '@/features/routine/slice';
 import { istClock, isoWeekday } from '@/lib/dates';
-import { formatClock } from '@/lib/format';
+import { formatClock, formatIndianNumber } from '@/lib/format';
 import { useFood } from '@/features/food/hooks/useFood';
 import { useFoodActions } from '@/features/food/hooks/useFoodActions';
 import { useReminderSchedule } from '@/features/notifications/hooks/useReminderSchedule';
@@ -20,6 +20,7 @@ import { useReminderSync } from '@/features/notifications/hooks/useReminderSync'
 import { ChangeCard } from '@/features/review/components/ChangeCard';
 import { useReviews } from '@/features/review/hooks/useReview';
 import { pinnedChange, type Summary } from '@/features/review/lib/review';
+import { useSteps } from '@/features/steps/hooks/useSteps';
 import { MorningCheckCard } from '@/features/sleep/components/MorningCheckCard';
 import { useLogNight } from '@/features/sleep/hooks/useLogNight';
 import { useSleep } from '@/features/sleep/hooks/useSleep';
@@ -88,6 +89,15 @@ export function TodayScreen({ now: fixedNow }: { now?: number } = {}) {
   useDayScoreSync(t);
   const sleep = useSleep(now);
   const tasks = useTasks(now);
+  const steps = useSteps(now);
+  // F21: refresh steps from Apple Health once per visit when connected.
+  const healthSynced = useRef(false);
+  const { link: stepsLink, syncHealth } = steps;
+  useEffect(() => {
+    if (stepsLink !== 'connected' || healthSynced.current) return;
+    healthSynced.current = true;
+    void syncHealth(clock()).catch(() => undefined);
+  }, [stepsLink, syncHealth]);
   const pinned = pinnedChange(reviews, t.today);
   const taskActions = useTaskActions(tasks.all, tasks.today);
   const logNight = useLogNight(t, sleep);
@@ -175,7 +185,7 @@ export function TodayScreen({ now: fixedNow }: { now?: number } = {}) {
     kicker: dayKicker(t.today, isoWeekday(t.today), t.day.score.done, t.day.score.counted),
     title: formatClock(istClock(now)),
   };
-  const templateChip = (
+  const templateOnly = (
     <Chip
       label={t.plan.template?.name ?? 'No template'}
       trailingIcon={ChevronDown}
@@ -183,6 +193,22 @@ export function TodayScreen({ now: fixedNow }: { now?: number } = {}) {
       onPress={() => setOpen('switch')}
     />
   );
+  // Steps chip (F21): hidden until there are steps or Health is connected.
+  const templateChip =
+    steps.count !== null || steps.link === 'connected' ? (
+      <View style={styles.chips}>
+        <Chip
+          label={formatIndianNumber(steps.count ?? 0)}
+          leadingIcon={Footprints}
+          accessibilityLabel={`${formatIndianNumber(steps.count ?? 0)} steps today of ${formatIndianNumber(steps.targets.min)}. Open Steps`}
+          onPress={() => router.push('/steps')}
+          testID="steps-chip"
+        />
+        {templateOnly}
+      </View>
+    ) : (
+      templateOnly
+    );
 
   if (t.isLoading && t.plan.blocks.length === 0) {
     return (
@@ -426,6 +452,7 @@ export function TodayScreen({ now: fixedNow }: { now?: number } = {}) {
 }
 
 const styles = StyleSheet.create({
+  chips: { flexDirection: 'row', gap: 8, alignItems: 'center' },
   fill: { flex: 1 },
   fab: { position: 'absolute', right: 16 },
 });

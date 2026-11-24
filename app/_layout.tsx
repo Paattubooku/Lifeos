@@ -137,6 +137,7 @@ function Navigator() {
               <Stack.Screen name="exercise/[id]" />
               <Stack.Screen name="weight" />
               <Stack.Screen name="sleep" />
+              <Stack.Screen name="steps" />
               <Stack.Screen name="tasks" />
               <Stack.Screen name="review" />
               <Stack.Screen name="reviews" />

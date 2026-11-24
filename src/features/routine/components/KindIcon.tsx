@@ -1,4 +1,13 @@
-import { Check, Droplet, Dumbbell, type LucideIcon, Moon, Soup, Sun } from 'lucide-react-native';
+import {
+  Check,
+  Droplet,
+  Dumbbell,
+  Footprints,
+  type LucideIcon,
+  Moon,
+  Soup,
+  Sun,
+} from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
 
 import { type Accent, useTheme } from '@/ui';
@@ -12,6 +21,7 @@ export const KIND_ICON: Record<KindGroup, LucideIcon> = {
   meal: Soup,
   sleep: Moon,
   task: Check,
+  steps: Footprints,
 };
 
 const KIND_ACCENT: Record<KindGroup, Accent | null> = {
@@ -21,6 +31,7 @@ const KIND_ACCENT: Record<KindGroup, Accent | null> = {
   meal: 'calories',
   sleep: null,
   task: 'primary',
+  steps: 'success',
 };
 
 /** 32 px tinted square with the kind's icon (Routine-Blocks design). */
