@@ -2,6 +2,41 @@
 
 One entry per feature, newest first: feature ID, what was built, how PTR verifies it on the phone, known gaps.
 
+## F20 — Weekly review · 2026-11-24 · done
+
+**Built**
+
+- **`/review`**, three steps (Review-1/2/3 designs):
+  1. **Your week in numbers**:
+     - Average day score in a ring, with the grade (Excellent ≥ 90 · Good 80–89 · OK 70–79 · Needs work < 70) and the change vs last week.
+     - Tiles: streak days, sessions, protein avg, 7-day-avg weight change, sleep avg and spend, all from `v_weekly_rollup`.
+     - **Worst block**: the hand-ticked block with the lowest completion %, with the days missed and its time.
+  2. **Reflect**: "What went well" and "What I change next week" (280 characters each, with counters), plus one-tap ideas drawn from the week (the worst block, sleep, protein).
+  3. **Done for this week**: saved with week number, score and grade; your change; "Pinned to Today all week"; the next review date. **Edit review** reuses the same row.
+- Saved to `weekly_review`, one per week: summary JSON, grade and both texts.
+- **Sunday 20:00 reminder** "Weekly review" → `/review`. It's dropped once that week is reviewed, and has its own switch in Settings → Reminders.
+- **Today**: the "This week's change · from Sunday" card (Review-4 design) shows all week, with last week's worst block and sleep; tap → past reviews.
+- **Progress**: a **Weekly review** button (Prog-Tab design) and a **Reviews** card (last grade, count) → `/reviews`, the list of past reviews (week, score · grade, went well, change, worst block).
+
+**Checks run here**
+
+- `typecheck` ✅ · `lint` ✅ · `test` ✅ 763 tests (`review/lib` 100 % lines) · `test:db` ✅ · iOS + Android bundle export ✅. No schema change (`weekly_review` and the view already existed).
+- **AC "under 2 minutes"**: the whole flow is 4 taps plus two short texts (screen test: Next → type → Save).
+- **AC "Monday header shows the saved text"**: screen test with last week's review; the card shows the change on Today.
+- **AC "past reviews list in Progress"**: Progress → Reviews → list (screen test).
+
+**How PTR verifies on the phone**
+
+1. `git pull`, `npm install`, `npm start`.
+2. Progress → **Weekly review**. Look at the numbers (they need a connection), tap **Next: reflect**, write two lines, **Save review**.
+3. On Monday (or any day next week) Today shows "This week's change" at the top.
+4. Progress → **Reviews** lists the review. On Sunday at 8 pm the reminder opens the review; it doesn't fire once you've reviewed that week.
+
+**Known gaps**
+
+- The design's "Evening walk block moved to 8:30 pm on Workday" (changing the routine from the review) isn't done; the change is text only.
+- The numbers come from the server view, so they need a connection. Offline, the screen says so and the reflection still saves.
+
 ## F19 — External ingest: bank SMS import + Shortcuts quick-log · 2026-11-24 · done
 
 **Built**
@@ -728,4 +763,4 @@ _M1's 7-day trial was skipped at PTR's request ("I don't have time to test it fo
 - Placeholder app icon/splash (Expo defaults) and bundle id `app.lifeos.ptr`.
 - Open questions from `REFERENCE_NOTES.md` (todo sort order, weight-trend insight, golden fixtures) still default as proposed until PTR answers.
 
-_Next: F20 (Weekly review). Waiting for PTR's "next"._
+_Next: F21 (Steps). Waiting for PTR's "next"._

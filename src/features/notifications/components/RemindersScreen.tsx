@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
 import {
+  NotebookPen,
   Bell,
   Droplet,
   Dumbbell,
@@ -96,6 +97,13 @@ export function RemindersScreen({ now: fixedNow }: { now?: number } = {}) {
       title: `Weigh-in · ${formatClock(addMinutes(hhmm(t.profile?.wake_time ?? '05:00'), 15))}`,
       sub: t.profile?.weigh_in_mode === 'weekly' ? 'Weekly' : 'Daily',
     },
+    {
+      type: 'review',
+      icon: NotebookPen,
+      accent: 'primary',
+      title: 'Weekly review · Sun 8:00 pm',
+      sub: 'Skipped once the week is reviewed',
+    },
   ];
 
   return (
@@ -167,7 +175,7 @@ export function RemindersScreen({ now: fixedNow }: { now?: number } = {}) {
               <Toggle
                 label={r.title}
                 hint={r.sub}
-                value={enabled[r.type]}
+                value={enabled[r.type] !== false}
                 onChange={(on) => dispatch(reminderToggled({ type: r.type, on }))}
                 testID={`toggle-${r.type}`}
               />
@@ -176,7 +184,7 @@ export function RemindersScreen({ now: fixedNow }: { now?: number } = {}) {
         ))}
       </Card>
       <Text variant="caption" tone="secondary">
-        Failure interrupt and weekly review arrive with F24 and F20.
+        Failure interrupt arrives with F24.
       </Text>
     </Screen>
   );

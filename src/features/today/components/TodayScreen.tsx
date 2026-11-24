@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { CalendarDays, ChevronDown } from 'lucide-react-native';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -17,6 +17,9 @@ import { useFood } from '@/features/food/hooks/useFood';
 import { useFoodActions } from '@/features/food/hooks/useFoodActions';
 import { useReminderSchedule } from '@/features/notifications/hooks/useReminderSchedule';
 import { useReminderSync } from '@/features/notifications/hooks/useReminderSync';
+import { ChangeCard } from '@/features/review/components/ChangeCard';
+import { useReviews } from '@/features/review/hooks/useReview';
+import { pinnedChange, type Summary } from '@/features/review/lib/review';
 import { MorningCheckCard } from '@/features/sleep/components/MorningCheckCard';
 import { useLogNight } from '@/features/sleep/hooks/useLogNight';
 import { useSleep } from '@/features/sleep/hooks/useSleep';
@@ -78,11 +81,14 @@ export function TodayScreen({ now: fixedNow }: { now?: number } = {}) {
   const food = useFood(now);
   const foodActions = useFoodActions(food);
   // F15: keep the phone's reminders in step with today's and tomorrow's plan.
-  useReminderSync(useReminderSchedule({ t, food, water }));
+  const reviews = useReviews();
+  const reviewedWeeks = useMemo(() => new Set(reviews.map((r) => r.week_start)), [reviews]);
+  useReminderSync(useReminderSchedule({ t, food, water, reviewedWeeks }));
   const { log: logWaterEntry } = useLogWater();
   useDayScoreSync(t);
   const sleep = useSleep(now);
   const tasks = useTasks(now);
+  const pinned = pinnedChange(reviews, t.today);
   const taskActions = useTaskActions(tasks.all, tasks.today);
   const logNight = useLogNight(t, sleep);
   const { streak } = useStreak(t.today, t.plan.blocks.length > 0 ? t.day.score.score : null);
@@ -223,6 +229,14 @@ export function TodayScreen({ now: fixedNow }: { now?: number } = {}) {
             onPress: () => router.push('/streaks'),
           }}
         />
+
+        {pinned ? (
+          <ChangeCard
+            text={pinned.text}
+            summary={pinned.review.summary as Partial<Summary> | null}
+            onPress={() => router.push('/reviews')}
+          />
+        ) : null}
 
         {sleep.check && !sleep.isLoading ? (
           <MorningCheckCard

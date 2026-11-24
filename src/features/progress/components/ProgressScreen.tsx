@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { Droplet, Dumbbell, Flame, MoonStar, Scale, Soup } from 'lucide-react-native';
+import { Droplet, Dumbbell, Flame, MoonStar, NotebookPen, Scale, Soup } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
 
 import { NIGHTS, TARGET_HOURS } from '@/features/sleep/lib/sleep';
@@ -7,7 +7,9 @@ import { useNow } from '@/features/today/hooks/useNow';
 import { shortDay } from '@/features/today/lib/present';
 import { addDays } from '@/lib/dates';
 import { formatIndianNumber } from '@/lib/format';
-import { Screen, Text, useTheme } from '@/ui';
+import { useReviews } from '@/features/review/hooks/useReview';
+import type { Summary } from '@/features/review/lib/review';
+import { Button, Screen, Text, useTheme } from '@/ui';
 
 import { useProgress } from '../hooks/useProgress';
 import { pctChange } from '../lib/progress';
@@ -53,9 +55,24 @@ export function ProgressScreen({ now: fixedNow }: { now?: number } = {}) {
     s.avg7 !== null && prevAvg !== null ? Math.round((s.avg7 - prevAvg) * 10) / 10 : null;
 
   const wa = p.water;
+  const reviews = useReviews();
+  const lastReview = reviews[0];
+  const lastSummary = (lastReview?.summary ?? null) as Partial<Summary> | null;
 
   return (
-    <Screen title="Progress" kicker={shortDay(p.today)}>
+    <Screen
+      title="Progress"
+      kicker={shortDay(p.today)}
+      action={
+        <Button
+          icon={NotebookPen}
+          size="sm"
+          label="Weekly review"
+          accessibilityLabel="Weekly review"
+          onPress={() => router.push('/review')}
+        />
+      }
+    >
       <SectionCard
         icon={Scale}
         accent="primary"
@@ -226,6 +243,23 @@ export function ProgressScreen({ now: fixedNow }: { now?: number } = {}) {
         }
         onPress={() => router.push('/water')}
         testID="progress-water"
+      />
+
+      <SectionCard
+        icon={NotebookPen}
+        accent="primary"
+        kicker="Reviews"
+        value={lastReview?.grade ?? '—'}
+        sub={
+          lastReview
+            ? `last week ${typeof lastSummary?.avgScore === 'number' ? `${lastSummary.avgScore}%` : ''} · ${reviews.length} ${reviews.length === 1 ? 'review' : 'reviews'}`
+            : 'Sundays at 8:00 pm, two minutes'
+        }
+        summary={
+          lastReview?.change_next_week ? `Change: ${lastReview.change_next_week}` : 'No reviews yet'
+        }
+        onPress={() => router.push('/reviews')}
+        testID="progress-reviews"
       />
     </Screen>
   );

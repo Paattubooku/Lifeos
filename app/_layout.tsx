@@ -138,6 +138,8 @@ function Navigator() {
               <Stack.Screen name="weight" />
               <Stack.Screen name="sleep" />
               <Stack.Screen name="tasks" />
+              <Stack.Screen name="review" />
+              <Stack.Screen name="reviews" />
               <Stack.Screen name="money/index" />
               <Stack.Screen name="money/transactions" />
               <Stack.Screen name="money/analytics" />

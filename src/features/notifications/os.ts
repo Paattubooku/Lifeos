@@ -62,7 +62,7 @@ export async function applySchedule(
   return n;
 }
 
-const ALLOWED = ['/today', '/water', '/train', '/meal/', '/streaks', '/progress'];
+const ALLOWED = ['/today', '/water', '/train', '/meal/', '/streaks', '/progress', '/review'];
 
 /** The screen a tapped reminder opens (F15 AC3), or null for anything unexpected. */
 export function routeFor(data: unknown): string | null {

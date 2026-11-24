@@ -184,3 +184,27 @@ describe('rules', () => {
     expect(nextDate(MON)).toBe(TUE);
   });
 });
+
+describe('F20: Sunday 20:00 weekly review', () => {
+  const SUN = '2026-11-29';
+  const sunday = (over: Partial<ScheduleInput> = {}) =>
+    buildSchedule(input({ now: logicalMoment(SUN, '12:00'), days: [day(SUN)], ...over }));
+  it('on Sundays at 20:00, opening /review', () => {
+    const r = sunday().find((x) => x.type === 'review');
+    expect(r).toMatchObject({ id: `${SUN}:review`, title: 'Weekly review', url: '/review' });
+    expect(clock(r!.at)).toBe('20:00');
+    expect(buildSchedule(input()).some((x) => x.type === 'review')).toBe(false);
+  });
+  it('dropped once the week is reviewed, or when switched off; old settings default on', () => {
+    expect(
+      sunday({ reviewedWeeks: new Set(['2026-11-23']) }).some((x) => x.type === 'review'),
+    ).toBe(false);
+    expect(sunday({ enabled: { ...ALL_ON, review: false } }).some((x) => x.type === 'review')).toBe(
+      false,
+    );
+    const { review: _drop, ...old } = ALL_ON;
+    expect(
+      sunday({ enabled: old as ScheduleInput['enabled'] }).some((x) => x.type === 'review'),
+    ).toBe(true);
+  });
+});

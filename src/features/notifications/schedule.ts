@@ -25,8 +25,10 @@ export const WATER_CHECKS = [
 ] as const;
 export const WORKOUT_LEAD_MIN = 5;
 export const WEIGH_IN_AFTER_WAKE_MIN = 15;
+export const REVIEW_AT = '20:00';
 
-export type ReminderType = 'block' | 'water' | 'workout' | 'meals' | 'phone_off' | 'weigh_in';
+export type ReminderType =
+  'block' | 'water' | 'workout' | 'meals' | 'phone_off' | 'weigh_in' | 'review';
 
 export const REMINDER_TYPES: readonly ReminderType[] = [
   'block',
@@ -35,6 +37,7 @@ export const REMINDER_TYPES: readonly ReminderType[] = [
   'meals',
   'phone_off',
   'weigh_in',
+  'review',
 ];
 
 /** Kept first when over the cap; water checks go first (PRD). */
@@ -44,6 +47,7 @@ const PRIORITY: Record<ReminderType | 'wake', number> = {
   workout: 9,
   meals: 8,
   weigh_in: 7,
+  review: 8,
   block: 4,
   water: 1,
 };
@@ -89,6 +93,8 @@ export type ScheduleInput = {
   enabled: Readonly<Record<ReminderType, boolean>>;
   /** Logical day muted with "Quiet today". */
   quietDate: DateString | null;
+  /** Weeks (Monday) already reviewed: no Sunday reminder for them (F20). */
+  reviewedWeeks?: ReadonlySet<DateString>;
 };
 
 const SLOT_NAME: Record<string, string> = {
@@ -233,6 +239,25 @@ export function dayCandidates(
         url: '/today',
       },
       PRIORITY.weigh_in,
+    );
+
+  // F20: Sunday 20:00 weekly review, unless that week is already reviewed.
+  // `!== false`: settings saved before F20 have no `review` key (default on).
+  if (
+    enabled.review !== false &&
+    isoWeekday(day.date) === 7 &&
+    !input.reviewedWeeks?.has(addDays(day.date, -6))
+  )
+    add(
+      {
+        id: id('review'),
+        at: at(day.date, REVIEW_AT),
+        type: 'review',
+        title: 'Weekly review',
+        body: 'Two minutes: your week in numbers, one change for next week.',
+        url: '/review',
+      },
+      PRIORITY.review,
     );
 
   // Water checks: only where, with no more water from now, the gap would be ≥ 300 ml (F07 / A7).

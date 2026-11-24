@@ -1,11 +1,13 @@
 import { profileApi } from '@/features/profile/api';
 import { progressApi } from '@/features/progress/api';
+import { reviewApi } from '@/features/review/api';
 import { tasksApi } from '@/features/tasks/api';
 import { bodyApi } from '@/features/body/api';
 import { foodApi } from '@/features/food/api';
 import { todayApi } from '@/features/today/api';
 import { trainApi } from '@/features/train/api';
 import { waterApi } from '@/features/water/api';
+import type { Json } from '@/types/supabase';
 import { addDays, logicalMoment, weekStart } from '@/lib/dates';
 
 import { seedMealPlan } from './foodFixtures';
@@ -50,6 +52,14 @@ export type TodayStoreOptions = {
   nutrition?: [number, number, number][];
   /** Logged sessions for Progress (8 weeks): [daysAgo, completion %]. */
   sessions?: [number, number][];
+  /** Weekly reviews (F20): week_start + fields. */
+  reviews?: {
+    week_start: string;
+    change_next_week?: string | null;
+    went_well?: string | null;
+    grade?: string | null;
+    summary?: Json;
+  }[];
   /** Tasks (F17); missing fields get defaults. */
   tasks?: Partial<TaskFixture>[];
 };
@@ -269,6 +279,22 @@ export async function todayStore(opts: TodayStoreOptions = {}) {
         done_at: null,
         sort: 0,
         ...t,
+      })),
+    ),
+  );
+  await store.dispatch(
+    reviewApi.util.upsertQueryData(
+      'getReviews',
+      undefined,
+      (opts.reviews ?? []).map((r, i) => ({
+        ...base,
+        id: `rv${i}`,
+        client_id: `rv${i}`,
+        went_well: null,
+        change_next_week: null,
+        grade: null,
+        summary: {},
+        ...r,
       })),
     ),
   );
