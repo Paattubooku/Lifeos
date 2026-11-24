@@ -1,6 +1,8 @@
 import { Eye, EyeOff, type LucideIcon } from 'lucide-react-native';
-import { type ComponentRef, forwardRef, useState } from 'react';
+import { type ComponentRef, forwardRef, useEffect, useState } from 'react';
 import { Pressable, StyleSheet, TextInput, type TextInputProps, View } from 'react-native';
+
+import { devLog } from '@/lib/devLog';
 
 import { Text } from './Text';
 import { useTheme } from './ThemeProvider';
@@ -21,6 +23,12 @@ export const TextField = forwardRef<ComponentRef<typeof TextInput>, TextFieldPro
     const { colors } = useTheme();
     const [focused, setFocused] = useState(false);
     const [hidden, setHidden] = useState(true);
+    useEffect(() => {
+      devLog(`text box "${label}" built`);
+      return () => devLog(`text box "${label}" removed`);
+      // Mount / unmount only.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const borderColor = error
       ? colors.accents.danger.base

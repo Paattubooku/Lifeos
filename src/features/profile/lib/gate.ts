@@ -16,3 +16,19 @@ export function onboardingGate(input: {
   if (input.profile) return input.profile.onboarded_at ? 'done' : 'onboard';
   return input.loading ? 'loading' : 'done';
 }
+
+export type SettledGate = { user: string | null; gate: OnboardingGate } | null;
+
+/**
+ * Keyboard fix: after the gate has settled for this account, a reload ('loading')
+ * keeps the settled answer, so the root never swaps the navigator for a spinner
+ * mid-use. A different account (or none settled yet) gets the live value.
+ */
+export function stickyGate(
+  live: OnboardingGate,
+  settled: SettledGate,
+  user: string | null,
+): OnboardingGate {
+  if (live !== 'loading') return live;
+  return settled?.user === user ? settled.gate : live;
+}

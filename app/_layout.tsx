@@ -24,6 +24,7 @@ import { useAuthListener } from '@/features/auth/hooks/useAuthListener';
 import { useNotificationRouting } from '@/features/notifications/hooks/useNotificationRouting';
 import { useOnboardingGate } from '@/features/profile/hooks/useOnboardingGate';
 import { useSyncWorker } from '@/features/sync/hooks/useSyncWorker';
+import { devLog } from '@/lib/devLog';
 import { useAppSelector } from '@/store';
 import { persistor, store } from '@/store/root';
 import { SnackbarProvider, ThemeProvider, useTheme } from '@/ui';
@@ -74,6 +75,11 @@ function Navigator() {
   const recovery = useAppSelector((s) => s.auth.recovery);
   const gate = useOnboardingGate(signedIn);
   useNotificationRouting(signedIn && gate === 'done');
+
+  const replaced = status === 'restoring' || (signedIn && gate === 'loading');
+  useEffect(() => {
+    if (replaced) devLog(`whole app hidden (status=${status}, gate=${gate})`);
+  }, [replaced, status, gate]);
 
   // Keep the splash up until fonts are in and the stored session is restored.
   useEffect(() => {
