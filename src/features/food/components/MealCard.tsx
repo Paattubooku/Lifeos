@@ -35,6 +35,7 @@ export function MealCard({
   onSwap,
   onOffPlan,
   onRemoveOffPlan,
+  weighIt,
 }: {
   view: MealView;
   onOpen: () => void;
@@ -43,6 +44,8 @@ export function MealCard({
   onSwap: (g: GroupView) => void;
   onOffPlan: () => void;
   onRemoveOffPlan: (log: FoodLogRow) => void;
+  /** F24 strict week: remind to weigh the food. */
+  weighIt?: boolean;
 }) {
   const { colors } = useTheme();
   const [time, period] = formatClock(hhmm(view.meal.time)).split(' ') as [string, string];
@@ -77,6 +80,7 @@ export function MealCard({
           <View style={styles.titleRow}>
             <Text variant="heading">{view.name}</Text>
             <StatusChip label={s.label.toUpperCase()} tone={s.tone} beacon={s.beacon} />
+            {weighIt ? <StatusChip label="WEIGH IT" tone="calories" /> : null}
           </View>
           <Text variant="sub" num>
             <Text variant="sub" weight={700} num>{`${totals.kcal} kcal `}</Text>

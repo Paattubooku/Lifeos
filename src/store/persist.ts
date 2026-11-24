@@ -11,7 +11,7 @@ export const persistConfig: PersistConfig<RootReducerState> = {
   // Wait for storage instead of redux-persist's 5 s give-up timer (see syncPersistConfig).
   timeout: 0,
   // UI prefs + the RTK Query cache (offline reads; restored via extractRehydrationInfo).
-  whitelist: ['app', 'api', 'profile', 'food', 'notifications', 'train', 'steps'],
+  whitelist: ['app', 'api', 'profile', 'food', 'notifications', 'train', 'steps', 'accountability'],
 };
 
 export { syncPersistConfig } from './syncPersist';

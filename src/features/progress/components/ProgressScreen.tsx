@@ -14,11 +14,11 @@ import { StyleSheet, View } from 'react-native';
 import { NIGHTS, TARGET_HOURS } from '@/features/sleep/lib/sleep';
 import { useNow } from '@/features/today/hooks/useNow';
 import { shortDay } from '@/features/today/lib/present';
-import { addDays } from '@/lib/dates';
+import { addDays, weekStart } from '@/lib/dates';
 import { formatIndianNumber } from '@/lib/format';
 import { useReviews } from '@/features/review/hooks/useReview';
 import { useSteps } from '@/features/steps/hooks/useSteps';
-import type { Summary } from '@/features/review/lib/review';
+import { gradeFor, type Summary } from '@/features/review/lib/review';
 import { Button, Screen, Text, useTheme } from '@/ui';
 
 import { useProgress } from '../hooks/useProgress';
@@ -68,6 +68,14 @@ export function ProgressScreen({ now: fixedNow }: { now?: number } = {}) {
   const reviews = useReviews();
   const st = useSteps(now);
   const lastReview = reviews[0];
+  // F24: this week's grade so far (avg day score, A5 bands).
+  const weekScores = p.streak.cells
+    .filter((c) => c.date >= weekStart(p.today) && c.score !== null)
+    .map((c) => c.score as number);
+  const weekAvg = weekScores.length
+    ? Math.round(weekScores.reduce((a, b) => a + b, 0) / weekScores.length)
+    : null;
+  const weekGrade = gradeFor(weekAvg);
   const lastSummary = (lastReview?.summary ?? null) as Partial<Summary> | null;
 
   return (
@@ -289,11 +297,13 @@ export function ProgressScreen({ now: fixedNow }: { now?: number } = {}) {
         icon={NotebookPen}
         accent="primary"
         kicker="Reviews"
-        value={lastReview?.grade ?? '—'}
+        value={weekGrade ? weekGrade.grade : (lastReview?.grade ?? '—')}
         sub={
-          lastReview
-            ? `last week ${typeof lastSummary?.avgScore === 'number' ? `${lastSummary.avgScore}%` : ''} · ${reviews.length} ${reviews.length === 1 ? 'review' : 'reviews'}`
-            : 'Sundays at 8:00 pm, two minutes'
+          weekGrade
+            ? `this week ${weekAvg}%${lastReview?.grade ? ` · last review ${lastReview.grade}` : ''}`
+            : lastReview
+              ? `last week ${typeof lastSummary?.avgScore === 'number' ? `${lastSummary.avgScore}%` : ''} · ${reviews.length} ${reviews.length === 1 ? 'review' : 'reviews'}`
+              : 'Sundays at 8:00 pm, two minutes'
         }
         summary={
           lastReview?.change_next_week ? `Change: ${lastReview.change_next_week}` : 'No reviews yet'

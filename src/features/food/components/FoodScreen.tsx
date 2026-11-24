@@ -9,6 +9,9 @@ import { istClock, isoWeekday } from '@/lib/dates';
 import { formatClock } from '@/lib/format';
 import { Button, Card, EmptyState, Screen, Text, useTheme } from '@/ui';
 
+import { useNudges } from '@/features/accountability/hooks/useNudges';
+import { strictWeek } from '@/features/accountability/lib/rules';
+
 import { useFood } from '../hooks/useFood';
 import { useFoodActions } from '../hooks/useFoodActions';
 import type { GroupView, MealView } from '../lib/plan';
@@ -28,6 +31,8 @@ export function FoodScreen({ now: fixedNow }: { now?: number } = {}) {
   const { colors } = useTheme();
   const food = useFood(now);
   const actions = useFoodActions(food);
+  // F24 strict week: every meal says "weigh it" for 7 days.
+  const strict = strictWeek(useNudges(food.today), food.today);
   const [swapping, setSwapping] = useState<{ view: MealView; group: GroupView } | null>(null);
   const [offPlan, setOffPlan] = useState<{ mealId: string | null } | null>(null);
   // Default slot for "+ Off-plan": the meal that's on now, else the next one, else Other.
@@ -92,6 +97,7 @@ export function FoodScreen({ now: fixedNow }: { now?: number } = {}) {
             onSwap={(g) => setSwapping({ view: m, group: g })}
             onOffPlan={() => setOffPlan({ mealId: m.meal.id })}
             onRemoveOffPlan={(l) => void actions.removeOffPlan(l)}
+            weighIt={strict}
           />
         ))
       ) : (

@@ -14,10 +14,22 @@ import { applyChanges } from '@/features/routine/slice';
 import { istClock, isoWeekday } from '@/lib/dates';
 import { markTodayReady } from '@/lib/startup';
 import { formatClock, formatIndianNumber } from '@/lib/format';
+import { drinkAmount } from '../lib/auto';
 import { useFood } from '@/features/food/hooks/useFood';
 import { useFoodActions } from '@/features/food/hooks/useFoodActions';
 import { useReminderSchedule } from '@/features/notifications/hooks/useReminderSchedule';
 import { useReminderSync } from '@/features/notifications/hooks/useReminderSync';
+import {
+  AuditCard,
+  FallbackCard,
+  InterruptCard,
+  PinnedCard,
+  RealityCard,
+  RecoveryCard,
+} from '@/features/accountability/components/NudgeCards';
+import { useAccountability } from '@/features/accountability/hooks/useAccountability';
+import { EGGS, type NudgeKind, planNudge, SNOOZE_MIN } from '@/features/accountability/lib/rules';
+import { interruptSnoozed } from '@/features/accountability/slice';
 import { ChangeCard } from '@/features/review/components/ChangeCard';
 import { useReviews } from '@/features/review/hooks/useReview';
 import { pinnedChange, type Summary } from '@/features/review/lib/review';
@@ -84,8 +96,12 @@ export function TodayScreen({ now: fixedNow }: { now?: number } = {}) {
   const foodActions = useFoodActions(food);
   // F15: keep the phone's reminders in step with today's and tomorrow's plan.
   const reviews = useReviews();
+  // F24: accountability nudges (cards + the interrupt notification time).
+  const acc = useAccountability(t, body, nowDayMinutes(now));
   const reviewedWeeks = useMemo(() => new Set(reviews.map((r) => r.week_start)), [reviews]);
-  useReminderSync(useReminderSchedule({ t, food, water, reviewedWeeks }));
+  useReminderSync(
+    useReminderSchedule({ t, food, water, reviewedWeeks, interruptAt: acc.interruptAt }),
+  );
   const { log: logWaterEntry } = useLogWater();
   useDayScoreSync(t);
   const sleep = useSleep(now);
@@ -109,6 +125,14 @@ export function TodayScreen({ now: fixedNow }: { now?: number } = {}) {
   const logNight = useLogNight(t, sleep);
   const { streak } = useStreak(t.today, t.plan.blocks.length > 0 ? t.day.score.score : null);
   const dispatch = useAppDispatch();
+  // Record each new interrupt once (max 3 a day counts these rows).
+  const interruptLogged = useRef<string | null>(null);
+  const newInterrupt = acc.interrupt.isNew ? `${t.today}:${acc.interrupt.shownToday}` : null;
+  useEffect(() => {
+    if (!newInterrupt || interruptLogged.current === newInterrupt) return;
+    interruptLogged.current = newInterrupt;
+    void dispatch(applyChanges(planNudge(t.today, 'interrupt', clock())));
+  }, [newInterrupt, t.today, dispatch]);
   const router = useRouter();
   const showSnackbar = useSnackbar();
   const { colors } = useTheme();
@@ -174,6 +198,47 @@ export function TodayScreen({ now: fixedNow }: { now?: number } = {}) {
       totalBefore: water.totalMl,
       targetMl: water.targetMl,
     });
+
+  // ---- F24 nudges --------------------------------------------------------
+  const nudge = (kind: NudgeKind, opts?: Parameters<typeof planNudge>[3]) =>
+    apply(planNudge(t.today, kind, clock(), opts));
+  const openInterrupt = t.nudges.find(
+    (n) => n.date === t.today && n.kind === 'interrupt' && !n.dismissed_at && !n.deleted_at,
+  );
+  const endInterrupt = () =>
+    openInterrupt &&
+    void apply([
+      {
+        op: 'upsert',
+        table: 'nudge_log',
+        clientId: openInterrupt.client_id,
+        row: { dismissed_at: new Date(clock()).toISOString() },
+      },
+    ]);
+  const rowById = (clientId: string) => t.day.rows.find((r) => r.block.client_id === clientId);
+  const doBlock = (clientId: string) => {
+    const r = rowById(clientId);
+    if (!r) return;
+    if (r.block.kind === 'water') logWater(drinkAmount(r.block.title));
+    else void setStatus(r, { status: 'done' }, `${rowTitle(r, ctx.session)} done`);
+  };
+  const rescue = (kind: 'rescue_eggs' | 'rescue_walk' | 'rescue_water' | 'rescue_plank') => {
+    if (kind === 'rescue_eggs')
+      foodActions.addOffPlan(
+        {
+          text: '2 boiled eggs',
+          kcal: EGGS.kcal,
+          protein: EGGS.protein,
+          mealId: null,
+          replaces: false,
+        },
+        null,
+      );
+    if (kind === 'rescue_water') logWater(500);
+    if (kind === 'rescue_walk') void steps.setToday((steps.count ?? 0) + 1000);
+    void nudge(kind);
+    haptics.success();
+  };
 
   const skip = async (reason: SkipReason, move: boolean) => {
     const row = skipping;
@@ -261,6 +326,69 @@ export function TodayScreen({ now: fixedNow }: { now?: number } = {}) {
             onPress: () => router.push('/streaks'),
           }}
         />
+
+        {acc.interrupt.show && acc.interrupt.target ? (
+          <InterruptCard
+            overdue={acc.interrupt.overdue}
+            target={acc.interrupt.target}
+            nowText={formatClock(istClock(now)).toUpperCase()}
+            detail={
+              acc.interrupt.target.block.kind === 'water'
+                ? `Water ${formatIndianNumber(water.totalMl)} / ${formatIndianNumber(water.targetMl)} ml.`
+                : `It takes ${acc.interrupt.target.block.duration_min} min.`
+            }
+            onDone={() => {
+              doBlock(acc.interrupt.target!.block.client_id);
+              endInterrupt();
+            }}
+            onSnooze={() => {
+              dispatch(interruptSnoozed(clock() + SNOOZE_MIN * 60_000));
+              endInterrupt();
+            }}
+          />
+        ) : null}
+
+        {acc.recovery.show && acc.recovery.yesterdayScore !== null ? (
+          <RecoveryCard
+            yesterdayScore={acc.recovery.yesterdayScore}
+            missed={acc.recovery.missedTitles}
+            options={acc.recovery.options}
+            graceLine={
+              acc.streak.graceAvailable ? 'streak: 1 grace left' : 'streak: grace day used'
+            }
+            onLock={(o) => {
+              void nudge('pinned', { ref: o.clientId });
+              void nudge('missed_day', { dismissed: true });
+              showSnackbar({ message: `Locked in: ${o.title}` });
+            }}
+            onDismiss={() => void nudge('missed_day', { dismissed: true })}
+          />
+        ) : acc.pinned ? (
+          <PinnedCard row={acc.pinned} onDone={() => doBlock(acc.pinned!.block.client_id)} />
+        ) : null}
+
+        {acc.fallback.show ? (
+          <FallbackCard
+            f={acc.fallback}
+            nowText={formatClock(istClock(now))}
+            waterLine={`water ${formatIndianNumber(water.totalMl)} → ${formatIndianNumber(water.totalMl + 500)}`}
+            onRescue={rescue}
+          />
+        ) : null}
+
+        {acc.reality?.show ? (
+          <RealityCard
+            r={acc.reality}
+            onStrict={() => {
+              void nudge('strict_week');
+              void nudge('reality_weight', { dismissed: true });
+              showSnackbar({ message: 'Strict week: meals show “weigh it” for 7 days' });
+            }}
+            onWater={() => void nudge('reality_weight', { dismissed: true })}
+          />
+        ) : acc.audit ? (
+          <AuditCard onDone={() => void nudge('reality_audit', { dismissed: true })} />
+        ) : null}
 
         {pinned ? (
           <ChangeCard

@@ -1,6 +1,10 @@
 import { useRouter } from 'expo-router';
 import {
+  LifeBuoy,
   NotebookPen,
+  RotateCcw,
+  ScanSearch,
+  TriangleAlert,
   Bell,
   Droplet,
   Dumbbell,
@@ -104,6 +108,34 @@ export function RemindersScreen({ now: fixedNow }: { now?: number } = {}) {
       title: 'Weekly review · Sun 8:00 pm',
       sub: 'Skipped once the week is reviewed',
     },
+    {
+      type: 'interrupt',
+      icon: TriangleAlert,
+      accent: 'danger',
+      title: 'Failure interrupt',
+      sub: '3+ blocks overdue: one thing now · max 3 a day',
+    },
+    {
+      type: 'missed_day',
+      icon: RotateCcw,
+      accent: 'primary',
+      title: 'Missed-day recovery',
+      sub: 'After a bad day: pick one non-negotiable',
+    },
+    {
+      type: 'fallback',
+      icon: LifeBuoy,
+      accent: 'calories',
+      title: 'Fallback mode',
+      sub: 'After 6 pm under 50%: 4 rescue actions',
+    },
+    {
+      type: 'reality',
+      icon: ScanSearch,
+      accent: 'success',
+      title: 'Reality check',
+      sub: 'When the scale and the logs disagree · weekly at most',
+    },
   ];
 
   return (
@@ -184,7 +216,7 @@ export function RemindersScreen({ now: fixedNow }: { now?: number } = {}) {
         ))}
       </Card>
       <Text variant="caption" tone="secondary">
-        Failure interrupt arrives with F24.
+        Nudges are blunt on purpose. Switch any of them off here.
       </Text>
     </Screen>
   );

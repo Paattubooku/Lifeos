@@ -212,7 +212,11 @@ describe('TodayScreen', () => {
     await act(async () => {
       await fireEvent.press(screen.getByRole('button', { name: 'Mark Pack lunch box done' }));
     });
-    expect(queue(store)[0]).toMatchObject({ table: 'block_log', row: { status: 'done' } });
+    // (F24: with 3+ blocks overdue an interrupt nudge row is queued too.)
+    expect(queue(store).find((q) => q.table === 'block_log')).toMatchObject({
+      table: 'block_log',
+      row: { status: 'done' },
+    });
   });
 
   it('shows what is next when nothing is current', async () => {

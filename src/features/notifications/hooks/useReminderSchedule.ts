@@ -17,6 +17,8 @@ type Sources = {
   water: ReturnType<typeof useWater>;
   /** Weeks already reviewed (F20), so their Sunday reminder is dropped. */
   reviewedWeeks?: ReadonlySet<string>;
+  /** F24: today's failure-interrupt time ('HH:mm') or null. */
+  interruptAt?: string | null;
 };
 
 /** Dish names per slot from a day's meal views ("Idli + Sambar + Boiled eggs"). */
@@ -24,7 +26,7 @@ const dishNames = (meals: ReturnType<typeof useFood>['day']['meals']) =>
   Object.fromEntries(meals.map((m) => [m.meal.slot, m.groups.map((g) => g.dish.name).join(' + ')]));
 
 /** Today's and tomorrow's reminders from the same data the screens show. */
-export function useReminderSchedule({ t, food, water, reviewedWeeks }: Sources) {
+export function useReminderSchedule({ t, food, water, reviewedWeeks, interruptAt }: Sources) {
   const enabled = useAppSelector((s) => s.notifications.enabled);
   const quietDate = useAppSelector((s) => s.notifications.quietDate);
   const profile = t.profile;
@@ -49,6 +51,7 @@ export function useReminderSchedule({ t, food, water, reviewedWeeks }: Sources) 
         loggedSlots,
         waterMl: water.totalMl,
         score: t.plan.blocks.length > 0 ? t.day.score.score : null,
+        interruptAt: interruptAt ?? null,
       },
       {
         date: tomorrow,
@@ -82,5 +85,5 @@ export function useReminderSchedule({ t, food, water, reviewedWeeks }: Sources) 
       quietDate,
       ...(reviewedWeeks ? { reviewedWeeks } : {}),
     });
-  }, [profile, t, food.day.meals, water.totalMl, enabled, quietDate, reviewedWeeks]);
+  }, [profile, t, food.day.meals, water.totalMl, enabled, quietDate, reviewedWeeks, interruptAt]);
 }

@@ -661,6 +661,7 @@ export type Database = {
           dismissed_at: string | null;
           id: string;
           kind: string;
+          ref: string | null;
           shown_at: string;
           updated_at: string;
           user_id: string;
@@ -673,6 +674,7 @@ export type Database = {
           dismissed_at?: string | null;
           id?: string;
           kind: string;
+          ref?: string | null;
           shown_at?: string;
           updated_at?: string;
           user_id?: string;
@@ -685,6 +687,7 @@ export type Database = {
           dismissed_at?: string | null;
           id?: string;
           kind?: string;
+          ref?: string | null;
           shown_at?: string;
           updated_at?: string;
           user_id?: string;

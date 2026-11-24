@@ -2,7 +2,7 @@ import { act, fireEvent, screen } from '@testing-library/react-native';
 import { Pedometer } from 'expo-sensors';
 
 import { TodayScreen } from '@/features/today/components/TodayScreen';
-import { addDays } from '@/lib/dates';
+import { addDays, istDate } from '@/lib/dates';
 import { renderWithStore } from '@/test/profileFixtures';
 import { todayStore } from '@/test/todayFixtures';
 
@@ -30,7 +30,7 @@ const press = async (name: string | RegExp) => {
 /** Fake Core Motion: steps per IST day keyed by the window's start. */
 const perDay = (counts: Record<string, number>) =>
   pedo.getStepCountAsync.mockImplementation(async (start: Date) => {
-    const date = new Date(start.getTime() + 5.5 * 3600e3).toISOString().slice(0, 10);
+    const date = istDate(start);
     return { steps: counts[date] ?? 0 };
   });
 

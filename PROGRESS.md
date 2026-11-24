@@ -2,6 +2,57 @@
 
 One entry per feature, newest first: feature ID, what was built, how PTR verifies it on the phone, known gaps.
 
+## F24 — Accountability nudges · 2026-11-24 · done
+
+**Built** (`src/features/accountability/`: pure rules in `lib/rules.ts`, Today cards, one hook)
+
+- **Failure interrupt** (Acc-Interrupt, A8): when **≥ 3 counted blocks are overdue**, a full-width red card says "Do ONE thing now: <easiest open block>".
+  - The easiest block is a water drink if there is one (one tap logs it), else the shortest open block.
+  - **Not now (snooze 15 min)**. At most **3 a day**: each new showing is a `nudge_log` row.
+  - It's re-checked as time passes on Today. A **high-priority notification** is scheduled at the first block start where 3 would be overdue if nothing else gets done. It outranks everything at the 10-a-day cap, so water checks drop first.
+- **Missed-day recovery** (Acc-Recovery): if yesterday wasn't a streak day (< 70 %), Today shows "Yesterday: 54%. Missed: …" with grace status.
+  - You pick today's **one non-negotiable** from yesterday's misses plus key blocks (max 4).
+  - **Lock it in** pins it at the top of Today with a Done button. **Not today** dismisses. Once a day.
+- **Fallback mode** (Acc-Fallback, A9): after 18:00 under 50 %, four one-tap rescues, each showing its **computed** gain ("+6 pts").
+  - The rescues: 2 boiled eggs (logs off-plan 140 kcal / 12 g), walk 1,000 steps (adds them), drink 500 ml (logs it), 30-s plank.
+  - The header says what all four would lift the day to, and whether that's a streak day, a grace day (streak kept) or not enough.
+  - Each rescue counts as an extra done block in the day score.
+- **Reality check** (Acc-Reality, A10): 7-day-average weight up ≥ 0.4 kg over 10–14 days, while day scores average ≥ 75 % and the logged deficit is ≥ 300 kcal/day, shows a card.
+  - It has the contradicting numbers and a 4-item honesty checklist.
+  - **Strict week: weigh food for 7 days** puts a "WEIGH IT" chip on every meal for 7 days. **It's water** dismisses it for 7 days.
+  - After **7 straight days at 100 %** an **Audit day** card appears. Each check shows at most once per 7 days.
+- **Weekly grade** on Progress (Reviews card: "this week N% · Good", A5 bands) and in F20's review.
+- **Settings → Reminders**: switches for Failure interrupt, Missed-day recovery, Fallback mode and Reality check.
+- Migration `20261124172641_nudge_kinds.sql` (applied live): widens `nudge_log.kind` and adds `nudge_log.ref` (the pinned block). Additive.
+
+**Checks run here**
+
+- `typecheck` ✅ · `lint` ✅ · `test` ✅ 826 tests (`accountability/lib/rules.ts` 100 % lines) · `test:db` ✅ (new `nudges.sql`) · iOS + Android bundle export ✅.
+- **AC "unit tests for every trigger condition and its once-per-period limit"**: `rules.test.ts` covers:
+  - recovery: shows below 70; not after 70 or with no score; once dismissed or locked today;
+  - interrupt: at ≥ 3 overdue; not at 2, while snoozed or when off; max 3 a day; notification time;
+  - fallback: from 18:00 below 50; computed gains; grace/streak; done rescues;
+  - reality weight: all three conditions; once per 7 days after acting;
+  - audit day: 7 × 100; once per 7 days;
+  - strict week: 7 days.
+- **AC "nudges never exceed the 10-a-day cap and take priority over water checks"**: schedule test.
+- Screen tests cover the interrupt (Done, snooze, off, maxed), recovery → pinned, the fallback rescues logging food/water/steps, Strict week → "WEIGH IT" on Food, and audit day.
+
+**How PTR verifies on the phone**
+
+1. `git pull`, `npm install`, `npm start`.
+2. Leave three early blocks unticked: by late morning Today shows the red **Do ONE thing now** card. Tap Done or snooze it.
+3. The morning after a bad day: the **Missed-day recovery** card. Pick one → **Lock it in**, and it's pinned on top.
+4. After 6 pm on a weak day: **Fallback mode**. Tap a rescue and watch the score rise by the shown points.
+5. Settings → Reminders: switch any nudge off.
+
+**Known gaps**
+
+- Missed-day "missed" titles come from yesterday's hand-ticked blocks (auto blocks like water and meals aren't re-judged here).
+- The design's "Two misses in a row is how the last 3 streaks ended" history line isn't generated.
+
+_All features (F00–F24) are built. Open items are in `LATER.md`._
+
 ## F23 — Settings, data export and polish · 2026-11-24 · done
 
 **Built**
@@ -920,4 +971,4 @@ _M1's 7-day trial was skipped at PTR's request ("I don't have time to test it fo
 - Placeholder app icon/splash (Expo defaults) and bundle id `app.lifeos.ptr`.
 - Open questions from `REFERENCE_NOTES.md` (todo sort order, weight-trend insight, golden fixtures) still default as proposed until PTR answers.
 
-_Next: F24 (Accountability nudges). Waiting for PTR's "next"._
+_All PRD features are done. Waiting for PTR._

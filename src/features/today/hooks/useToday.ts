@@ -1,5 +1,7 @@
 import { useMemo } from 'react';
 
+import { useNudges } from '@/features/accountability/hooks/useNudges';
+import { rescuesOn, withRescues } from '@/features/accountability/lib/rules';
 import { useGetStepsSinceQuery } from '@/features/steps/api';
 import { targets } from '@/features/steps/lib/steps';
 
@@ -104,7 +106,10 @@ export function useToday(now: number) {
   }, [stepsQ.data, stepsWrites, today]);
   const stepsMin = targets(profile?.steps_min).min;
   const waterTargetMl = profile?.water_target_ml ?? 3000;
-  const day = useMemo(
+  // F24: fallback-mode rescue actions count as extra done blocks for the day.
+  const nudges = useNudges(today);
+  const rescues = rescuesOn(nudges, today);
+  const built = useMemo(
     () =>
       buildDay(
         routine.todayPlan.blocks,
@@ -138,6 +143,20 @@ export function useToday(now: number) {
       now,
     ],
   );
+  const day = useMemo(
+    () =>
+      rescues === 0
+        ? built
+        : {
+            ...built,
+            score: {
+              done: built.score.done + rescues,
+              counted: built.score.counted + rescues,
+              score: withRescues(built.score.done, built.score.counted, rescues),
+            },
+          },
+    [built, rescues],
+  );
 
   return {
     now,
@@ -165,6 +184,8 @@ export function useToday(now: number) {
     sleep,
     stepsToday,
     stepsMin,
+    nudges,
+    rescues,
     isLoading: routine.isLoading || profileCtx.isLoading,
   };
 }

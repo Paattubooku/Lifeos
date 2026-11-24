@@ -28,6 +28,7 @@ describe('store', () => {
       'notifications',
       'train',
       'steps',
+      'accountability',
     ]);
     expect(persistConfig.key).toBe('lifeos-root');
   });

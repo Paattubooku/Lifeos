@@ -208,3 +208,25 @@ describe('F20: Sunday 20:00 weekly review', () => {
     ).toBe(true);
   });
 });
+
+describe('F24: failure interrupt notification', () => {
+  it('high priority: kept at the 10-a-day cap, water checks drop first; can be switched off', () => {
+    const s = buildSchedule(input({ days: [day(MON, { interruptAt: '13:00' })] }));
+    const mon = s.filter((r) => r.date === MON);
+    expect(mon).toHaveLength(DAILY_CAP);
+    expect(mon.find((r) => r.type === 'interrupt')).toMatchObject({
+      title: 'Do ONE thing now',
+      url: '/today',
+    });
+    expect(clock(mon.find((r) => r.type === 'interrupt')!.at)).toBe('13:00');
+    expect(mon.some((r) => r.type === 'water')).toBe(false);
+    const off = buildSchedule(
+      input({
+        days: [day(MON, { interruptAt: '13:00' })],
+        enabled: { ...ALL_ON, interrupt: false },
+      }),
+    );
+    expect(off.some((r) => r.type === 'interrupt')).toBe(false);
+    expect(buildSchedule(input()).some((r) => r.type === 'interrupt')).toBe(false);
+  });
+});

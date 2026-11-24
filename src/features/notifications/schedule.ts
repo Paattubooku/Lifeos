@@ -28,7 +28,18 @@ export const WEIGH_IN_AFTER_WAKE_MIN = 15;
 export const REVIEW_AT = '20:00';
 
 export type ReminderType =
-  'block' | 'water' | 'workout' | 'meals' | 'phone_off' | 'weigh_in' | 'review';
+  | 'block'
+  | 'water'
+  | 'workout'
+  | 'meals'
+  | 'phone_off'
+  | 'weigh_in'
+  | 'review'
+  // F24 nudges: interrupt is a notification; the other three are Today cards.
+  | 'interrupt'
+  | 'missed_day'
+  | 'fallback'
+  | 'reality';
 
 export const REMINDER_TYPES: readonly ReminderType[] = [
   'block',
@@ -38,6 +49,10 @@ export const REMINDER_TYPES: readonly ReminderType[] = [
   'phone_off',
   'weigh_in',
   'review',
+  'interrupt',
+  'missed_day',
+  'fallback',
+  'reality',
 ];
 
 /** Kept first when over the cap; water checks go first (PRD). */
@@ -48,6 +63,11 @@ const PRIORITY: Record<ReminderType | 'wake', number> = {
   meals: 8,
   weigh_in: 7,
   review: 8,
+  // F24: above everything else, so the cap drops water checks first.
+  interrupt: 11,
+  missed_day: 0,
+  fallback: 0,
+  reality: 0,
   block: 4,
   water: 1,
 };
@@ -78,6 +98,8 @@ export type DayInput = {
   waterMl: number;
   /** The day's live score, for "Phone away. Today so far: 78%". */
   score: number | null;
+  /** F24: when ≥ 3 blocks will be overdue if nothing more gets done ('HH:mm'). */
+  interruptAt?: string | null;
 };
 
 export type ScheduleInput = {
@@ -239,6 +261,20 @@ export function dayCandidates(
         url: '/today',
       },
       PRIORITY.weigh_in,
+    );
+
+  // F24: failure interrupt, high urgency (kept over everything at the cap).
+  if (enabled.interrupt !== false && day.interruptAt)
+    add(
+      {
+        id: id('interrupt'),
+        at: at(day.date, day.interruptAt),
+        type: 'interrupt',
+        title: 'Do ONE thing now',
+        body: '3 blocks are overdue. Open LifeOS and finish the easiest one.',
+        url: '/today',
+      },
+      PRIORITY.interrupt,
     );
 
   // F20: Sunday 20:00 weekly review, unless that week is already reviewed.

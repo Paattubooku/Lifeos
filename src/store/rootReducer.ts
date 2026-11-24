@@ -4,6 +4,7 @@ import { persistReducer } from 'redux-persist';
 import { authSlice } from '@/features/auth/slice';
 import { foodSlice } from '@/features/food/slice';
 import { notificationsSlice } from '@/features/notifications/slice';
+import { accountabilitySlice } from '@/features/accountability/slice';
 import { stepsSlice } from '@/features/steps/slice';
 import { trainSlice } from '@/features/train/slice';
 import { profileSlice } from '@/features/profile/slice';
@@ -23,6 +24,7 @@ export const rootReducer = combineReducers({
   [notificationsSlice.name]: notificationsSlice.reducer,
   [trainSlice.name]: trainSlice.reducer,
   [stepsSlice.name]: stepsSlice.reducer,
+  [accountabilitySlice.name]: accountabilitySlice.reducer,
   [baseApi.reducerPath]: baseApi.reducer,
 });
 

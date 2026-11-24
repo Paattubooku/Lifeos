@@ -18,6 +18,7 @@ export const TAGS = [
   'Expense',
   'Review',
   'Steps',
+  'Nudge',
 ] as const;
 export type Tag = (typeof TAGS)[number];
 
