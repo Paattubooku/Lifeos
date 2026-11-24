@@ -15,7 +15,8 @@
     "e2e": "maestro test e2e",
     "test:db": "scripts/db-test.sh",
     "gen:types": "scripts/db-test.sh --gen-types",
-    "start:dev-client": "expo start --dev-client"
+    "start:dev-client": "expo start --dev-client",
+    "publish": "eas update --branch main --message"
   },
   "dependencies": {
     "@expo-google-fonts/inter": "^0.4.2",
@@ -44,6 +45,7 @@
     "expo-splash-screen": "~58.0.14",
     "expo-status-bar": "~58.0.5",
     "expo-system-ui": "~58.0.7",
+    "expo-updates": "~58.0.22",
     "fflate": "^0.8.2",
     "lucide-react-native": "^1.77.0",
     "react": "19.3.0",

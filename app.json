@@ -4,6 +4,9 @@
     "slug": "lifeos",
     "scheme": "lifeos",
     "version": "0.0.1",
+    "runtimeVersion": {
+      "policy": "sdkVersion"
+    },
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
