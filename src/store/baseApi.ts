@@ -15,6 +15,7 @@ export const TAGS = [
   'Session',
   'Sleep',
   'Task',
+  'Expense',
 ] as const;
 export type Tag = (typeof TAGS)[number];
 

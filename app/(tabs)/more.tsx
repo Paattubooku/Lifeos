@@ -5,6 +5,7 @@ import {
   Droplet,
   ListTodo,
   LogOut,
+  Wallet,
   MoonStar,
   Palette,
   Scale,
@@ -68,6 +69,14 @@ export default function MoreScreen() {
           title="Tasks"
           sub="Today’s top 3 and everything pending"
           onPress={() => router.push('/tasks')}
+          divider
+        />
+        <MenuRow
+          icon={Wallet}
+          accent="success"
+          title="Money"
+          sub="Expenses, budgets and analytics"
+          onPress={() => router.push('/money')}
           divider
         />
         <MenuRow

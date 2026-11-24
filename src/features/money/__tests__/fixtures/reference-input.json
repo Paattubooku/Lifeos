@@ -1,0 +1,122 @@
+[
+  {
+    "id": 1,
+    "amount": 220,
+    "payee": "Murugan Stores",
+    "txn_date": "2026-11-24",
+    "type": "debit",
+    "category": "food"
+  },
+  {
+    "id": 2,
+    "amount": 80,
+    "payee": "Ola auto",
+    "txn_date": "2026-11-24",
+    "type": "debit",
+    "category": "other"
+  },
+  {
+    "id": 3,
+    "amount": 40,
+    "payee": null,
+    "txn_date": "2026-11-24",
+    "type": "debit",
+    "category": "food"
+  },
+  {
+    "id": 4,
+    "amount": 1240,
+    "payee": "BigBasket",
+    "txn_date": "2026-11-22",
+    "type": "debit",
+    "category": "food"
+  },
+  {
+    "id": 5,
+    "amount": 349,
+    "payee": "Jio recharge",
+    "txn_date": "2026-11-22",
+    "type": "debit",
+    "category": "bills"
+  },
+  {
+    "id": 6,
+    "amount": 514,
+    "payee": "Amazon",
+    "txn_date": "2026-11-20",
+    "type": "debit",
+    "category": "shopping"
+  },
+  {
+    "id": 7,
+    "amount": 999,
+    "payee": "TNEB electricity",
+    "txn_date": "2026-11-19",
+    "type": "debit",
+    "category": "bills"
+  },
+  {
+    "id": 8,
+    "amount": 50000,
+    "payee": "Salary",
+    "txn_date": "2026-11-01",
+    "type": "credit",
+    "category": "income"
+  },
+  {
+    "id": 9,
+    "amount": 700,
+    "payee": "BigBasket",
+    "txn_date": "2026-11-01",
+    "type": "debit",
+    "category": "food"
+  },
+  {
+    "id": 10,
+    "amount": 2500,
+    "payee": "BigBasket",
+    "txn_date": "2026-10-30",
+    "type": "debit",
+    "category": "food"
+  },
+  {
+    "id": 11,
+    "amount": 1200,
+    "payee": "TNEB electricity",
+    "txn_date": "2026-10-15",
+    "type": "debit",
+    "category": "bills"
+  },
+  {
+    "id": 12,
+    "amount": 300.5,
+    "payee": "Friend",
+    "txn_date": "2026-10-10",
+    "type": "debit",
+    "category": "transfer"
+  },
+  {
+    "id": 13,
+    "amount": 450,
+    "payee": "Murugan Stores",
+    "txn_date": "2026-09-05",
+    "type": "debit",
+    "category": "food"
+  },
+  {
+    "id": 14,
+    "amount": 120,
+    "payee": "Ola auto",
+    "txn_date": "2026-08-01",
+    "type": "debit",
+    "category": "other"
+  },
+  {
+    "id": 15,
+    "amount": 2000,
+    "payee": "Refund",
+    "txn_date": "2026-11-23",
+    "type": "credit",
+    "category": "income"
+  }
+]

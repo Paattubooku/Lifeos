@@ -2,6 +2,57 @@
 
 One entry per feature, newest first: feature ID, what was built, how PTR verifies it on the phone, known gaps.
 
+## F18 — Money: expenses, budgets and analytics · 2026-11-24 · done
+
+**Built**
+
+- **More → Money** `/money` (Money-Overview):
+  - The month card shows spent of ₹18,000, a bar with an even-pace tick, "% spent · day N of M", "₹X left · ₹Y/day", and a "12% lower than October" badge from the same days last month.
+  - Tiles for Today (spend, payment count) and Income this month.
+  - "Last 14 days" bars with the average line.
+  - The last 5 transactions, with links to Analytics (top category share) and Budgets (over/amber alerts).
+- **Add expense** sheet (Money-AddExpense): big amount, keypad, category chips (Income makes it a credit), payment method (UPI default / Cash / Card / Other), payee, note, Today/Yesterday, Recurring. Amount → category → Save is three taps.
+- **Transactions** `/money/transactions` (Money-Transactions):
+  - Filters: All / Spent / Received, category chips, and search by payee, note or amount.
+  - Rows are grouped by day with each day's spend and paged 15 at a time.
+  - Swipe left → Delete with Undo; there are no confirm dialogs.
+- **Analytics** `/money/analytics` (Money-Analytics):
+  - Ranges: 7D / 30D / 90D / Month / All.
+  - Spent / average payment / received tiles, and a month-over-month line.
+  - Category share bars; tap one to open Transactions filtered to that category.
+  - Daily spend bars (≤ 90 days) and weekday average per day (Monday first) with the weekend share.
+  - Top 8 payees.
+- **Budgets** `/money/budgets` (Money-Budgets):
+  - The total card shows the pace tick, plus what the categories cover and what's unallocated.
+  - Per-category bars turn amber at ≥ 80 % and red at ≥ 100 %, with "₹X left · N%" or "Over by ₹X".
+  - **Edit** changes each category's budget and icon and the overall monthly budget.
+- `money/lib`: `analytics.ts` (port of My-Tracker `useExpenseAnalytics`), `budget.ts`, `expense.ts` (keypad, filters port of `useExpenseFilters`, paging, day groups).
+- Theme: a validated categorical chart palette (`colors.chart`) for the money categories.
+
+**Checks run here**
+
+- `typecheck` ✅ · `lint` ✅ · `test` ✅ 703 tests; `money/lib` 100 % lines, ≥ 92 % branches.
+- **AC1**: spend totals count debits only and income is separate (lib and screen tests).
+- **AC2**: I ran the reference hook's own code, unchanged, on a 15-row fixture with the clock frozen. Its output for all five ranges is stored in `__tests__/fixtures/reference-output.json`, and the port matches it exactly.
+- **AC3**: tapping a category in Analytics opens Transactions with that category filter set (screen tests).
+- Category palette passes the dataviz validator in both themes. `test:db` ✅ · iOS + Android bundle export ✅. No schema change.
+
+**How PTR verifies on the phone**
+
+1. `git pull`, `npm install`, `npm start` → More → **Money**.
+2. **Add** → type 240 → Food & groceries → Save. It appears in Today, Last 5 and the 14-day bars.
+3. Add an **Income** entry. It shows under Income, not in spend.
+4. **All** → try Spent/Received, a category chip and a search. Swipe a row left → Delete → Undo.
+5. **Analytics** → switch ranges and tap a category: Transactions opens filtered.
+6. **Budgets** → Edit → change a budget or icon → Save. A category past 80 % turns amber; past 100 % turns red.
+
+**Known gaps**
+
+- Bank SMS import and quick-log are F19.
+- Adding, renaming or deleting categories isn't built; budgets and icons are editable.
+- Editing an existing expense isn't built; delete (with Undo) and re-add instead.
+- Older dates than yesterday can't be picked in the add sheet.
+
 ## F17 — Tasks · 2026-11-24 · done
 
 **Built**
@@ -626,4 +677,4 @@ _M1's 7-day trial was skipped at PTR's request ("I don't have time to test it fo
 - Placeholder app icon/splash (Expo defaults) and bundle id `app.lifeos.ptr`.
 - Open questions from `REFERENCE_NOTES.md` (todo sort order, weight-trend insight, golden fixtures) still default as proposed until PTR answers.
 
-_Next: F18 (Money: expenses, budgets and analytics). Waiting for PTR's "next"._
+_Next: F19 (External ingest: bank SMS import + Shortcuts quick-log). Waiting for PTR's "next"._

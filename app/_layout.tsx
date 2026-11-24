@@ -136,6 +136,10 @@ function Navigator() {
               <Stack.Screen name="weight" />
               <Stack.Screen name="sleep" />
               <Stack.Screen name="tasks" />
+              <Stack.Screen name="money/index" />
+              <Stack.Screen name="money/transactions" />
+              <Stack.Screen name="money/analytics" />
+              <Stack.Screen name="money/budgets" />
               <Stack.Screen name="dev/gallery" />
             </Stack.Protected>
             <Stack.Protected guard={signedIn && gate === 'onboard'}>

@@ -52,6 +52,11 @@ export type Palette = {
   inverseAction: string;
   shadow: string;
   accents: Record<Accent, AccentTokens>;
+  /**
+   * Categorical chart hues in fixed order (dataviz validator: all checks pass
+   * on this theme's raised surface). Money categories use them by sort order.
+   */
+  chart: readonly string[];
 };
 
 const dark: Palette = {
@@ -74,6 +79,7 @@ const dark: Palette = {
   onInverse: '#0A0F1C',
   inverseAction: '#2563EB',
   shadow: '#000000',
+  chart: ['#EA580C', '#3B82F6', '#0D9488', '#E11D48', '#8B5CF6'],
   accents: {
     primary: {
       base: '#60A5FA',
@@ -140,6 +146,7 @@ const light: Palette = {
   onInverse: '#F8FAFC',
   inverseAction: '#60A5FA',
   shadow: '#0F172A',
+  chart: ['#C2410C', '#2563EB', '#0D9488', '#E11D48', '#7C3AED'],
   accents: {
     primary: {
       base: '#2563EB',
