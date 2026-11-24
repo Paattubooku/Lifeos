@@ -12,6 +12,7 @@ import { dayMinutes, hhmm } from '@/features/routine/lib/blocks';
 import type { Change } from '@/features/routine/lib/changes';
 import { applyChanges } from '@/features/routine/slice';
 import { istClock, isoWeekday } from '@/lib/dates';
+import { markTodayReady } from '@/lib/startup';
 import { formatClock, formatIndianNumber } from '@/lib/format';
 import { useFood } from '@/features/food/hooks/useFood';
 import { useFoodActions } from '@/features/food/hooks/useFoodActions';
@@ -91,6 +92,11 @@ export function TodayScreen({ now: fixedNow }: { now?: number } = {}) {
   const tasks = useTasks(now);
   const steps = useSteps(now);
   // F21: refresh steps (Apple Health or the iPhone motion chip) once per visit.
+  // F23: stop the cold-start clock once the day's plan is on screen.
+  const planReady = !t.isLoading;
+  useEffect(() => {
+    if (planReady) markTodayReady(clock());
+  }, [planReady]);
   const stepsSynced = useRef(false);
   const { auto: stepsAuto, syncAuto } = steps;
   useEffect(() => {

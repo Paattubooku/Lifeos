@@ -338,6 +338,7 @@ const wi = (
   dur: number | null = null,
 ) => ({
   id: `wi-${day}-${exId}`,
+  client_id: `wc-${day}-${exId}`,
   workout_day_id: day,
   exercise_id: exId,
   sets,

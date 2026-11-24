@@ -2,6 +2,52 @@
 
 One entry per feature, newest first: feature ID, what was built, how PTR verifies it on the phone, known gaps.
 
+## F23 — Settings, data export and polish · 2026-11-24 · done
+
+**Built**
+
+- **More** (More-Menu design), grouped with live subtitles:
+  - Tasks (pending · overdue), Money (month spend of budget), Routine.
+  - Meal plan, Program.
+  - Reminders, Integrations (inbox, tokens), **Settings**.
+  - Sync status, and a version line with the cold-start time.
+  - Water and Weight moved off More (they're on Progress); theme, Screen Time and sign out moved into Settings.
+- **Settings** `/settings` (Settings design):
+  - Profile & targets rows (height, weight goal, kcal, protein, water, coffee limit, steps minimum, monthly budget, wake · sleep), each opening the profile editor.
+  - Theme; a Screen Time card with the 4 steps (+ full guide, Open iPhone Settings).
+  - **Your data**: Export JSON / Export CSV; sign out with the unsynced-changes note.
+- **Export**: syncs pending changes first, reads **every table** page by page (RLS keeps it to your rows), and opens the iOS share sheet.
+  - **JSON** is one file with `counts` and `tables`. **CSV** is a zip with one file per table plus a README.
+  - Token hashes are never exported.
+  - The table list is checked by a test against the database types, so a new table can't be missed.
+- **Program editor** `/program-day/[id]` (Train-ProgramEditor design; tap a day on Program):
+  - Per exercise: sets, rep range or hold seconds, rest (30–180 s), **swap** from the library (search), move up/down, remove.
+  - **Add exercise from library**; live estimated time.
+  - Save writes only what changed (new rows get their ids on the phone so sessions can use them at once).
+  - Train now applies unsynced program edits immediately.
+- **App icon, splash and Android adaptive icons** (the Today triple ring in the theme colours), drawn by `scripts/make-icons.py`. They replace Expo's placeholders; they show in a real build, not in Expo Go.
+- **Performance**: `(user_id, date)` indexes already exist on every log table (F01). A cold-start clock (JS start → Today's plan on screen) shows in More as "opened Today in N s", for checking the < 2 s target on the phone.
+
+**Checks run here**
+
+- `typecheck` ✅ · `lint` ✅ · `test` ✅ 805 tests · `test:db` ✅ · iOS + Android bundle export ✅.
+- **AC "export produces valid JSON containing every table"**: tested. The export covers every table in `src/types/supabase.ts` and parses as JSON with all tables and counts. CSV escaping and zip contents are tested too.
+- **AC "cold start to interactive Today < 2 s on PTR's phone"**: can't be measured here. More now shows the time after each cold start (it doesn't count iOS launching Expo Go itself).
+
+**How PTR verifies on the phone**
+
+1. `git pull`, `npm install`, `npm start` (new packages: expo-file-system, expo-sharing, fflate).
+2. More: check the new groups. **Settings** → change Theme; tap a target row → profile editor.
+3. Settings → **Export JSON** → the share sheet opens → save to Files and open it (every table is listed under `tables`). **Export CSV** → a zip of CSVs.
+4. Train → Program → tap **Upper A** → change sets/rest, swap an exercise → **Save**. Today's session shows the change.
+5. Fully close LifeOS (and Expo Go), reopen, then look at the bottom of More: "opened Today in N s".
+
+**Known gaps**
+
+- Drag-to-reorder in the program editor uses Up/Down buttons instead (drag is in LATER since F04). The design's "Auto overload" per-exercise switch isn't built: suggestions (F12) apply to every exercise.
+- New icon and splash only appear in a real (TestFlight/dev) build.
+- There's no Name field (the profile has none); Settings shows your email.
+
 ## F22 — Home-screen widgets (Scriptable, Option A) · 2026-11-24 · done
 
 **Built**
@@ -874,4 +920,4 @@ _M1's 7-day trial was skipped at PTR's request ("I don't have time to test it fo
 - Placeholder app icon/splash (Expo defaults) and bundle id `app.lifeos.ptr`.
 - Open questions from `REFERENCE_NOTES.md` (todo sort order, weight-trend insight, golden fixtures) still default as proposed until PTR answers.
 
-_Next: F23 (Settings, data export and polish). Waiting for PTR's "next"._
+_Next: F24 (Accountability nudges). Waiting for PTR's "next"._

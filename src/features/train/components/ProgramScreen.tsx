@@ -11,7 +11,7 @@ import { estMinutes, itemsOf, plannedSets } from '../lib/program';
 
 const DOW = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
 
-/** Program view (Train-Program): the week's days, exercises, sets and time. Editing is F23. */
+/** Program view (Train-Program): the week's days, exercises, sets and time; tap a day to edit it (F23). */
 export function ProgramScreen({ now: fixedNow }: { now?: number } = {}) {
   const ticking = useNow(60_000);
   const now = fixedNow ?? ticking;
@@ -68,6 +68,13 @@ export function ProgramScreen({ now: fixedNow }: { now?: number } = {}) {
         return (
           <Card
             key={d.id}
+            onPress={() => {
+              if (d.kind !== 'rest')
+                router.push({ pathname: '/program-day/[id]', params: { id: d.id } });
+            }}
+            accessibilityLabel={
+              d.kind === 'rest' ? `${d.title}. Rest day` : `${d.title}. Edit sets, reps and rest`
+            }
             testID={`program-${d.weekday}`}
             style={
               isToday ? { borderColor: colors.accents.primary.base, borderWidth: 1.5 } : undefined
@@ -103,7 +110,7 @@ export function ProgramScreen({ now: fixedNow }: { now?: number } = {}) {
         );
       })}
       <Text variant="caption" tone="secondary">
-        Editing the program (sets, reps, rest, swapping exercises) comes with Settings (F23).
+        Tap a day to edit its sets, reps and rest, or swap exercises.
       </Text>
     </Screen>
   );

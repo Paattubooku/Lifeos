@@ -103,3 +103,31 @@ jest.mock('expo-sensors', () => ({
     watchStepCount: jest.fn(() => ({ remove: jest.fn() })),
   },
 }));
+
+// Data export (F23): an in-memory file system and share sheet.
+jest.mock('expo-file-system', () => {
+  const files = new Map<string, string | Uint8Array>();
+  class File {
+    uri: string;
+    constructor(dir: { uri?: string } | string, name: string) {
+      this.uri = `${typeof dir === 'string' ? dir : (dir.uri ?? 'cache:')}/${name}`;
+    }
+    get exists() {
+      return files.has(this.uri);
+    }
+    create() {
+      files.set(this.uri, '');
+    }
+    delete() {
+      files.delete(this.uri);
+    }
+    write(content: string | Uint8Array) {
+      files.set(this.uri, content);
+    }
+  }
+  return { File, Paths: { cache: { uri: 'file:///cache' } }, __files: files };
+});
+jest.mock('expo-sharing', () => ({
+  isAvailableAsync: jest.fn(() => Promise.resolve(true)),
+  shareAsync: jest.fn(() => Promise.resolve()),
+}));

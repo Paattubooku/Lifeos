@@ -12,7 +12,7 @@ import {
   useGetSessionsSinceQuery,
   useGetSetLogsSinceQuery,
 } from '../api';
-import { type ExerciseRow, itemsOf } from '../lib/program';
+import { type ExerciseRow, itemsOf, type WorkoutItem } from '../lib/program';
 import type { SessionRow, SetLogRow } from '../lib/session';
 
 const EMPTY: ProgramFull = { days: [], items: [], exercises: [] };
@@ -29,7 +29,17 @@ export function useTrain(t: ReturnType<typeof useToday>) {
   const setWrites = useLocalWrites('set_log');
   const sessionWrites = useLocalWrites('session_log');
 
-  const program = progQ.data ?? EMPTY;
+  // F23: the program editor's unsynced edits (workout_exercise rows) apply at once.
+  const itemWrites = useLocalWrites('workout_exercise');
+  const program = useMemo(() => {
+    const base = progQ.data ?? EMPTY;
+    if (itemWrites.length === 0) return base;
+    const items = mergeKeepingDeleted<WorkoutItem & { client_id: string }>(
+      base.items.filter((i): i is WorkoutItem & { client_id: string } => Boolean(i.client_id)),
+      itemWrites,
+    );
+    return { ...base, items: [...base.items.filter((i) => !i.client_id), ...items] };
+  }, [progQ.data, itemWrites]);
   const logs = useMemo(
     () => live(mergeKeepingDeleted<SetLogRow>(setsQ.data ?? [], setWrites)),
     [setsQ.data, setWrites],

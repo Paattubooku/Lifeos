@@ -1,4 +1,5 @@
 // Import each weight by path: the package index would bundle every weight + italic.
+import '@/lib/startup'; // start the cold-start clock first (F23)
 import { Inter_400Regular } from '@expo-google-fonts/inter/400Regular';
 import { Inter_500Medium } from '@expo-google-fonts/inter/500Medium';
 import { Inter_600SemiBold } from '@expo-google-fonts/inter/600SemiBold';
@@ -119,6 +120,7 @@ function Navigator() {
             <Stack.Screen name="index" />
             <Stack.Protected guard={signedIn && gate === 'done'}>
               <Stack.Screen name="(tabs)" />
+              <Stack.Screen name="settings/index" />
               <Stack.Screen name="settings/profile" />
               <Stack.Screen name="settings/reminders" />
               <Stack.Screen name="settings/screen-time" />
@@ -133,6 +135,7 @@ function Navigator() {
               <Stack.Screen name="dish/[id]" />
               <Stack.Screen name="session/[date]" />
               <Stack.Screen name="program" />
+              <Stack.Screen name="program-day/[id]" />
               <Stack.Screen name="exercises" />
               <Stack.Screen name="exercise/[id]" />
               <Stack.Screen name="weight" />

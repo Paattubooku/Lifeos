@@ -24,7 +24,7 @@ export const trainApi = baseApi.injectEndpoints({
             await c
               .from('workout_exercise')
               .select(
-                'id, workout_day_id, exercise_id, sets, rep_min, rep_max, duration_sec, rest_sec, sort',
+                'id, client_id, workout_day_id, exercise_id, sets, rep_min, rep_max, duration_sec, rest_sec, sort',
               )
               .is('deleted_at', null),
           ).filter((i) => ids.has(i.workout_day_id));

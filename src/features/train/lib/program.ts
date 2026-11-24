@@ -11,6 +11,8 @@ export type ExerciseRow = {
 
 export type WorkoutItem = {
   id: string;
+  /** Present on server rows (F23 editor writes by client_id). */
+  client_id?: string;
   workout_day_id: string;
   exercise_id: string;
   sets: number;
