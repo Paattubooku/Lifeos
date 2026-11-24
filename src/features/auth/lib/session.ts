@@ -66,11 +66,10 @@ export function authErrorMessage(error: unknown): string {
     return 'Email or password is wrong.';
   }
   if (e.code === 'email_not_confirmed') return 'Confirm your email first (check your inbox).';
-  if (
-    e.status === 429 ||
-    e.code === 'over_request_rate_limit' ||
-    e.code === 'over_email_send_rate_limit'
-  ) {
+  if (e.code === 'over_email_send_rate_limit') {
+    return 'Too many emails sent from LifeOS just now. Try again in an hour.';
+  }
+  if (e.status === 429 || e.code === 'over_request_rate_limit') {
     return 'Too many attempts. Wait a minute and try again.';
   }
   if (e.code === 'signup_disabled') return 'Sign-up is turned off for this project.';

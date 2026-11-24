@@ -82,7 +82,10 @@ describe('authErrorMessage', () => {
     [{ status: 400, message: 'Invalid login credentials' }, 'Email or password is wrong.'],
     [{ code: 'email_not_confirmed' }, 'Confirm your email first (check your inbox).'],
     [{ status: 429 }, 'Too many attempts. Wait a minute and try again.'],
-    [{ code: 'over_email_send_rate_limit' }, 'Too many attempts. Wait a minute and try again.'],
+    [
+      { code: 'over_email_send_rate_limit' },
+      'Too many emails sent from LifeOS just now. Try again in an hour.',
+    ],
     [{ code: 'signup_disabled' }, 'Sign-up is turned off for this project.'],
     [{ message: 'Weird server error' }, 'Weird server error'],
     [{}, 'Something went wrong. Try again.'],
