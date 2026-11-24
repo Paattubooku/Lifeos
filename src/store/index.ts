@@ -20,6 +20,7 @@ export const defaultDeps: AuthDeps = {
 };
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
+const RUN_INVARIANT_CHECKS = process.env.JEST_WORKER_ID !== undefined;
 // Explicit type: with redux-persist's reducer plus a thunk extra argument, RTK infers state as `any`.
 const reducer: Reducer<ReturnType<typeof persistedReducer>, UnknownAction> = persistedReducer;
 
@@ -30,7 +31,12 @@ export function makeStore(deps: AuthDeps = defaultDeps) {
     middleware: (getDefault) =>
       getDefault({
         thunk: { extraArgument: deps },
-        serializableCheck: { ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER] },
+        // Dev-only invariant checks walk the whole (large, persisted) state on every
+        // action: ~40 ms per key press on a phone. Kept in tests, off in the app.
+        immutableCheck: RUN_INVARIANT_CHECKS,
+        serializableCheck: RUN_INVARIANT_CHECKS
+          ? { ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER] }
+          : false,
       })
         .prepend(listenerMiddleware.middleware)
         .concat(baseApi.middleware),

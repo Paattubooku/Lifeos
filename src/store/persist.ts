@@ -10,6 +10,9 @@ export const persistConfig: PersistConfig<RootReducerState> = {
   storage,
   // Wait for storage instead of redux-persist's 5 s give-up timer (see syncPersistConfig).
   timeout: 0,
+  // Write at most every 500 ms (cache + drafts), not on every key press. The write
+  // queue has its own config with no throttle, so no change is ever lost.
+  throttle: 500,
   // UI prefs + the RTK Query cache (offline reads; restored via extractRehydrationInfo).
   whitelist: ['app', 'api', 'profile', 'food', 'notifications', 'train', 'steps', 'accountability'],
 };

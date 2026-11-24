@@ -42,6 +42,9 @@ describe('OnboardingScreen (F25: any new account)', () => {
     expect(screen.getByRole('button', { name: 'Back' })).toBeDisabled();
 
     await type('Birth year', '1890');
+    // No range warning while typing; it shows once the box is left.
+    expect(screen.queryByText('1920–2015')).toBeNull();
+    await fireEvent(screen.getByLabelText('Birth year'), 'blur');
     expect(screen.getByText('1920–2015')).toBeOnTheScreen();
     await type('Birth year', '1990');
     await type('Height (cm)', '162');
@@ -58,6 +61,21 @@ describe('OnboardingScreen (F25: any new account)', () => {
       pathname: '/onboarding/[step]',
       params: { step: '2' },
     });
+  });
+
+  it('typing a number updates the answers only when the value changes (not on every key)', async () => {
+    const { store } = await seededStore(profileRow(NEW_USER));
+    const spy = jest.spyOn(store, 'dispatch');
+    await renderWithStore(store, <OnboardingScreen step={1} />);
+    const updates = () =>
+      spy.mock.calls.filter(([a]) => (a as { type?: string }).type === 'profile/draftUpdated')
+        .length;
+    for (const t of ['1', '19', '199']) await type('Birth year', t);
+    expect(updates()).toBe(0);
+    await type('Birth year', '1990');
+    await type('Birth year', '19900');
+    expect(updates()).toBe(2);
+    expect(store.getState().profile.draft?.birth_year).toBeNull();
   });
 
   it('step 2 Weight: typed weights, weigh-in habit and the plain maths', async () => {

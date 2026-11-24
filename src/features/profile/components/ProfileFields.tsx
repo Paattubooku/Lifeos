@@ -1,5 +1,5 @@
 import { Info, Moon, Smartphone, Sun, type LucideIcon } from 'lucide-react-native';
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import type { Sex } from '@/features/body/lib/energy';
@@ -294,8 +294,16 @@ export function NumberField({
   decimals?: number;
 }) {
   const [text, setText] = useState(value === null ? '' : String(value));
-  const n = Number(text.replace(',', '.'));
-  const bad = text.trim() !== '' && (!Number.isFinite(n) || n < limits.min || n > limits.max);
+  // The range shows once the person leaves the box, not while "1", "19"… are typed.
+  const [touched, setTouched] = useState(false);
+  // Only tell the parent when the parsed answer changes (not on every key).
+  const sent = useRef<number | null>(value);
+  const parse = (t: string): number | null => {
+    const v = Number(t.replace(',', '.'));
+    const ok = t.trim() !== '' && Number.isFinite(v) && v >= limits.min && v <= limits.max;
+    return ok ? Math.round(v * 10 ** decimals) / 10 ** decimals : null;
+  };
+  const bad = touched && text.trim() !== '' && parse(text) === null;
   return (
     <TextField
       label={label}
@@ -304,11 +312,14 @@ export function NumberField({
       keyboardType={decimals > 0 ? 'decimal-pad' : 'number-pad'}
       maxLength={6}
       error={bad ? `${limits.min}–${limits.max}` : null}
+      onBlur={() => setTouched(true)}
       onChangeText={(t) => {
         setText(t);
-        const v = Number(t.replace(',', '.'));
-        const ok = t.trim() !== '' && Number.isFinite(v) && v >= limits.min && v <= limits.max;
-        onChange(ok ? Math.round(v * 10 ** decimals) / 10 ** decimals : null);
+        const next = parse(t);
+        if (next !== sent.current) {
+          sent.current = next;
+          onChange(next);
+        }
       }}
     />
   );

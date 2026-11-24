@@ -1,6 +1,6 @@
 import { Lock } from 'lucide-react-native';
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAppDispatch, useAppSelector } from '@/store';
@@ -27,12 +27,12 @@ export function SetPasswordScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={[styles.flex, { backgroundColor: colors.canvas }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
+    <View style={[styles.flex, { backgroundColor: colors.canvas }]}>
+      {/* Native keyboard insets: no JS relayout each time the suggestion bar changes height. */}
       <ScrollView
         keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets
+        keyboardDismissMode="interactive"
         contentContainerStyle={[
           styles.content,
           { paddingTop: insets.top + 64, paddingBottom: insets.bottom + 24 },
@@ -96,7 +96,7 @@ export function SetPasswordScreen() {
           />
         </View>
       </ScrollView>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
