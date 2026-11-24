@@ -2,6 +2,40 @@
 
 One entry per feature, newest first: feature ID, what was built, how PTR verifies it on the phone, known gaps.
 
+## F16 — Progress tab · 2026-11-24 · done
+
+**Built**
+
+- **Progress tab** (Prog-Tab design) replaces the F13 placeholder. It has one card per area; tap a card to open its detail screen.
+  - **Weight** → `/weight`: 7-day avg, total change, 4-week sparkline of the 7-day average.
+  - **Streaks** → `/streaks`: current, best and grace days used, with a 30-day mini heatmap in the Streaks screen's score bands.
+  - **Food** → Food tab: 7-day average kcal (food + coffee) and protein, and the deficit vs TDEE (F13). Two 14-day bar rows for kcal and protein, each against its target line.
+  - **Training** → Train tab: done / planned sessions this week and the change vs last week. 8-week bars of sessions per week (≥ 80 % complete) against this week's plan.
+  - **Sleep** → `/sleep`: 7-day avg, change vs the week before, 14 nights of bars with the 7 h line.
+  - **Water** → `/water`: 7-day avg, days the goal was hit out of 7, 14 days of bars with the goal line.
+- Every card shows "—" and a one-line empty state, with no chart, when it has no data (AC1).
+- `progress/lib/progress.ts` holds the pure maths: daily nutrition, logged-day averages, weekly sessions and water days.
+
+**Checks run here**
+
+- `typecheck` ✅ · `lint` ✅ · `test` ✅; `features/progress/lib` 100% coverage.
+- **AC1**: test with an empty account; all six cards render their empty state.
+- **AC2**: the heatmap cells for scores 92 / 75 / 40 / none land in the 90+ / 70–79 / < 50 / empty bands, the same banding as `/streaks`.
+- Mini-chart colours checked with the dataviz validator: contrast vs surface passes in both themes. Each chart is one series in its own titled card, so the categorical checks don't apply.
+- iOS + Android bundle export ✅. No schema change.
+
+**How PTR verifies on the phone**
+
+1. `git pull`, `npm install`, `npm start` → the **Progress** tab.
+2. Each card shows your numbers, or "—" with a short note where there's no data yet.
+3. The 30 squares on Streaks match the colours on the Streaks screen.
+4. Tap each card: it opens Weight, Streaks, Food, Train, Sleep or Water.
+
+**Known gaps**
+
+- The design's "Five weeks in" summary card and the **Weekly review** button belong to F20 and aren't built yet.
+- The "+8% vol" volume change in the design is shown as the sessions change vs last week; training volume is on the Train tab.
+
 ## F14 — Sleep and phone-off · 2026-11-24 · done
 
 **Built**
@@ -553,4 +587,4 @@ _M1's 7-day trial was skipped at PTR's request ("I don't have time to test it fo
 - Placeholder app icon/splash (Expo defaults) and bundle id `app.lifeos.ptr`.
 - Open questions from `REFERENCE_NOTES.md` (todo sort order, weight-trend insight, golden fixtures) still default as proposed until PTR answers.
 
-_Next: F16 (Progress tab). Waiting for PTR's "next"._
+_Next: F17 (Tasks). Waiting for PTR's "next"._

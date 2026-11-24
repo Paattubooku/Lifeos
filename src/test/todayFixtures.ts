@@ -1,4 +1,5 @@
 import { profileApi } from '@/features/profile/api';
+import { progressApi } from '@/features/progress/api';
 import { bodyApi } from '@/features/body/api';
 import { foodApi } from '@/features/food/api';
 import { todayApi } from '@/features/today/api';
@@ -44,6 +45,10 @@ export type TodayStoreOptions = {
   pastSets?: [number, string, number, number | null, number | null][];
   /** Nights by the morning they end: [daysAgo (-1 = tomorrow), bed, wake, phoneOffKept]. */
   sleep?: [number, string | null, string | null, boolean | null][];
+  /** Food per day for Progress: [daysAgo, kcal, protein g]. */
+  nutrition?: [number, number, number][];
+  /** Logged sessions for Progress (8 weeks): [daysAgo, completion %]. */
+  sessions?: [number, number][];
 };
 
 export async function todayStore(opts: TodayStoreOptions = {}) {
@@ -204,6 +209,34 @@ export async function todayStore(opts: TodayStoreOptions = {}) {
       })),
       coffee: [],
     }),
+  );
+  await store.dispatch(
+    progressApi.util.upsertQueryData('getNutritionSince', addDays(today, -13), {
+      food: (opts.nutrition ?? []).map(([ago, kcal, protein]) => ({
+        client_id: `nu${ago}`,
+        date: addDays(today, -ago),
+        kcal,
+        protein_g: protein,
+        deleted_at: null,
+      })),
+      coffee: [],
+    }),
+  );
+  await store.dispatch(
+    trainApi.util.upsertQueryData(
+      'getSessionsSince',
+      addDays(weekStart(today), -49),
+      (opts.sessions ?? []).map(([ago, completion]) => ({
+        ...base,
+        id: `ss${ago}`,
+        client_id: `ss${ago}-c`,
+        date: addDays(today, -ago),
+        completion,
+        started_at: null,
+        finished_at: null,
+        workout_day_id: null,
+      })),
+    ),
   );
   const at = (hhmm: string) => logicalMoment(today, hhmm);
   return { store, today, blocks, at };
