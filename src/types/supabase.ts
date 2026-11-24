@@ -715,6 +715,7 @@ export type Database = {
           start_weight_kg: number | null;
           steps_min: number;
           theme: string;
+          tour_seen_at: string | null;
           updated_at: string;
           user_id: string;
           wake_time: string;
@@ -743,6 +744,7 @@ export type Database = {
           start_weight_kg?: number | null;
           steps_min?: number;
           theme?: string;
+          tour_seen_at?: string | null;
           updated_at?: string;
           user_id?: string;
           wake_time?: string;
@@ -771,6 +773,7 @@ export type Database = {
           start_weight_kg?: number | null;
           steps_min?: number;
           theme?: string;
+          tour_seen_at?: string | null;
           updated_at?: string;
           user_id?: string;
           wake_time?: string;

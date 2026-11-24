@@ -209,7 +209,7 @@ describe('OnboardingScreen (F25: any new account)', () => {
       'rd-wake-c': '07:00',
     });
     expect(store.getState().profile.draft).toBeNull();
-    expect(mockRouter.replace).toHaveBeenCalledWith('/today');
+    expect(mockRouter.replace).toHaveBeenCalledWith('/tour');
   });
 
   it('step 5 "Allow notifications" asks the OS first', async () => {
@@ -219,6 +219,6 @@ describe('OnboardingScreen (F25: any new account)', () => {
       await fireEvent.press(screen.getByRole('button', { name: 'Allow notifications and finish' }));
     });
     expect(Notifications.requestPermissionsAsync).toHaveBeenCalled();
-    expect(mockRouter.replace).toHaveBeenCalledWith('/today');
+    expect(mockRouter.replace).toHaveBeenCalledWith('/tour');
   });
 });

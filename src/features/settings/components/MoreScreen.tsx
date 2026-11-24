@@ -4,6 +4,7 @@ import {
   Bell,
   Cable,
   Clock,
+  Compass,
   Droplet,
   Dumbbell,
   IndianRupee,
@@ -124,6 +125,13 @@ export function MoreScreen({ now: fixedNow }: { now?: number } = {}) {
           title="Integrations"
           sub={`SMS parser · ${integ.inbox.length} in inbox · ${active} ${active === 1 ? 'token' : 'tokens'}`}
           onPress={() => router.push('/settings/integrations')}
+          divider
+        />
+        <MenuRow
+          icon={Compass}
+          title="App tour"
+          sub="What every screen does, in a minute"
+          onPress={() => router.push('/tour')}
           divider
         />
         <MenuRow

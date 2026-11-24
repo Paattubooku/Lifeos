@@ -45,6 +45,7 @@ export function profileRow(over: Partial<Tables<'profile'>> = {}): Tables<'profi
     coffee_limit: 2,
     theme: 'dark',
     onboarded_at: null,
+    tour_seen_at: null,
     ...over,
   };
 }

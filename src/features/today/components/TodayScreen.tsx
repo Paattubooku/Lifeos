@@ -342,7 +342,7 @@ export function TodayScreen({ now: fixedNow }: { now?: number } = {}) {
               endInterrupt();
             }}
             onSnooze={() => {
-              dispatch(interruptSnoozed(clock() + SNOOZE_MIN * 60_000));
+              dispatch(interruptSnoozed(now + SNOOZE_MIN * 60_000)); // same clock the card is checked with
               endInterrupt();
             }}
           />

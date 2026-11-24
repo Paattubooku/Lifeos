@@ -2,6 +2,21 @@
 
 One entry per feature, newest first: feature ID, what was built, how PTR verifies it on the phone, known gaps.
 
+## App tour · 2026-11-25 · done
+
+**Built** (`src/features/tour/`, route `/tour`)
+
+- A 12-page swipeable tour shown **once after first-run setup**, before Today. Pages: welcome, Today, water, food, training, weight, sleep and phone-off, steps, tasks and money, progress and weekly review, nudges and reminders, ready.
+- Each page says where the area lives, what it does, and 2–4 "how to use it" lines naming the real buttons.
+- Swipe or use Next / Back. Skip on every page except the last. "Start my day" on the last.
+- Finishing or skipping saves `profile.tour_seen_at` (migration `20261124214306_profile_tour_seen.sql`, applied live). It's remembered per account, on every phone.
+- **More → App tour** replays it any time. A replay changes nothing and goes back to More.
+- Fix found on the way: the "Do ONE thing now" snooze used the phone clock while the card checks the screen clock. It now uses the same clock.
+
+**Checks run here:** typecheck ✅ · lint ✅ · 859 tests ✅ · test:db ✅ · iOS export ✅ · checked in the browser (dark theme).
+
+**How PTR verifies:** create a new account and finish setup; the tour opens. Skip or finish it, and it doesn't come back after restarting. More → App tour replays it.
+
 ## F25 — Multiple accounts · 2026-11-24 · done
 
 **Built** (PTR's decisions: open sign-up, email + password, setup that asks everything with PTR's plan as the example)

@@ -111,7 +111,7 @@ export function OnboardingScreen({ step }: { step: number }) {
     });
     await dispatch(applyWrites(writes));
     dispatch(draftCleared());
-    router.replace('/today');
+    router.replace('/tour');
   };
 
   const { title, subtitle } = TITLES[step] ?? TITLES[1]!;

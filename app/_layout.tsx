@@ -131,6 +131,7 @@ function Navigator() {
             <Stack.Screen name="auth-callback" />
             <Stack.Protected guard={signedIn && gate === 'done'}>
               <Stack.Screen name="(tabs)" />
+              <Stack.Screen name="tour" options={{ gestureEnabled: false }} />
               <Stack.Screen name="settings/index" />
               <Stack.Screen name="settings/profile" />
               <Stack.Screen name="settings/reminders" />
