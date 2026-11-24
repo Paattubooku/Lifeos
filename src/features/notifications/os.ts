@@ -95,5 +95,8 @@ export const cancelRestEnd = () =>
   Notifications.cancelScheduledNotificationAsync(REST_ID).catch(() => undefined);
 
 /** Another account takes over this phone: drop every scheduled reminder (F25). */
-export const cancelAllReminders = () =>
-  Notifications.cancelAllScheduledNotificationsAsync().catch(() => undefined);
+export const cancelAllReminders = async () => {
+  await Notifications.cancelAllScheduledNotificationsAsync().catch(() => undefined);
+  // Delivered ones in Notification Center show scores and meal names too.
+  await Notifications.dismissAllNotificationsAsync().catch(() => undefined);
+};

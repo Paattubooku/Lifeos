@@ -5,6 +5,7 @@
 // ON DELETE CASCADE, so all of that person's rows go with it. Personal access
 // tokens (lifeos_pat_…) are refused: a token pasted into Shortcuts must never be
 // able to delete the account.
+// Leftover auth rows without a foreign key are purged first (purge_auth_leftovers).
 import { bearer } from '../_shared/ingest.ts';
 import { admin, json, readJson } from '../_shared/server.ts';
 
@@ -21,7 +22,11 @@ Deno.serve(async (req) => {
   const body = (await readJson(req)) as { confirm?: unknown } | null;
   if (body?.confirm !== 'DELETE') return json(400, { error: 'Confirm with "DELETE"' });
 
-  const { error } = await db.auth.admin.deleteUser(userId);
+  // Auth rows that hold the id without a foreign key (flow state, old refresh tokens).
+  const purge = await db.rpc('purge_auth_leftovers', { target: userId });
+  if (purge.error) return json(500, { error: purge.error.message });
+  // Hard delete (not soft): the login row goes, and ON DELETE CASCADE takes every LifeOS row.
+  const { error } = await db.auth.admin.deleteUser(userId, false);
   if (error) return json(500, { error: error.message });
   return json(200, { ok: true });
 });

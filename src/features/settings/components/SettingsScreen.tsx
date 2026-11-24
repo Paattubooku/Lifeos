@@ -206,8 +206,10 @@ function DeleteAccount() {
   return (
     <Card title="Delete account" gap={12} testID="delete-account">
       <Text variant="sub" tone="secondary">
-        This deletes your account and everything in it: routine, logs, food, workouts, money and
-        tokens. It can’t be undone. Export first if you want a copy.
+        This permanently deletes your login and everything in LifeOS: profile, routine, every log,
+        food, workouts, money, SMS, tasks, reviews and tokens (Shortcuts and widgets stop working).
+        This phone’s copy, reminders and exports are cleared too. It can’t be undone. Export first
+        if you want a copy.
       </Text>
       <TextField
         label="Type DELETE to confirm"

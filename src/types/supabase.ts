@@ -1457,6 +1457,10 @@ export type Database = {
         Args: never;
         Returns: Json;
       };
+      purge_auth_leftovers: {
+        Args: { target: string };
+        Returns: undefined;
+      };
       seed_defaults: {
         Args: never;
         Returns: Json;

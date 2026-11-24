@@ -53,6 +53,12 @@ describe('Settings (F23)', () => {
       api_token: [{ name: 'iPhone', token_hash: 'h', last4: 'ab12' }],
     });
     const { store } = await moneyStore();
+    const { __files } = jest.requireMock('expo-file-system') as { __files: Map<string, string> };
+    // Read the file while the share sheet is open: it is deleted once it closes.
+    let json = '';
+    jest.mocked(shareAsync).mockImplementationOnce(async (uri: string) => {
+      json = __files.get(uri) ?? '';
+    });
     await renderWithStore(store, <SettingsScreen />);
     await press('Export JSON');
     expect(mockFrom).toHaveBeenCalledTimes(EXPORT_TABLES.length);
@@ -60,8 +66,7 @@ describe('Settings (F23)', () => {
       expect.stringMatching(/lifeos-\d{4}-\d{2}-\d{2}\.json$/),
       expect.objectContaining({ mimeType: 'application/json' }),
     );
-    const { __files } = jest.requireMock('expo-file-system') as { __files: Map<string, string> };
-    const json = [...__files.entries()].find(([k]) => k.endsWith('.json'))![1];
+    expect([...__files.keys()].filter((k) => k.includes('lifeos-'))).toEqual([]);
     const doc = JSON.parse(json) as {
       tables: Record<string, unknown[]>;
       counts: Record<string, number>;

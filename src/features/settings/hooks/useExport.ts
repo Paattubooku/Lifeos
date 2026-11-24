@@ -9,6 +9,7 @@ import { getSupabase } from '@/lib/supabase';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { useSnackbar } from '@/ui';
 
+import { EXPORT_PREFIX, clearExportFiles } from '../lib/exportFiles';
 import {
   buildExport,
   csvZip,
@@ -70,8 +71,8 @@ export function useExport() {
       const json = JSON.stringify(doc, null, 1);
       const uri =
         kind === 'json'
-          ? writeFile(`lifeos-${date}.json`, json)
-          : writeFile(`lifeos-${date}-csv.zip`, csvZip(doc, date));
+          ? writeFile(`${EXPORT_PREFIX}${date}.json`, json)
+          : writeFile(`${EXPORT_PREFIX}${date}-csv.zip`, csvZip(doc, date));
       const rows = Object.values(doc.counts).reduce((s, n) => s + n, 0);
       setLast({ rows, size: sizeText(json.length) });
       if (await isAvailableAsync())
@@ -84,6 +85,8 @@ export function useExport() {
     } catch {
       showSnackbar({ message: 'Export needs a connection. Try again when online.' });
     } finally {
+      // The share sheet has closed (or failed): don't keep a full copy on the phone.
+      clearExportFiles();
       setBusy(null);
     }
   };

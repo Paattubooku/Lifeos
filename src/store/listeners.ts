@@ -3,6 +3,7 @@ import { createListenerMiddleware } from '@reduxjs/toolkit';
 import type { AuthState } from '@/features/auth/slice';
 import { deleteAccount, ensureSeeded } from '@/features/auth/slice';
 import { cancelAllReminders } from '@/features/notifications/os';
+import { clearExportFiles } from '@/features/settings/lib/exportFiles';
 import { ownerDropped, runSync } from '@/features/sync/slice';
 
 import { type AppState, accountCleared, accountSet } from './appSlice';
@@ -57,6 +58,7 @@ listenerMiddleware.startListening({
     if (!clear) return;
     api.dispatch(baseApi.util.resetApiState());
     api.dispatch(accountCleared());
+    clearExportFiles();
     await cancelAllReminders();
   },
 });

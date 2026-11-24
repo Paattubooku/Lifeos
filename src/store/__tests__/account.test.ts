@@ -52,6 +52,26 @@ describe('account switch', () => {
     expect(s.app.themePreference).toBe('light');
     expect(s.sync.queue.map((m) => m.owner)).toEqual(['a']);
     expect(Notifications.cancelAllScheduledNotificationsAsync).toHaveBeenCalledTimes(1);
+    expect(Notifications.dismissAllNotificationsAsync).toHaveBeenCalledTimes(1);
+  });
+
+  it('sign-out deletes leftover data exports from the phone, nothing else', async () => {
+    const { File, Paths, __files } = jest.requireMock('expo-file-system') as {
+      File: new (d: { uri: string }, n: string) => { create(): void; uri: string };
+      Paths: { cache: { uri: string } };
+      __files: Map<string, string>;
+    };
+    new File(Paths.cache, 'lifeos-2026-11-24.json').create();
+    new File(Paths.cache, 'lifeos-2026-11-24-csv.zip').create();
+    new File(Paths.cache, 'other.txt').create();
+    const store = makeStore();
+    store.dispatch(sessionChanged(user('a')));
+    await tick();
+    store.dispatch(sessionChanged(null));
+    await tick();
+    expect([...__files.keys()].filter((k) => k.startsWith(Paths.cache.uri))).toEqual([
+      `${Paths.cache.uri}/other.txt`,
+    ]);
   });
 
   it('another account restored over cached data clears it first', async () => {

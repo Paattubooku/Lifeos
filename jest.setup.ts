@@ -74,6 +74,7 @@ jest.mock('expo-notifications', () => ({
   setNotificationHandler: jest.fn(),
   setNotificationChannelAsync: jest.fn(() => Promise.resolve(null)),
   cancelAllScheduledNotificationsAsync: jest.fn(() => Promise.resolve()),
+  dismissAllNotificationsAsync: jest.fn(() => Promise.resolve()),
   getAllScheduledNotificationsAsync: jest.fn(() => Promise.resolve([])),
   cancelScheduledNotificationAsync: jest.fn(() => Promise.resolve()),
   scheduleNotificationAsync: jest.fn((req: { identifier?: string }) =>
@@ -109,8 +110,10 @@ jest.mock('expo-file-system', () => {
   const files = new Map<string, string | Uint8Array>();
   class File {
     uri: string;
+    name: string;
     constructor(dir: { uri?: string } | string, name: string) {
       this.uri = `${typeof dir === 'string' ? dir : (dir.uri ?? 'cache:')}/${name}`;
+      this.name = name;
     }
     get exists() {
       return files.has(this.uri);
@@ -125,7 +128,18 @@ jest.mock('expo-file-system', () => {
       files.set(this.uri, content);
     }
   }
-  return { File, Paths: { cache: { uri: 'file:///cache' } }, __files: files };
+  class Directory {
+    uri: string;
+    constructor(dir: { uri?: string } | string) {
+      this.uri = typeof dir === 'string' ? dir : (dir.uri ?? 'cache:');
+    }
+    list() {
+      return [...files.keys()]
+        .filter((u) => u.startsWith(`${this.uri}/`))
+        .map((u) => new File(this.uri, u.slice(this.uri.length + 1)));
+    }
+  }
+  return { File, Directory, Paths: { cache: { uri: 'file:///cache' } }, __files: files };
 });
 jest.mock('expo-sharing', () => ({
   isAvailableAsync: jest.fn(() => Promise.resolve(true)),
