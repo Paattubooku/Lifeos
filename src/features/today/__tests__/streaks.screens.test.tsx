@@ -50,7 +50,10 @@ describe('F06 on Today', () => {
       score: isoWeekday(addDays(today, -1)) === 7 ? 18 : 9,
       is_streak_day: false,
     });
-    expect(writes.find((w) => w.client_id === 'h4-c')?.row).toMatchObject({ score: 0 });
+    // Nothing ticked 4 days ago, except a Sunday's rest-day workout block counts as done.
+    expect(writes.find((w) => w.client_id === 'h4-c')?.row).toMatchObject({
+      score: isoWeekday(addDays(today, -4)) === 7 ? 9 : 0,
+    });
     expect(writes.find((w) => w.client_id === 'dl-c')?.row).toMatchObject({ score: 0 });
   });
 });

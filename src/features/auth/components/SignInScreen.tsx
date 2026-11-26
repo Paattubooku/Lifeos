@@ -2,6 +2,7 @@ import { Lock, Mail } from 'lucide-react-native';
 import { type ComponentRef, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 
 import { useAppDispatch, useAppSelector } from '@/store';
 import { Banner, Button, Text, TextField, useSnackbar, useTheme } from '@/ui';
@@ -14,6 +15,7 @@ type Mode = 'signIn' | 'signUp';
 /** design/screens/SignIn(-Dark).png, plus "Create account" for new people (F25). */
 export function SignInScreen() {
   const dispatch = useAppDispatch();
+  const router = useRouter();
   const { pending, error, notice, configMissing } = useAppSelector((s) => s.auth);
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
@@ -222,6 +224,16 @@ export function SignInScreen() {
             </>
           )}
         </View>
+
+        {__DEV__ ? (
+          <Button
+            size="sm"
+            variant="ghost"
+            label="Keyboard test (development)"
+            accessibilityLabel="Keyboard test, development only"
+            onPress={() => router.push('/dev/keyboard')}
+          />
+        ) : null}
 
         <View style={styles.footer}>
           <Text variant="caption" tone="secondary" align="center">
