@@ -31,7 +31,7 @@ export const scheduleKey = (rs: readonly Reminder[]) =>
   rs.map((r) => `${r.id}|${r.at}|${r.title}|${r.body}`).join('\n');
 
 /**
- * Replace every LifeOS reminder with `reminders` (local notifications only,
+ * Replace every Life reminder with `reminders` (local notifications only,
  * PRD §6). Returns how many were scheduled; 0 without permission.
  */
 export async function applySchedule(

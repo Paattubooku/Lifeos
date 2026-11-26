@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "LifeOS",
+    "name": "Life",
     "slug": "lifeos",
     "scheme": "lifeos",
     "version": "0.0.1",
@@ -46,7 +46,7 @@
       [
         "@kingstinct/react-native-healthkit",
         {
-          "NSHealthShareUsageDescription": "LifeOS reads your daily step count to track your steps target.",
+          "NSHealthShareUsageDescription": "Life reads your daily step count to track your steps target.",
           "NSHealthUpdateUsageDescription": false,
           "background": false
         }
@@ -54,7 +54,7 @@
       [
         "expo-sensors",
         {
-          "motionPermission": "LifeOS counts your daily steps with your iPhone's motion sensor."
+          "motionPermission": "Life counts your daily steps with your iPhone's motion sensor."
         }
       ]
     ],

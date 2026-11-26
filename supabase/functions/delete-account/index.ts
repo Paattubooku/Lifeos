@@ -1,7 +1,7 @@
 // POST /functions/v1/delete-account   {"confirm": "DELETE"}
 // Authorization: Bearer <the app's signed-in session JWT>
 //
-// F25: deletes the caller's login. Every LifeOS table references auth.users with
+// F25: deletes the caller's login. Every Life table references auth.users with
 // ON DELETE CASCADE, so all of that person's rows go with it. Personal access
 // tokens (lifeos_pat_…) are refused: a token pasted into Shortcuts must never be
 // able to delete the account.
@@ -25,7 +25,7 @@ Deno.serve(async (req) => {
   // Auth rows that hold the id without a foreign key (flow state, old refresh tokens).
   const purge = await db.rpc('purge_auth_leftovers', { target: userId });
   if (purge.error) return json(500, { error: purge.error.message });
-  // Hard delete (not soft): the login row goes, and ON DELETE CASCADE takes every LifeOS row.
+  // Hard delete (not soft): the login row goes, and ON DELETE CASCADE takes every Life row.
   const { error } = await db.auth.admin.deleteUser(userId, false);
   if (error) return json(500, { error: error.message });
   return json(200, { ok: true });

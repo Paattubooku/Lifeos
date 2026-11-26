@@ -106,7 +106,7 @@ export function useIntegrations() {
       });
       return data;
     } catch {
-      showSnackbar({ message: 'Could not reach LifeOS. Try again when online.' });
+      showSnackbar({ message: 'Could not reach the Life server. Try again when online.' });
       return null;
     } finally {
       setProcessing(false);

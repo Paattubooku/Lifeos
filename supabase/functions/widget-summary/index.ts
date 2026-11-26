@@ -8,7 +8,7 @@ Deno.serve(async (req) => {
   if (req.method !== 'GET' && req.method !== 'POST') return json(405, { error: 'Use GET' });
   const db = admin();
   const userId = await authenticate(req, db);
-  if (!userId) return json(401, { error: 'Reconnect in LifeOS' });
+  if (!userId) return json(401, { error: 'Reconnect in Life' });
 
   const now = Date.now();
   const { today } = istNow(now);

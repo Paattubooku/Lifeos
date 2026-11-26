@@ -1,5 +1,5 @@
-// LifeOS home-screen widget for Scriptable (iOS). PRD F22.
-// Copy this from LifeOS → More → Integrations → "Copy widget script".
+// Life home-screen widget for Scriptable (iOS). PRD F22.
+// Copy this from Life → More → Integrations → "Copy widget script".
 // Run it once in Scriptable to paste your token (kept in the iPhone Keychain,
 // never in this file). Widget parameter: score, water, spend or next
 // (default: small = score, medium = next block, large = everything).
@@ -263,14 +263,11 @@ function top3Block(w, d) {
 
 function build(r) {
   if (r.state === 'no-token')
-    return message(
-      'Connect LifeOS',
-      'Run this script once in Scriptable and paste your LifeOS token.',
-    );
+    return message('Connect Life', 'Run this script once in Scriptable and paste your Life token.');
   if (r.state === 'reconnect')
     return message(
-      'Reconnect in LifeOS',
-      'This token was revoked or is wrong. Make a new one in LifeOS → Integrations.',
+      'Reconnect in Life',
+      'This token was revoked or is wrong. Make a new one in Life → Integrations.',
     );
   if (r.state === 'offline')
     return message('Offline', 'No data yet. It will fill in when the phone is online.');
@@ -307,8 +304,8 @@ function build(r) {
 
 async function setup() {
   const a = new Alert();
-  a.title = 'LifeOS widget';
-  a.message = 'Paste the token from LifeOS → More → Integrations (starts with lifeos_pat_).';
+  a.title = 'Life widget';
+  a.message = 'Paste the token from Life → More → Integrations (starts with lifeos_pat_).';
   a.addSecureTextField('lifeos_pat_…', '');
   a.addAction('Save');
   a.addCancelAction('Cancel');
@@ -319,7 +316,7 @@ async function setup() {
 
 if (config.runsInApp && !config.runsInWidget) {
   const menu = new Alert();
-  menu.title = 'LifeOS widget';
+  menu.title = 'Life widget';
   menu.addAction('Set token');
   menu.addAction('Preview small');
   menu.addAction('Preview medium');

@@ -110,6 +110,6 @@ describe('More (F23 design)', () => {
       });
       expect(mockRouter.push).toHaveBeenLastCalledWith(path);
     }
-    expect(screen.getByText(/^LifeOS /)).toBeOnTheScreen();
+    expect(screen.getByText(/^Life /)).toBeOnTheScreen();
   });
 });

@@ -173,16 +173,16 @@ describe('buildSummary', () => {
 });
 
 describe('Scriptable script', () => {
-  it('the app copy matches widgets/scriptable/LifeOS.js; URL filled in; no secrets', () => {
+  it('the app copy matches widgets/scriptable/Life.js; URL filled in; no secrets', () => {
     // eslint-disable-next-line @typescript-eslint/no-require-imports -- jest-only file read
     const { readFileSync } = require('fs') as { readFileSync: (p: string, e: 'utf8') => string };
-    expect(WIDGET_SCRIPT).toBe(readFileSync('widgets/scriptable/LifeOS.js', 'utf8'));
+    expect(WIDGET_SCRIPT).toBe(readFileSync('widgets/scriptable/Life.js', 'utf8'));
     const s = widgetScript('https://abc.supabase.co');
     expect(s).toContain(
       "const SUMMARY_URL = 'https://abc.supabase.co/functions/v1/widget-summary';",
     );
     expect(s).not.toContain('__LIFEOS_SUMMARY_URL__');
-    expect(s).toContain('Reconnect in LifeOS');
+    expect(s).toContain('Reconnect in Life');
     expect(s).not.toMatch(/service_role|anon|eyJ/i);
   });
 });

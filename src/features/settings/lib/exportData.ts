@@ -1,7 +1,7 @@
 import { strToU8, zipSync } from 'fflate';
 
 /**
- * Every LifeOS table, exported per user (PRD F23 AC: "valid JSON containing
+ * Every Life table, exported per user (PRD F23 AC: "valid JSON containing
  * every table"). A test checks this list against src/types/supabase.ts.
  */
 export const EXPORT_TABLES = [
@@ -61,7 +61,7 @@ export function toCsv(rows: readonly Row[]): string {
 }
 
 export type ExportDoc = {
-  app: 'LifeOS';
+  app: 'Life';
   version: 1;
   exported_at: string;
   user: string | null;
@@ -81,7 +81,7 @@ export function buildExport(
     ExportTable,
     number
   >;
-  return { app: 'LifeOS', version: 1, exported_at: exportedAt, user, counts, tables };
+  return { app: 'Life', version: 1, exported_at: exportedAt, user, counts, tables };
 }
 
 /** One CSV per table in a zip (`lifeos-<date>/<table>.csv`). */
@@ -90,7 +90,7 @@ export function csvZip(doc: ExportDoc, date: string): Uint8Array {
   const files: Record<string, Uint8Array> = {};
   for (const t of EXPORT_TABLES) files[`${dir}/${t}.csv`] = strToU8(toCsv(doc.tables[t]));
   files[`${dir}/README.txt`] = strToU8(
-    `LifeOS export ${doc.exported_at}\nOne CSV per table; dates are IST logical days, times are UTC.\n`,
+    `Life export ${doc.exported_at}\nOne CSV per table; dates are IST logical days, times are UTC.\n`,
   );
   return zipSync(files);
 }

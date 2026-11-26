@@ -89,7 +89,7 @@ export const TOUR: readonly TourSlide[] = [
     body: 'Today’s session from your program, with sets, reps and rest timers.',
     how: [
       'Start the session and log each set as you go.',
-      'Hit every rep and LifeOS suggests a little more weight next time.',
+      'Hit every rep and Life suggests a little more weight next time.',
       'Change exercises and days in Train → Program.',
       'Can’t train today? Long-press the workout block on Today → Move to tomorrow.',
     ],

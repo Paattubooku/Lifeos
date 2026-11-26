@@ -150,7 +150,7 @@ export function MoreScreen({ now: fixedNow }: { now?: number } = {}) {
         }}
       />
       <Text variant="caption" tone="secondary" align="center">
-        {`LifeOS ${version} · ${Platform.OS === 'ios' ? 'iPhone' : 'Android'}${start !== null ? ` · opened Today in ${(start / 1000).toFixed(1)} s` : ''}`}
+        {`Life ${version} · ${Platform.OS === 'ios' ? 'iPhone' : 'Android'}${start !== null ? ` · opened Today in ${(start / 1000).toFixed(1)} s` : ''}`}
       </Text>
       {__DEV__ ? (
         <Card kicker="Developer" title="Sync test">

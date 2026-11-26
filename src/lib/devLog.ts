@@ -4,5 +4,5 @@
  * a text box that is built again on every key means its screen is rebuilt.
  */
 export function devLog(message: string): void {
-  if (__DEV__ && process.env.JEST_WORKER_ID === undefined) console.log(`[LifeOS] ${message}`);
+  if (__DEV__ && process.env.JEST_WORKER_ID === undefined) console.log(`[Life] ${message}`);
 }

@@ -149,7 +149,7 @@ export function RemindersScreen({ now: fixedNow }: { now?: number } = {}) {
         <Banner
           tone="warning"
           title="Reminders off — enable"
-          body="Notifications are off for LifeOS, so nothing below will ring."
+          body="Notifications are off for Life, so nothing below will ring."
           action={{
             label: 'Enable',
             accessibilityLabel: 'Enable reminders',

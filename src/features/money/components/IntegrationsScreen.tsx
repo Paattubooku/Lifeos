@@ -189,7 +189,7 @@ export function IntegrationsScreen({ now: fixedNow }: { now?: number } = {}) {
           </View>
           <CopyLine label="Token" value={fresh.token} />
           <Text variant="caption" tone="secondary">
-            {`Copy it now. After you leave this screen only the last 4 characters (…${fresh.token.slice(-4)}) are kept. It works once LifeOS has synced.`}
+            {`Copy it now. After you leave this screen only the last 4 characters (…${fresh.token.slice(-4)}) are kept. It works once Life has synced.`}
           </Text>
         </Card>
       ) : null}
@@ -285,7 +285,7 @@ export function IntegrationsScreen({ now: fixedNow }: { now?: number } = {}) {
           'Install Scriptable (free) from the App Store.',
           <View key="c" style={styles.gap}>
             <Text variant="sub">
-              Copy the LifeOS widget script (your URL is already in it; no token inside):
+              Copy the Life widget script (your URL is already in it; no token inside):
             </Text>
             <Button
               icon={Copy}
@@ -300,9 +300,9 @@ export function IntegrationsScreen({ now: fixedNow }: { now?: number } = {}) {
               }
             />
           </View>,
-          'Scriptable → + → paste → name it LifeOS. Run it once → Set token → paste your token (it stays in the iPhone Keychain).',
-          'Long-press the home screen → + → Scriptable → pick a size → Edit widget → Script: LifeOS. Parameter (optional): score, water, spend or next.',
-          'It refreshes about every 15 minutes and shows the time it was updated. A revoked token shows “Reconnect in LifeOS”.',
+          'Scriptable → + → paste → name it Life. Run it once → Set token → paste your token (it stays in the iPhone Keychain).',
+          'Long-press the home screen → + → Scriptable → pick a size → Edit widget → Script: Life. Parameter (optional): score, water, spend or next.',
+          'It refreshes about every 15 minutes and shows the time it was updated. A revoked token shows “Reconnect in Life”.',
         ]}
       />
       <Text variant="caption" tone="secondary">

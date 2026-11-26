@@ -181,7 +181,7 @@ export function StepsScreen({ now: fixedNow }: { now?: number } = {}) {
             />
           </View>
           <Text variant="caption" tone="secondary">
-            No steps showing? Allow LifeOS in the Health app → Sharing → Apps.
+            No steps showing? Allow Life in the Health app → Sharing → Apps.
           </Text>
           <Button
             size="sm"
@@ -209,7 +209,7 @@ export function StepsScreen({ now: fixedNow }: { now?: number } = {}) {
             />
           </View>
           <Text variant="caption" tone="secondary">
-            {`Your iPhone counts steps all day, even with LifeOS closed. It keeps 7 days, so open LifeOS at least once a week.${s.lastReadAt ? ` Updated ${formatClock(istClock(s.lastReadAt))}.` : ''}`}
+            {`Your iPhone counts steps all day, even with Life closed. It keeps 7 days, so open Life at least once a week.${s.lastReadAt ? ` Updated ${formatClock(istClock(s.lastReadAt))}.` : ''}`}
           </Text>
           <Button
             size="sm"

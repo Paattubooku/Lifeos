@@ -78,7 +78,7 @@ export function useExport() {
       if (await isAvailableAsync())
         await shareAsync(uri, {
           mimeType: kind === 'json' ? 'application/json' : 'application/zip',
-          dialogTitle: 'Export LifeOS data',
+          dialogTitle: 'Export Life data',
           UTI: kind === 'json' ? 'public.json' : 'public.zip-archive',
         });
       showSnackbar({ message: `Exported ${rows} rows` });

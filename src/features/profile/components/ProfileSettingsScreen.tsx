@@ -94,7 +94,7 @@ export function ProfileSettingsScreen() {
             title="Reminders off — enable"
             body={
               permission && !permission.canAskAgain
-                ? 'Turn notifications on for LifeOS in your phone’s Settings.'
+                ? 'Turn notifications on for Life in your phone’s Settings.'
                 : 'Block starts, water pace and phone-away nudges. Max 10 a day.'
             }
             action={{

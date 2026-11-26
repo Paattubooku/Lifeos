@@ -21,7 +21,7 @@ function Steps({ steps }: { steps: readonly string[] }) {
   );
 }
 
-/** PRD F14: step-by-step text only; LifeOS can't change these settings itself. */
+/** PRD F14: step-by-step text only; Life can't change these settings itself. */
 export function ScreenTimeScreen() {
   const router = useRouter();
   const { profile } = useProfile();
@@ -35,7 +35,7 @@ export function ScreenTimeScreen() {
       back={{ label: 'Back', onPress: () => router.back() }}
     >
       <Text variant="sub" tone="secondary">
-        Set this up once on the phone. LifeOS only reminds you; the phone does the locking.
+        Set this up once on the phone. Life only reminds you; the phone does the locking.
       </Text>
       <Card kicker="iPhone" title="Downtime" testID="ios-steps">
         <Steps

@@ -95,7 +95,7 @@ export function SignInScreen() {
             </Text>
           </View>
           <Text variant="title" accessibilityRole="header">
-            LifeOS
+            Life
           </Text>
           <Text variant="body" tone="secondary">
             {creating

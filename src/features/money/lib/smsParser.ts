@@ -10,7 +10,7 @@
  * Parser Lab and the `ingest-sms` Edge Function classify the same way.
  */
 
-/** LifeOS category keys; the ingest maps them to the user's categories by name. */
+/** Life category keys; the ingest maps them to the user's categories by name. */
 export type SmsCategory =
   'food' | 'bills' | 'transport' | 'health' | 'shopping' | 'other' | 'income';
 
@@ -109,7 +109,7 @@ const cleanPayee = (raw: string | undefined | null): string | null =>
 
 /**
  * Merchant keyword map from Tracker `parse-sms.ts` (upper-cased payee
- * `includes`, first category wins), folded into LifeOS categories:
+ * `includes`, first category wins), folded into Life categories:
  * Subscriptions → Bills; Entertainment and Education → Other (PRD F18).
  */
 const MERCHANTS: readonly [SmsCategory, readonly string[]][] = [
@@ -446,7 +446,7 @@ export const REJECT_RULES: readonly RejectRule[] = [
     reason: 'noise',
   },
   {
-    // New in LifeOS (PRD F19): one-time passwords are never transactions.
+    // New in Life (PRD F19): one-time passwords are never transactions.
     name: 'otp',
     test: (m) =>
       (/\botp\b/.test(m) || m.includes('one time password') || m.includes('do not share')) &&

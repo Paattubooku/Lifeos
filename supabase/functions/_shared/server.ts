@@ -1,4 +1,4 @@
-// Deno-only helpers for the LifeOS Edge Functions (not part of the app bundle).
+// Deno-only helpers for the Life Edge Functions (not part of the app bundle).
 import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2';
 
 import { bearer, isTokenShaped, sha256Hex } from './ingest.ts';

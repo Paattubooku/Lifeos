@@ -27,7 +27,7 @@ describe('SignInScreen', () => {
   it('shows sign-in with a way to create an account (F25)', async () => {
     const { view } = setup(<SignInScreen />);
     await view;
-    expect(screen.getByRole('header', { name: 'LifeOS' })).toBeOnTheScreen();
+    expect(screen.getByRole('header', { name: 'Life' })).toBeOnTheScreen();
     expect(screen.getByText('Your whole day. One screen.')).toBeOnTheScreen();
     expect(screen.getByText('Your data syncs to your account only.')).toBeOnTheScreen();
     expect(screen.getByRole('button', { name: 'New here? Create an account' })).toBeOnTheScreen();

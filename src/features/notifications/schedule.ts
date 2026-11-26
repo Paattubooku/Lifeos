@@ -271,7 +271,7 @@ export function dayCandidates(
         at: at(day.date, day.interruptAt),
         type: 'interrupt',
         title: 'Do ONE thing now',
-        body: '3 blocks are overdue. Open LifeOS and finish the easiest one.',
+        body: '3 blocks are overdue. Open Life and finish the easiest one.',
         url: '/today',
       },
       PRIORITY.interrupt,

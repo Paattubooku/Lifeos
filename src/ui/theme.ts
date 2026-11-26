@@ -1,5 +1,5 @@
 /**
- * LifeOS design tokens — the only file allowed to contain colour literals
+ * Life design tokens — the only file allowed to contain colour literals
  * (enforced by eslint.config.js).
  *
  * Source: PRD §7.2 and design/source/{Main,Components-1,Components-2}(-Dark).dc.html.

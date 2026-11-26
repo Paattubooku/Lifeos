@@ -1,5 +1,5 @@
 /**
- * All calendar-day maths for LifeOS (PRD §4.1). Never derive a day any other way.
+ * All calendar-day maths for Life (PRD §4.1). Never derive a day any other way.
  *
  * - Time zone: Asia/Kolkata = UTC+05:30 all year (India has no DST), so plain
  *   arithmetic is exact and identical on every device and in tests.

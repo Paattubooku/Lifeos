@@ -110,8 +110,8 @@ export function SettingsScreen() {
         {[
           'Settings → Screen Time → turn on, set a passcode someone else knows.',
           `Downtime → Scheduled → ${phoneAway} – ${wake}, every day. Block at Downtime: on.`,
-          'Always Allowed → Phone, Messages, LifeOS (Expo Go), Clock. Nothing else.',
-          `LifeOS reminds you to put the phone away at ${phoneAway}.`,
+          'Always Allowed → Phone, Messages, Life (Expo Go), Clock. Nothing else.',
+          `Life reminds you to put the phone away at ${phoneAway}.`,
         ].map((s, i) => (
           <View key={i} style={styles.step}>
             <Text variant="sub" weight={700} style={styles.num}>
@@ -206,7 +206,7 @@ function DeleteAccount() {
   return (
     <Card title="Delete account" gap={12} testID="delete-account">
       <Text variant="sub" tone="secondary">
-        This permanently deletes your login and everything in LifeOS: profile, routine, every log,
+        This permanently deletes your login and everything in Life: profile, routine, every log,
         food, workouts, money, SMS, tasks, reviews and tokens (Shortcuts and widgets stop working).
         This phone’s copy, reminders and exports are cleared too. It can’t be undone. Export first
         if you want a copy.

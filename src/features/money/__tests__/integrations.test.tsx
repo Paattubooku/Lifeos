@@ -140,7 +140,9 @@ describe('Parser Lab', () => {
     const { store, at } = await moneyStore();
     await renderWithStore(store, <ParserLabScreen now={at('12:00')} />);
     await press('Process the inbox now');
-    expect(screen.getByText('Could not reach LifeOS. Try again when online.')).toBeOnTheScreen();
+    expect(
+      screen.getByText('Could not reach the Life server. Try again when online.'),
+    ).toBeOnTheScreen();
   });
 });
 

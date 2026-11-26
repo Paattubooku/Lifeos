@@ -84,7 +84,7 @@ describe('authErrorMessage', () => {
     [{ status: 429 }, 'Too many attempts. Wait a minute and try again.'],
     [
       { code: 'over_email_send_rate_limit' },
-      'Too many emails sent from LifeOS just now. Try again in an hour.',
+      'Too many emails sent just now. Try again in an hour.',
     ],
     [{ code: 'signup_disabled' }, 'Sign-up is turned off for this project.'],
     [{ message: 'Weird server error' }, 'Weird server error'],
