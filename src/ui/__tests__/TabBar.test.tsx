@@ -1,9 +1,10 @@
 import { fireEvent, screen } from '@testing-library/react-native';
 import type { BottomTabBarProps } from 'expo-router/js-tabs';
+import { StyleSheet } from 'react-native';
 
 import { renderWithTheme } from '@/test/render';
 
-import { TabBar, TabBarItems, tabBarClearance } from '../TabBar';
+import { TabBar, TabBarItems, tabBarBottom, tabBarClearance } from '../TabBar';
 
 const routes = ['today', 'food', 'train', 'progress', 'more'].map((name) => ({
   key: `${name}-key`,
@@ -50,9 +51,29 @@ describe('TabBar', () => {
     expect(navigateToTab).not.toHaveBeenCalled();
   });
 
-  it('reserves room for the floating bar above the home indicator', () => {
+  it('reserves room for the docked bar and the home indicator under it', () => {
     expect(tabBarClearance(34)).toBe(56 + 34 + 16);
-    expect(tabBarClearance(0)).toBe(56 + 12 + 16);
+    expect(tabBarClearance(0)).toBe(56 + 8 + 16);
+    expect(tabBarBottom(34)).toBe(34);
+    expect(tabBarBottom(0)).toBe(8);
+  });
+
+  it('is docked: full width, solid background, hairline on top, padded for the home indicator', async () => {
+    await renderWithTheme(
+      <TabBarItems
+        routes={[{ key: 't', name: 'today' }]}
+        activeIndex={0}
+        onSelect={jest.fn()}
+        bottomInset={34}
+      />,
+    );
+    const bar = StyleSheet.flatten(screen.getByTestId('tab-bar').props.style);
+    expect(bar).toMatchObject({
+      paddingBottom: 34,
+      backgroundColor: '#0F1626',
+      borderTopColor: '#1F2A40',
+    });
+    expect(bar.borderRadius).toBeUndefined();
   });
 });
 

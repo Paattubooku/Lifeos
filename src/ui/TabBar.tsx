@@ -14,7 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { haptics } from './haptics';
 import { Text } from './Text';
 import { useTheme } from './ThemeProvider';
-import { cardShadow, radius } from './theme';
+import { radius } from './theme';
 
 export type TabKey = 'today' | 'food' | 'train' | 'progress' | 'more';
 
@@ -26,15 +26,21 @@ export const TABS: Record<TabKey, { label: string; icon: LucideIcon }> = {
   more: { label: 'More', icon: Ellipsis },
 };
 
-/** Height of the floating bar; screens pad their content by this + bottom inset. */
+/** Height of the tab row (design: 56). The docked bar adds the bottom safe area below it. */
 export const TAB_BAR_HEIGHT = 56;
 
+/** Bottom padding of the docked bar: the home-indicator area (design: 30 on iPhone). */
+export const tabBarBottom = (bottomInset: number) => Math.max(bottomInset, 8);
+
+/** How far screens pad their content so the last card clears the bar. */
 export function tabBarClearance(bottomInset: number) {
-  return TAB_BAR_HEIGHT + Math.max(bottomInset, 12) + 16;
+  return TAB_BAR_HEIGHT + tabBarBottom(bottomInset) + 16;
 }
 
 export type TabBarItemsProps = {
   routes: { key: string; name: string }[];
+  /** Space under the tabs for the home indicator (the bar's own bottom padding). */
+  bottomInset?: number;
   activeIndex: number;
   onSelect: (index: number) => void;
   /** Red dot on a tab, e.g. More when changes failed to sync. */
@@ -42,15 +48,25 @@ export type TabBarItemsProps = {
 };
 
 /** Presentational pill bar (tested on its own; `TabBar` adapts it to Expo Router). */
-export function TabBarItems({ routes, activeIndex, onSelect, badges }: TabBarItemsProps) {
-  const { colors, scheme } = useTheme();
+export function TabBarItems({
+  routes,
+  activeIndex,
+  onSelect,
+  badges,
+  bottomInset = 0,
+}: TabBarItemsProps) {
+  const { colors } = useTheme();
   return (
     <View
       accessibilityRole="tablist"
+      testID="tab-bar"
       style={[
         styles.bar,
-        { backgroundColor: colors.tabBar, borderColor: colors.hairline },
-        cardShadow(scheme),
+        {
+          backgroundColor: colors.tabBar,
+          borderTopColor: colors.hairline,
+          paddingBottom: bottomInset,
+        },
       ]}
     >
       {routes.map((route, index) => {
@@ -79,7 +95,7 @@ export function TabBarItems({ routes, activeIndex, onSelect, badges }: TabBarIte
               />
             ) : null}
             <View>
-              <Icon size={20} color={color} strokeWidth={2} />
+              <Icon size={22} color={color} strokeWidth={active ? 2 : 1.75} />
               {badge ? (
                 <View
                   testID={`tab-badge-${route.name}`}
@@ -100,7 +116,7 @@ export function TabBarItems({ routes, activeIndex, onSelect, badges }: TabBarIte
   );
 }
 
-/** Floating tab bar for `<Tabs tabBar={(p) => <TabBar {...p} />}>`. */
+/** Docked tab bar (design: full width, solid, hairline on top) for `<Tabs tabBar={…}>`. */
 export function TabBar({
   state,
   navigateToTab,
@@ -108,9 +124,10 @@ export function TabBar({
 }: BottomTabBarProps & { badges?: TabBarItemsProps['badges'] }) {
   const insets = useSafeAreaInsets();
   return (
-    <View pointerEvents="box-none" style={[styles.float, { bottom: Math.max(insets.bottom, 12) }]}>
+    <View style={styles.dock}>
       <TabBarItems
         routes={state.routes}
+        bottomInset={tabBarBottom(insets.bottom)}
         activeIndex={state.index}
         badges={badges}
         onSelect={(index) => {
@@ -123,8 +140,8 @@ export function TabBar({
 }
 
 const styles = StyleSheet.create({
-  float: { position: 'absolute', left: 16, right: 16 },
-  bar: { flexDirection: 'row', borderRadius: radius.card, borderWidth: 1 },
+  dock: { position: 'absolute', left: 0, right: 0, bottom: 0 },
+  bar: { flexDirection: 'row', borderTopWidth: StyleSheet.hairlineWidth * 2 },
   item: {
     flex: 1,
     height: TAB_BAR_HEIGHT,

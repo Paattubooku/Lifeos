@@ -58,6 +58,7 @@ import {
   haptics,
   Screen,
   TAB_BAR_HEIGHT,
+  tabBarBottom,
   useSnackbar,
   useTheme,
 } from '@/ui';
@@ -572,7 +573,7 @@ export function TodayScreen({ now: fixedNow }: { now?: number } = {}) {
           />
         ) : null}
       </Screen>
-      <View style={[styles.fab, { bottom: TAB_BAR_HEIGHT + insets.bottom + 12 }]}>
+      <View style={[styles.fab, { bottom: TAB_BAR_HEIGHT + tabBarBottom(insets.bottom) + 12 }]}>
         <Fab
           label="+200"
           accessibilityLabel="Add 200 ml of water. Hold for more amounts"

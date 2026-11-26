@@ -23,7 +23,7 @@ export {
   type StepRule,
 } from './NumberStepper';
 export { TimePicker, type TimePickerProps } from './TimePicker';
-export { TabBar, TabBarItems, TABS, TAB_BAR_HEIGHT, tabBarClearance } from './TabBar';
+export { TabBar, TabBarItems, TABS, TAB_BAR_HEIGHT, tabBarBottom, tabBarClearance } from './TabBar';
 export { Screen, type ScreenProps } from './Screen';
 export { haptics } from './haptics';
 export { TextField, type TextFieldProps } from './TextField';
