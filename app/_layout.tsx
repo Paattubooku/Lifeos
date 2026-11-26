@@ -129,8 +129,6 @@ function Navigator() {
           >
             <Stack.Screen name="index" />
             <Stack.Screen name="auth-callback" />
-            {/* Development only: diagnose iPhone keyboard focus. */}
-            <Stack.Screen name="dev/keyboard" />
             <Stack.Protected guard={signedIn && gate === 'done'}>
               <Stack.Screen name="(tabs)" />
               <Stack.Screen name="tour" options={{ gestureEnabled: false }} />

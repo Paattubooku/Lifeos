@@ -9,9 +9,6 @@ import { SnackbarProvider, ThemeProvider } from '@/ui';
 import { SignInScreen } from '../components/SignInScreen';
 import { restoreSession } from '../slice';
 
-const mockRouter = { push: jest.fn(), back: jest.fn(), replace: jest.fn() };
-jest.mock('expo-router', () => ({ useRouter: () => mockRouter }));
-
 function setup(ui: ReactElement, fake = fakeSupabase(), configured = true) {
   const ctx = storeWithFake(fake, { isConfigured: configured });
   const view = render(
