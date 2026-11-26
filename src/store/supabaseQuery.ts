@@ -26,7 +26,12 @@ export async function supabaseQuery<T>(
   const startedAt = deps.now?.() ?? Date.now();
   try {
     const data = await read(deps.getSupabase());
-    for (const table of tables) api.dispatch(serverRead({ table, startedAt }));
+    // Drop the "just synced" overlay only after RTK Query has stored this result.
+    // Dropping it first left one render with the old cached rows and no overlay
+    // (e.g. onboarded_at briefly null → setup screens flipped back → router loop).
+    setTimeout(() => {
+      for (const table of tables) api.dispatch(serverRead({ table, startedAt }));
+    }, 0);
     return { data };
   } catch (e) {
     return { error: { message: message(e) } };

@@ -1,6 +1,8 @@
 import { supabaseQuery, unwrapList, unwrapOne } from '../supabaseQuery';
 
 const client = { tag: 'client' };
+/** The overlay is dropped on the next tick, after RTK Query stored the result. */
+const nextTick = () => new Promise((r) => setTimeout(r, 0));
 const api = (over: object = {}) => ({
   extra: { isConfigured: true, getSupabase: () => client, storageKey: 'k', now: () => 42, ...over },
   dispatch: jest.fn(),
@@ -14,6 +16,9 @@ describe('supabaseQuery', () => {
       data: [1, 2],
     });
     expect(read).toHaveBeenCalledWith(client);
+    // Not in the same tick: the cached result must land before the overlay goes.
+    expect(a.dispatch).not.toHaveBeenCalled();
+    await nextTick();
     expect(a.dispatch.mock.calls.map(([action]) => action)).toEqual([
       { type: 'sync/serverRead', payload: { table: 'profile', startedAt: 42 } },
       { type: 'sync/serverRead', payload: { table: 'weight_log', startedAt: 42 } },
@@ -32,6 +37,7 @@ describe('supabaseQuery', () => {
         throw 'plain';
       }),
     ).resolves.toEqual({ error: { message: 'plain' } });
+    await nextTick();
     expect(a.dispatch).not.toHaveBeenCalled();
   });
 
@@ -41,6 +47,7 @@ describe('supabaseQuery', () => {
     ).resolves.toEqual({ error: { message: 'Supabase is not configured' } });
     const a = api({ now: undefined });
     await supabaseQuery(a, ['profile'], async () => 1);
+    await nextTick();
     expect(a.dispatch.mock.calls[0]?.[0].payload.startedAt).toEqual(expect.any(Number));
   });
 });

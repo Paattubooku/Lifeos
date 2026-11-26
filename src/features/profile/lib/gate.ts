@@ -29,6 +29,10 @@ export function stickyGate(
   settled: SettledGate,
   user: string | null,
 ): OnboardingGate {
+  const same = settled?.user === user;
+  // Setup can't be undone: once 'done' for this account, a stale read never
+  // sends the person back to the setup screens.
+  if (same && settled.gate === 'done') return 'done';
   if (live !== 'loading') return live;
-  return settled?.user === user ? settled.gate : live;
+  return same ? settled.gate : live;
 }

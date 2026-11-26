@@ -39,6 +39,9 @@ describe('stickyGate', () => {
     expect(stickyGate('loading', { user: 'a', gate: 'done' }, 'a')).toBe('done');
     expect(stickyGate('loading', { user: 'a', gate: 'done' }, 'b')).toBe('loading');
     expect(stickyGate('loading', null, 'a')).toBe('loading');
-    expect(stickyGate('onboard', { user: 'a', gate: 'done' }, 'a')).toBe('onboard');
+    // Setup can't be undone: a stale read saying 'onboard' never flips back.
+    expect(stickyGate('onboard', { user: 'a', gate: 'done' }, 'a')).toBe('done');
+    expect(stickyGate('onboard', { user: 'b', gate: 'done' }, 'a')).toBe('onboard');
+    expect(stickyGate('done', { user: 'a', gate: 'onboard' }, 'a')).toBe('done');
   });
 });
