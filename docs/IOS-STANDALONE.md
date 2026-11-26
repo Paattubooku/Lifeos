@@ -24,6 +24,7 @@ GitHub → the Lifeos repo → **Settings → Secrets and variables → Actions 
 The workflow is `.github/workflows/ios-unsigned.yml` (macOS runner, ~20–40 min).
 
 - **From any branch:** GitHub → **Releases → Draft a new release → Choose a tag**, type `ios-1` (next time `ios-2`, …), set **Target** to the branch, and publish. Pushing the tag starts the build.
+- **From Claude's session:** a commit with `[ios-build]` in its message on the `claude/…` branch starts a build.
 - **Once the workflow is on the default branch:** GitHub → **Actions → iOS unsigned IPA (SideStore) → Run workflow**.
 
 When it finishes: open the run → **Artifacts → Life-ipa** → download and unzip → `Life.ipa`.
