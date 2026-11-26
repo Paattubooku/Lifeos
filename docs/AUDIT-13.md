@@ -2,11 +2,11 @@
 
 Stack: Expo SDK 58 / React Native 0.88 (TypeScript, Expo Router, Redux Toolkit + RTK Query, offline sync queue) · Supabase (Postgres + RLS, Auth, Deno Edge Functions) · hosting via Expo Go + EAS Update · **no LLM / AI features** (AI-specific checklist items are N/A).
 
-Audit kit: *13 Layers of a Production AI App* (`/audit-13`), run read-only in waves. Kit checklists were adapted from FastAPI/Vite to this stack. Hosted Supabase dashboard settings were **not** visible to the auditors; findings about them come from `supabase/config.toml` (local) and must be checked in the dashboard. No auditor changed any file (`git status` clean after each wave).
+Audit kit: *13 Layers of a Production AI App* (`/audit-13`), run read-only in three waves (L01 L04 L08 L09 · L02 L03 L05 L12 L13 · L06 L07 L10 L11). Kit checklists were adapted from FastAPI/Vite to this stack. Status follows the kit's rule: **PASS** = every applicable item true · **PARTIAL** = only partly-met or manual items left · **FAIL** = any code item false. Hosted Supabase dashboard settings were **not** visible to the auditors; findings about them come from `supabase/config.toml` (local) and must be checked in the dashboard. No auditor changed any file (`git status` clean after every wave).
 
-**Progress:** Wave 1 done (L01, L04, L08, L09) · Wave 2 done (L02, L03, L05, L12, L13) · Wave 3 pending (L06, L07, L10, L11)
+**Overall:** 2/13 layers PASS · 3 PARTIAL · 8 FAIL · **0 Critical · 12 High · 34 Medium · 46 Low**
 
-**So far (9 layers):** 2 PASS · 2 PARTIAL · 5 FAIL · **0 Critical · 10 High · 26 Medium · 35 Low**
+The core product is in good shape: data isolation (RLS on every table, tested), secrets handling, the client and the database pass. The gaps are almost all **operational**: backups, CI, deploy process, monitoring and server-side limits.
 
 | # | Layer | Status | Score | Top issue |
 |---|-------|--------|-------|-----------|
@@ -15,31 +15,35 @@ Audit kit: *13 Layers of a Production AI App* (`/audit-13`), run read-only in wa
 | L03 | Database & Storage | PASS | 6/6 | Unique day keys ignore soft delete; weekly rollup scans full history |
 | L04 | Auth & Permissions | PARTIAL | 5/6 | Deep-link tokens allow login CSRF; Edge Function auth untested |
 | L05 | Hosting & Deployment | FAIL | 1/4 | No DEPLOY.md / rollback; EAS project link missing; dev runs against live data |
-| L06 | Cloud Compute | pending (wave 3) | | |
-| L07 | CI/CD & Version Control | pending (wave 3) | | |
+| L06 | Cloud Compute | PARTIAL | 1/3 | Failing SMS rows retried forever; no time budget |
+| L07 | CI/CD & Version Control | FAIL | 1/4 | No CI, no hooks, no branch protection |
 | L08 | Security & RLS | PARTIAL | 3/5 | No docs/SECURITY.md; weak sign-up settings; owner can un-revoke a token |
 | L09 | Rate Limiting | FAIL | 2/6 | Edge Functions have no rate/size limits; open sign-up without captcha |
-| L10 | Caching & CDN | pending (wave 3) | | |
-| L11 | Load Balancing & Scaling | pending (wave 3) | | |
+| L10 | Caching & CDN | FAIL | 2/6 | Server-side writes never refresh the app's cache; no Cache-Control headers |
+| L11 | Load Balancing & Scaling | FAIL | 2/5 | No health check or load test; free-plan ceiling undocumented |
 | L12 | Error Tracking & Logs | FAIL | 1/5 | No crash reporting; Edge Functions log nothing |
 | L13 | Availability & Recovery | FAIL | 0/5 | No database backups at all (free plan, no PITR); no restore drill |
 
-## Fix First (High first, then the most important Mediums; ordered by risk, then effort)
+## Fix First (all 12 Highs, then the most important Mediums; ordered by risk, then effort)
 1. **[L13 High]** No backups: free Supabase plan without PITR and no off-site dump · fix: nightly encrypted `pg_dump` GitHub Action to a private bucket (or Supabase Pro) · M
 2. **[L13 High]** No restore drill · fix: restore + verify scripts on the throwaway Postgres; record the result in a RUNBOOK · S–M
 3. **[L09 High]** Edge Functions have no rate or size limits · fix: Postgres fixed-window counter after `authenticate()`, 429 + Retry-After, 8 KB body cap · M
 4. **[L09 High / L08 / L04]** Open sign-up hardening in the hosted project: CAPTCHA, email confirmation, min 8 chars with letters+digits, leaked-password protection, purge unconfirmed users · S
-5. **[L05 High]** Development and tests hit the live database · fix: a second free project for development; production keys only in EAS env · M
-6. **[L12 High]** Edge Functions log nothing · fix: JSON logger + `X-Request-ID`, generic error messages · S
-7. **[L12 High]** No crash reporting · fix: `@sentry/react-native` (no PII, scrub SMS/amounts) + error boundary · M
-8. **[L05 High]** No written deploy/rollback process · fix: `docs/DEPLOY.md` (publish, rollback, function deploy with `verify_jwt`, smoke test) · S
-9. **[L05 High]** EAS project link + channel/branch mismatch · fix: `eas init`, commit ids, align channel and branch · S
-10. **[L02 High]** Concurrent SMS ingest runs process the same rows · fix: atomic claim (`FOR UPDATE SKIP LOCKED`) or process only the new row on POST · M
-11. **[L04 Medium]** Login CSRF via `lifeos://auth-callback#access_token=…` · fix: PKCE, accept only `?code` · S
-12. **[L01 Medium]** No error boundary · fix: `ErrorBoundary` in `app/_layout.tsx` · S
-13. **[L03 Medium]** Unique day keys ignore soft delete (writes dead-letter on a second phone) · fix: partial unique indexes · S
-14. **[L02 Medium]** quick-log not idempotent (Shortcut retries double-log) · fix: optional `client_id` upsert · S
-15. **[L08 Medium]** `docs/SECURITY.md` + gitleaks · S
+5. **[L07 High]** No CI · fix: GitHub Actions running typecheck, lint, Jest with coverage, `test:db`, `deno check`/`deno lint` · ½ day
+6. **[L07 High]** No branch protection · fix: protect main, require PR + CI · 1 h
+7. **[L05 High]** Development and tests hit the live database · fix: a second free project for development; production keys only in EAS env · M
+8. **[L12 High]** Edge Functions log nothing · fix: JSON logger + `X-Request-ID`, generic error messages · S
+9. **[L12 High]** No crash reporting · fix: `@sentry/react-native` (no PII, scrub SMS/amounts) + error boundary · M
+10. **[L05 High]** No written deploy/rollback process · fix: `docs/DEPLOY.md` (publish, rollback, function deploy with `verify_jwt`, smoke test) · S
+11. **[L05 High]** EAS project link + channel/branch mismatch · fix: `eas init`, commit ids, align channel and branch · S
+12. **[L02 High]** Concurrent SMS ingest runs process the same rows · fix: atomic claim (`FOR UPDATE SKIP LOCKED`) or process only the new row on POST · M
+13. **[L04 Medium]** Login CSRF via `lifeos://auth-callback#access_token=…` · fix: PKCE, accept only `?code` · S
+14. **[L01 Medium]** No error boundary · fix: `ErrorBoundary` in `app/_layout.tsx` · S
+15. **[L03 Medium]** Unique day keys ignore soft delete (writes dead-letter on a second phone) · fix: partial unique indexes · S
+16. **[L10 Medium]** SMS/Shortcut/second-phone writes never refresh mounted screens · fix: invalidate server-written tags on foreground/reconnect · S
+17. **[L02 Medium]** quick-log not idempotent (Shortcut retries double-log) · fix: optional `client_id` upsert · S
+18. **[L02/L06 Medium]** Failing SMS rows retried forever · fix: `attempts < 5` filter · S
+19. **[L08 Medium]** `docs/SECURITY.md` + gitleaks · S
 
 ## Layer Details
 
@@ -153,6 +157,46 @@ Extra: generated types in sync → **PASS**; seed data → **PASS**; views `secu
 - **Low** — Edge Function timeouts: fine today (no outbound calls); wrap future outbound calls in `AbortSignal.timeout()`. · S
 - **Low** — Deployed functions never smoke-tested end-to-end (this container can't reach `*.supabase.co`). Fix: curl smoke test in DEPLOY.md, run from a laptop/phone. · S
 
+### L06 Cloud Compute — PARTIAL · 1/3 (2 partial, 2 N/A)
+
+(The auditor reported "6/10"; scored here as items fully passed out of applicable items.)
+
+**DoD (no own servers, workers, Redis or LLM)**
+1. Worker runs locally → **N/A** (Edge runtime is the only server compute).
+2. Every long task is a job (idempotent, timeout, retries, failure saved) → **PARTIAL** — the SMS inbox is a real job pattern: a row leaves `expense_inbox` only after it is written, failures keep `last_error` + attempts, dedupe via `txn_ref` (`_shared/ingest.ts:101-176`); missing a max-attempts cap and a time budget. `widget-summary` runs its queries in parallel; the export runs on the phone in 1,000-row pages.
+3. 202 + job id + status endpoint → **N/A** (nothing long enough).
+4. Region + budget alerts documented → **PARTIAL** — region ap-south-1 in `DECISIONS.md:32`; no DEPLOY.md, no budget/spend-cap note.
+5. No GPU → **PASS**.
+
+**Findings**
+- **Medium** — Failing inbox rows retried on every request forever (`_shared/ingest.ts:106`, `ingest-sms/index.ts:24-31`). Fix: `.lt('attempts', 5)` + show stuck rows in Parser Lab (same as L02). · S
+- **Low** — `processInbox` has no time budget; a big backlog could hit the Edge Function wall-clock/CPU limit. Fix: stop at ~100 s and leave the rest for the next run. · S
+- **Low** — No DEPLOY.md with region, function list + `verify_jwt`, cost posture (free plan; spend cap + billing alert if moving to Pro). · S
+- **Low** — `authenticate()` writes `last_used_at` on every PAT call (see L02). · S
+
+### L07 CI/CD & Version Control — FAIL · 1/4 (2 N/A)
+
+Local quality gates are strong, but nothing enforces them: no CI, no hooks, no branch protection.
+
+**DoD (adapted)**
+1. CI runs lint / types / tests / migrations / build → **FAIL** — no `.github/`; releases go out by hand (`npm run publish`).
+2. Mandatory tests (auth, RLS ownership, limits, health) → **PASS** — Jest 117 suites / 862 tests; DB tests in `supabase/tests/{rls,delete_account,ingest,nudges,steps,tasks,views}.sql`. Maestro has one flow, never run (`PROGRESS.md:1030`).
+3. Provider calls mocked → **N/A** (no LLM; Supabase mocked in Jest). 4. Eval cases → **N/A**.
+5. Pre-commit hooks + gitleaks + `.gitignore` → **PARTIAL** — `.gitignore` good, `.env` never committed; no hooks, no gitleaks.
+6. Branch protection documented → **FAIL** — not mentioned anywhere; 53 commits, no merges (work lands without PRs).
+
+**Coverage** (CLAUDE.md wants ≥ 90% for business rules): overall lines 96.3%, branches 85.7%; `src/features/*/lib` lines 99.5% / branches 95.9%; `selectors.ts` lines 100%; `src/lib` lines 100%. Weak branches: `food/lib/logging.ts` 79.6%, `steps/lib/motion.ts` 75%. The `coverageThreshold` in `jest.config.js` only enforces `./src/lib/`.
+
+**Findings**
+- **High** — No CI. Fix: `.github/workflows/ci.yml` on PRs + pushes to main: Node 22, `npm ci`, typecheck, lint, `jest --coverage --ci`; a `db` job (apt Postgres + `npm run test:db`, no Docker needed); a `deno` job (`deno check` + `deno lint` on `supabase/functions`). · ½ day
+- **High** — No branch protection / PR flow on main. Fix: require a PR + the CI checks, no force pushes; document in README. · 1 h
+- **Medium** — Releases manual and ungated (no production EAS profile; `npm run publish` ships with no checks). Fix: production profile + a tag-triggered workflow (`eas update`/`eas build` after CI passes, `EXPO_TOKEN` secret); gated `supabase db push` / `functions deploy`. · ½–1 day
+- **Medium** — No secret scanning / pre-commit. Fix: husky + lint-staged + gitleaks (hook and CI); GitHub secret scanning + push protection. · 2 h
+- **Medium** — Coverage threshold misses business-rule folders. Fix: add `src/features/*/lib/` and `selectors.ts` (90/80/90/90); raise `logging.ts` / `motion.ts` branches. · 2 h
+- **Low** — Jest open-handle warning could make CI flaky (see L01). · 1 h
+- **Low** — Maestro e2e never run, one flow. Fix: manual e2e job or document as device-only. · ½ day
+- **Low** — Commit message convention not enforced (optional for one developer). · 30 min
+
 ### L08 Security & RLS — PARTIAL · 3/5 (no Critical/High)
 
 **DoD**
@@ -196,6 +240,47 @@ Extra: generated types in sync → **PASS**; seed data → **PASS**; views `secu
 - **Low L2** — `widget-summary` runs 9 queries / up to 400 days per poll; covered by H1, optional `Cache-Control: max-age=60`. · S
 - **Low L3** — no runbook for Supabase free-tier quotas; enable usage emails, weekly DB-size check. · S
 
+### L10 Caching & CDN — FAIL · 2/6 (1 N/A)
+
+(The auditor called it PARTIAL; by the kit's rule the missing response cache headers are a failing code item.)
+
+**DoD (adapted to RTK Query + Supabase)**
+1. Correct invalidation → **PASS (with a gap)** — every endpoint `providesTags`; all tags invalidated after a sync push and after seeding (`listeners.ts:24-29`); gap below (server-side writes).
+2. Per-user cache isolation → **PASS** — account switch / sign-out resets the API cache and every account-scoped slice (`listeners.ts:36-63`, `rootReducer.ts`); Edge Function queries scoped by `user_id`.
+3. TTL / staleness → **PARTIAL** — no `refetchOnFocus`/`refetchOnReconnect`/`setupListeners`; RTK's 60 s default for unused entries; rehydrated entries are also collected.
+4. Device cache size → **PARTIAL** — per-date entries collected, but some list queries are unbounded (F2).
+5. HTTP cache headers on Edge Functions → **FAIL** — `json()` sends only Content-Type (`_shared/server.ts:15-19`); per-user responses lack `Cache-Control: private, no-store`.
+6. LLM / prompt / Redis / CDN caching → **N/A**.
+7. Cache tests → **PARTIAL** — isolation tested (`src/store/__tests__/account.test.ts`); no test for invalidation after a server-side write.
+
+**Findings**
+- **Medium** — Writes made outside the app (SMS ingest, widget/Shortcut quick-log, a second phone) never invalidate the cache; mounted screens like Today keep stale data. Fix: on app-foreground and reconnect, `invalidateTags` for the server-written tags (Expense, Water, DayLog, BlockLog, Task, Steps), or `setupListeners` + `refetchOnFocus`. · S
+- **Medium** — `getExpenses` reads all expenses with no bound (`src/features/money/api.ts:24-30`), persisted and re-serialised every 500 ms during activity; grows with years of SMS rows. Fix: date-bounded reads (e.g. last 13 months, older on demand); same for other unbounded lists (see L03). · M
+- **Low** — No `Cache-Control` on Edge Function responses. Fix: `'Cache-Control': 'private, no-store'` in `json()`. · XS
+- **Low** — A phone cached before F25 keeps that cache for whichever account signs in first (`listeners.ts:52-55`, intentional). Fix: clear when no account is recorded but queries are cached. · XS
+- **Info** — `widget-summary` recomputes ~9 queries per 15-min poll; no server cache needed at this load.
+
+### L11 Load Balancing & Scaling — FAIL · 2/5 (1 N/A)
+
+(The auditor called it "pass with gaps": the architecture scales well past hundreds of users, but by the kit's rule the missing health check and load test are failing code items.)
+
+**DoD (adapted)**
+- Stateless → **PASS** — every Edge Function builds a fresh client per request (`_shared/server.ts:9-13`); module state only constants/regexes; device state by design.
+- `/health` + `/ready` → **FAIL** — no health/ping function, no uptime check (`widget-summary` touches the DB but needs a token).
+- Pool sizing / pooled URL → **PASS** — no direct Postgres connections; all traffic via PostgREST/Auth (Supabase's pool).
+- LLM fallback / circuit breaker → **N/A** (client sync has backoff + dead letter).
+- Provider tier vs peak users → **PARTIAL** — free plan is the hard ceiling, not documented against the target.
+- Load test at peak → **FAIL** — no k6/loadtest folder, no CI.
+
+Load per user is modest: sync pushes only with a non-empty queue, every 60 s in the foreground (`useSyncWorker.ts:9,44-52`); the widget refreshes every 15 min (`widgets/scriptable/Life.js:10`).
+
+**Findings**
+- **Medium** — No load/smoke test. Fix: `loadtest/k6-smoke.js` against `widget-summary` + `quick-log` with test tokens on a dev project, never production. · S
+- **Medium** — Free-plan ceiling not written down. Fix: table in DECISIONS.md (500K Edge Function calls/month, 500 MB DB, egress, 7-day auto-pause) vs per-user use, plus the trigger point for Pro. · S
+- **Low** — No liveness probe. Fix: tiny public `health` function (or a `select 1` RPC) + a free uptime pinger (also prevents auto-pause). · S
+- **Low** — `last_used_at` written on every token call (~96 writes/day per widget user; see L02). · XS
+- **Low** — `widget-summary` sends 9 queries incl. up to 400 days of `day_log`; fine now, merge into one RPC if calls grow. · M
+
 ### L12 Error Tracking & Logs — FAIL · 1/5
 
 **DoD (LLM tracing N/A)**
@@ -237,7 +322,9 @@ What works for the user (not the operator): dead-letter list with last error + R
 - **Low** — Free-plan auto-pause after 7 days of inactivity not monitored. Fix: weekly ping action or a runbook note. · S
 
 ## Suggested Plan
-- Week 1: backups + restore drill, Edge Function limits, sign-up hardening, DEPLOY.md + EAS link.
-- Week 2: dev/prod separation, Edge Function logging, crash reporting + error boundary, ingest race, PKCE.
-- Week 3: remaining Mediums (soft-delete keys, idempotent quick-log, SECURITY.md, screen error states, Edge Function auth tests).
-- Later: the Low items in each layer.
+- **Week 1 — protect the data:** backups + restore drill (1–2), Edge Function limits (3), sign-up hardening (4), CI + branch protection (5–6).
+- **Week 2 — ship safely and see problems:** dev/prod separation (7), Edge Function logging (8), crash reporting + error boundary (9, 14), DEPLOY.md + EAS link (10–11).
+- **Week 3 — correctness:** ingest race (12), PKCE (13), soft-delete keys (15), cache refresh (16), idempotent quick-log (17), inbox retry cap (18), SECURITY.md (19).
+- **Later:** the remaining Medium and Low items per layer.
+
+Fix one finding at a time ("Fix the High finding #1 from docs/AUDIT-13.md, show me the diff first"). Don't use the kit's `--fix` / `/execute-prp`: they rebuild things in the kit's FastAPI stack.
