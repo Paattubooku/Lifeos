@@ -46,3 +46,8 @@ expo-env.d.ts
 expo-env.d.ts
 .metro-health-check*
 *.tsbuildinfo
+
+# 13-layer audit kit (local only, not part of the app)
+/agents/
+/skills/
+/.claude/commands/audit-13.md
