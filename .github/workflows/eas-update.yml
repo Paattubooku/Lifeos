@@ -1,0 +1,74 @@
+# Publishes the app to Expo's free hosting (EAS Update) so it opens in Expo Go
+# without a laptop running `npm start`. Needs the repository secret EXPO_TOKEN
+# (expo.dev → Settings → Access tokens) plus the two EXPO_PUBLIC_SUPABASE_*
+# secrets. Runs from the Actions tab (when on the default branch) or when a
+# commit whose message contains "[eas-update]" is pushed to a claude/* branch.
+name: Publish to Expo Go (EAS Update)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ['claude/**']
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    if: >-
+      github.event_name != 'push' ||
+      contains(github.event.head_commit.message, '[eas-update]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Check secrets
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "::error::Add the repository secret EXPO_TOKEN (expo.dev → Settings → Access tokens)."
+            exit 1
+          fi
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "::error::Add the repository secrets EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY."
+            exit 1
+          fi
+          printf 'EXPO_PUBLIC_SUPABASE_URL=%s\nEXPO_PUBLIC_SUPABASE_ANON_KEY=%s\n' "$SUPABASE_URL" "$SUPABASE_ANON_KEY" > .env
+
+      - name: Install dependencies
+        run: npm ci
+
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Link the Expo project (creates it the first time)
+        run: eas init --non-interactive --force
+
+      - name: Set the update URL; keep the Expo Go runtime policy
+        run: |
+          eas update:configure --platform all --non-interactive || true
+          node -e "
+            const fs = require('fs');
+            const j = JSON.parse(fs.readFileSync('app.json', 'utf8'));
+            j.expo.runtimeVersion = { policy: 'sdkVersion' };
+            fs.writeFileSync('app.json', JSON.stringify(j, null, 2) + '\n');
+            console.log('updates:', JSON.stringify(j.expo.updates), 'projectId:', j.expo.extra?.eas?.projectId);
+          "
+
+      - name: Publish
+        env:
+          MESSAGE: ${{ github.event.head_commit.message || 'Manual publish' }}
+        run: |
+          eas update --branch main --message "$(printf '%s' "$MESSAGE" | head -n 1)" --non-interactive
+          echo "Open on the iPhone: expo.dev → your project → Updates → latest update → scan the QR code."
