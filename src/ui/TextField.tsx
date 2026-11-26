@@ -44,14 +44,18 @@ export const TextField = forwardRef<ComponentRef<typeof TextInput>, TextFieldPro
         <View
           style={[
             styles.field,
-            { backgroundColor: colors.raised, borderColor },
-            focused &&
-              !error && {
-                shadowColor: colors.accents.primary.base,
-                shadowOpacity: 0.35,
-                shadowRadius: 6,
-                shadowOffset: { width: 0, height: 0 },
-              },
+            {
+              backgroundColor: colors.raised,
+              borderColor,
+              // The shadow props are always set; only the opacity changes on focus.
+              // Adding `shadowColor` only while focused makes React Native (new
+              // architecture) rebuild this view as a new stacking context, which
+              // re-parents the native text field and drops the keyboard on iPhone.
+              shadowColor: colors.accents.primary.base,
+              shadowOpacity: focused && !error ? 0.35 : 0,
+              shadowRadius: 6,
+              shadowOffset: { width: 0, height: 0 },
+            },
           ]}
         >
           {Icon ? <Icon size={18} color={colors.textSecondary} strokeWidth={2} /> : null}

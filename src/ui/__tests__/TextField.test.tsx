@@ -1,4 +1,5 @@
-import { fireEvent, screen } from '@testing-library/react-native';
+import { act, fireEvent, screen } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 import { Mail } from 'lucide-react-native';
 
 import { renderWithTheme } from '@/test/render';
@@ -25,6 +26,23 @@ describe('TextField', () => {
     await fireEvent.press(screen.getByRole('button', { name: 'Show password' }));
     expect(screen.getByLabelText('Password')).toHaveProp('secureTextEntry', false);
     expect(screen.getByRole('button', { name: 'Hide password' })).toBeOnTheScreen();
+  });
+
+  it('focus changes only the glow opacity, never which shadow props exist (iPhone keyboard fix)', async () => {
+    await renderWithTheme(<TextField label="Email" value="" onChangeText={jest.fn()} />);
+    // The frame around the input: the input's parent view.
+    const frame = () => StyleSheet.flatten(screen.getByLabelText('Email').parent?.props.style);
+    const before = frame();
+    await act(async () => {
+      await fireEvent(screen.getByLabelText('Email'), 'focus');
+    });
+    const after = frame();
+    // Same shadow colour before and after: adding one on focus rebuilt the native
+    // view and dropped the keyboard.
+    expect(before.shadowColor).toBeDefined();
+    expect(after.shadowColor).toBe(before.shadowColor);
+    expect(before.shadowOpacity).toBe(0);
+    expect(after.shadowOpacity).toBeGreaterThan(0);
   });
 
   it('shows an error and tracks focus', async () => {
